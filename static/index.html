@@ -1311,7 +1311,7 @@
         let result;
         try { result = await resp.json(); } catch (e) { result = {}; }
         if (resp.ok) {
-          showStatus('Moved ' + (result.moved_count || 0) + ' lead' + ((result.moved_count || 0) === 1 ? '' : 's') + ' to Trash · <a href="/trash" style="color:#00E5FF">View Trash</a>' + (result.failed_count ? ' (' + result.failed_count + ' failed)' : ''), 'success');
+          showStatus('Moved ' + (result.moved_count || 0) + ' lead' + ((result.moved_count || 0) === 1 ? '' : 's') + ' to Trash · <a href="/trash.html" style="color:#00E5FF">View Trash</a>' + (result.failed_count ? ' (' + result.failed_count + ' failed)' : ''), 'success');
           const sa = document.getElementById('selectAllHist');
           if (sa) sa.checked = false;
           loadHistory();
