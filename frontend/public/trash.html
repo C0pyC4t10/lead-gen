@@ -153,7 +153,7 @@
     const API_BASE = window.location.origin;
     const token = localStorage.getItem('skarbol_token');
 
-    if (!token) { window.location.href = '/login?redirect=/trash'; }
+    if (!token) { window.location.href = '/login.html?redirect=/trash'; }
 
     let allTrashed = [];
     let filteredTrashed = [];
@@ -250,7 +250,7 @@
       try {
         const resp = await fetch(API_BASE + '/api/leads/trash', { headers: { 'Authorization': 'Bearer ' + token } });
         if (!resp.ok) {
-          if (resp.status === 401) { window.location.href = '/login?redirect=/trash'; return; }
+          if (resp.status === 401) { window.location.href = '/login.html?redirect=/trash'; return; }
           throw new Error('HTTP ' + resp.status);
         }
         allTrashed = await resp.json();
@@ -344,7 +344,7 @@
       try { await fetch(API_BASE + '/api/auth/logout', { method: 'POST', headers: { 'Authorization': 'Bearer ' + token } }); } catch (_) {}
       localStorage.removeItem('skarbol_token');
       localStorage.removeItem('skarbol_user');
-      window.location.href = '/login';
+      window.location.href = '/login.html';
     });
 
     loadTrash();

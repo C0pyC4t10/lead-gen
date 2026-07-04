@@ -1871,7 +1871,7 @@
       let user;
       try { user = JSON.parse(localStorage.getItem('skarbol_user') || 'null'); } catch(e) { user = null; }
       if (!token) {
-        window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname);
+        window.location.href = '/login.html?redirect=' + encodeURIComponent(window.location.pathname);
         return;
       }
       fetch(API_BASE + '/api/auth/me', { headers: { 'Authorization': 'Bearer ' + token } })
@@ -1882,7 +1882,7 @@
         })
         .catch(() => {
           if (user && user.name) { renderLeadsAuth(user); return; }
-          window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname);
+          window.location.href = '/login.html?redirect=' + encodeURIComponent(window.location.pathname);
         });
     })();
 
