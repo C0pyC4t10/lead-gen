@@ -1022,17 +1022,43 @@ def outreach():
     }), 202
 
 # ═════════════════════════════════════════════════════════════
-# HTML SERVING (Flask serves HTML directly so root / works)
+# HTML SERVING (read at module load, embedded in function)
 # ═════════════════════════════════════════════════════════════
-HTML_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'public')
+HTML_DIR_CANDIDATES = [
+    os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'public'),
+    os.path.join(os.getcwd(), 'public'),
+    os.path.join(os.path.dirname(os.path.abspath(__file__)), 'public'),
+]
+
+# Load HTML files at module load (bundled with Vercel Python function)
+HTML_CACHE = {}
+for _candidate in HTML_DIR_CANDIDATES:
+    if os.path.isdir(_candidate):
+        for _root, _dirs, _files in os.walk(_candidate):
+            for _fname in _files:
+                _full = os.path.join(_root, _fname)
+                _rel = os.path.relpath(_full, _candidate)
+                try:
+                    with open(_full, 'rb') as _f:
+                        HTML_CACHE[_rel] = _f.read()
+                except:
+                    pass
+        break
+
+print(f'Loaded {len(HTML_CACHE)} static files from {_candidate}', flush=True)
 
 def serve_html(filename):
-    """Serve HTML from public/ directory bundled in this Vercel deployment."""
-    path = os.path.join(HTML_DIR, filename)
-    if os.path.exists(path):
-        with open(path) as f:
-            content = f.read()
-        return content, 200, {'Content-Type': 'text/html; charset=utf-8'}
+    """Serve HTML from preloaded cache."""
+    if filename in HTML_CACHE:
+        content_type = 'text/html; charset=utf-8'
+        if filename.endswith('.js'): content_type = 'application/javascript'
+        elif filename.endswith('.css'): content_type = 'text/css'
+        elif filename.endswith('.json'): content_type = 'application/json'
+        elif filename.endswith('.svg'): content_type = 'image/svg+xml'
+        elif filename.endswith('.png'): content_type = 'image/png'
+        elif filename.endswith('.jpg'): content_type = 'image/jpeg'
+        elif filename.endswith('.ico'): content_type = 'image/x-icon'
+        return HTML_CACHE[filename], 200, {'Content-Type': content_type, 'Cache-Control': 'public, max-age=3600'}
     return '<h1>Not Found</h1>', 404, {'Content-Type': 'text/html; charset=utf-8'}
 
 @app.route('/')
@@ -1041,6 +1067,4 @@ def root_index():
 
 @app.route('/<path:filename>')
 def static_html(filename):
-    if filename.endswith('.html') or filename.endswith('.js') or filename.endswith('.css') or filename.endswith('.svg') or filename.endswith('.png') or filename.endswith('.jpg') or filename.endswith('.ico'):
-        return serve_html(filename)
-    return serve_html('leads.html')
+    return serve_html(filename)
