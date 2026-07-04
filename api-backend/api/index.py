@@ -1022,6 +1022,25 @@ def outreach():
     }), 202
 
 # ═════════════════════════════════════════════════════════════
-# HTML routes are served directly by Vercel from /public/
-# Flask only handles /api/* routes
+# HTML SERVING (Flask serves HTML directly so root / works)
 # ═════════════════════════════════════════════════════════════
+HTML_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'public')
+
+def serve_html(filename):
+    """Serve HTML from public/ directory bundled in this Vercel deployment."""
+    path = os.path.join(HTML_DIR, filename)
+    if os.path.exists(path):
+        with open(path) as f:
+            content = f.read()
+        return content, 200, {'Content-Type': 'text/html; charset=utf-8'}
+    return '<h1>Not Found</h1>', 404, {'Content-Type': 'text/html; charset=utf-8'}
+
+@app.route('/')
+def root_index():
+    return serve_html('leads.html')
+
+@app.route('/<path:filename>')
+def static_html(filename):
+    if filename.endswith('.html') or filename.endswith('.js') or filename.endswith('.css') or filename.endswith('.svg') or filename.endswith('.png') or filename.endswith('.jpg') or filename.endswith('.ico'):
+        return serve_html(filename)
+    return serve_html('leads.html')
