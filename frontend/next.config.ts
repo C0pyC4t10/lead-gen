@@ -5,7 +5,7 @@ const nextConfig: NextConfig = {
     return [
       {
         source: "/api/:path*",
-        destination: "https://lead-gen-api.vercel.app/api/:path*",
+        destination: "https://lead-gen-api-nine.vercel.app/api/:path*",
       },
     ];
   },

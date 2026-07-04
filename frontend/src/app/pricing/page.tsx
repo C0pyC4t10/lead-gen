@@ -139,7 +139,7 @@ export default function PricingPage() {
             onMouseLeave={e => { e.currentTarget.style.boxShadow = 'none'; }}
           >
             Upgrade to Pro
-          </a>
+          </button>
         </div>
       </div>
 
