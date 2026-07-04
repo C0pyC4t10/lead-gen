@@ -44,20 +44,21 @@ fi
 # Verify Supabase connection
 echo ""
 echo "=== Verifying Supabase connection... ==="
-python3 -c "
+python3 << 'PYEOF'
 import os
-os.environ['DATABASE_URL'] = '$DATABASE_URL'
+import sys
 try:
     import psycopg2
-    conn = psycopg2.connect('$DATABASE_URL', connect_timeout=10)
-    print('  ✅ Connected to Supabase')
+    conn = psycopg2.connect(os.environ['DATABASE_URL'], connect_timeout=10)
+    print('  Connected to Supabase OK')
     conn.close()
+    sys.exit(0)
 except Exception as e:
-    print(f'  ❌ Connection failed: {e}')
-    print('  If you see Network is unreachable, your ISP blocks Supabase IP.')
+    print(f'  Connection failed: {e}')
+    print('  If Network is unreachable, your ISP blocks Supabase IP.')
     print('  Try a different network or use VPN.')
-    exit 1
-"
+    sys.exit(1)
+PYEOF
 
 echo ""
 echo "=== Starting server on http://localhost:8800 ==="
