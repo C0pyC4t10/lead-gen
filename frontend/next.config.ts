@@ -5,7 +5,7 @@ const nextConfig: NextConfig = {
     return [
       {
         source: "/api/:path*",
-        destination: "http://192.168.68.116:8800/api/:path*",
+        destination: "https://lead-gen-api.onrender.com/api/:path*",
       },
     ];
   },
