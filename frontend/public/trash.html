@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+  <title>Trash — Skarbol Lead Gen</title>
+  <link rel="icon" type="image/svg+xml" href="assets/icon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    :focus-visible { outline: 3px solid rgba(0, 229, 255, 0.25); outline-offset: 2px; }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #050A14; color: #E2E8F0; font-size: 16px; line-height: 1.6;
+      min-height: 100vh; -webkit-font-smoothing: antialiased;
+    }
+
+    .nav{width:100%;display:flex;align-items:center;gap:12px;padding:12px 24px;background:rgba(5,10,20,0.8);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);border-bottom:1px solid rgba(226,232,240,0.06);position:sticky;top:0;z-index:100}
+    .logo{display:flex;align-items:center;gap:10px;text-decoration:none;color:#F8FAFC;font-size:18px;font-weight:700;transition:transform .2s}
+    .logo:hover{transform:scale(1.03)}
+    .logo-icon{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#EF4444,#F59E0B);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;color:#fff;flex-shrink:0}
+    .nav-links{display:flex;align-items:center;gap:12px}
+    .nav-links a,.nav-links button{color:#94A3B8;text-decoration:none;font-size:14px;padding:8px 14px;border-radius:8px;transition:all .2s;background:none;border:none;cursor:pointer;font-family:inherit}
+    .nav-links a:hover,.nav-links button:hover{color:#F8FAFC;background:rgba(148,163,184,0.08)}
+    .nav-links a.active{color:#F8FAFC;background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.3)}
+    .auth-btn{background:linear-gradient(135deg,#0A4FD9,#00E5FF);color:#fff!important;font-weight:600;padding:8px 14px!important;border-radius:8px!important}
+    .auth-btn:hover{background:linear-gradient(135deg,#0A4FD9,#00E5FF)!important;opacity:0.9}
+    .avatar-circle img{width:36px;height:36px;border-radius:50%;object-fit:cover}
+    .avatar-circle{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#0A4FD9,#00E5FF);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff!important;cursor:pointer;padding:0!important}
+    #auth-nav{display:flex;align-items:center;gap:8px;margin-left:auto}
+    .lead-badge{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:6px;background:rgba(0,229,255,0.08);border:1px solid rgba(0,229,255,0.1);font-size:11px;font-weight:600;color:#00E5FF;cursor:default}
+    .lead-badge.warning{color:#FBBF24;border-color:rgba(251,191,36,0.2);background:rgba(251,191,36,0.08)}
+    .lead-badge.danger{color:#EF4444;border-color:rgba(239,68,68,0.2);background:rgba(239,68,68,0.08)}
+    .lead-badge.unlimited{color:#10B981;border-color:rgba(16,185,129,0.2);background:rgba(16,185,129,0.08)}
+    .container{max-width:1280px;width:100%;margin:0 auto;padding:24px 16px 60px}
+    .page-header{display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:16px;margin-bottom:24px}
+    .page-title{font-size:32px;font-weight:800;background:linear-gradient(135deg,#F8FAFC,#EF4444);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:8px}
+    .page-sub{color:#94A3B8;font-size:14px;line-height:1.6;max-width:640px}
+    .stat-pill{padding:8px 16px;border-radius:999px;font-size:13px;font-weight:700;background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.3);color:#EF4444;white-space:nowrap}
+    .card{background:rgba(14,24,37,0.6);border:1px solid rgba(226,232,240,0.08);border-radius:12px;overflow:hidden}
+    .card-header{padding:16px 20px;font-size:14px;font-weight:700;color:#F8FAFC;border-bottom:1px solid rgba(226,232,240,0.08);display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+    .actions-row{display:flex;gap:8px;flex-wrap:wrap;padding:14px 20px;border-bottom:1px solid rgba(226,232,240,0.08);align-items:center;background:rgba(5,10,20,0.4)}
+    .actions-row .left{display:flex;gap:8px;flex-wrap:wrap;align-items:center;flex:1}
+    .actions-row .right{display:flex;gap:8px;flex-wrap:wrap}
+    .btn{padding:9px 16px;border-radius:6px;font-size:13px;font-weight:600;border:none;cursor:pointer;transition:all .15s;display:inline-flex;align-items:center;gap:6px;font-family:inherit}
+    .btn:disabled{opacity:0.4;cursor:not-allowed}
+    .btn-restore{background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.4);color:#10B981}
+    .btn-restore:hover:not(:disabled){background:rgba(16,185,129,0.25)}
+    .btn-purge{background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.4);color:#EF4444}
+    .btn-purge:hover:not(:disabled){background:rgba(239,68,68,0.25)}
+    .btn-empty{background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);color:#F87171}
+    .btn-empty:hover:not(:disabled){background:rgba(239,68,68,0.18)}
+    .btn-ghost{background:transparent;border:1px solid rgba(226,232,240,0.15);color:#CBD5E1}
+    .btn-ghost:hover:not(:disabled){background:rgba(226,232,240,0.05)}
+    .search-input{padding:9px 12px;border-radius:6px;background:rgba(5,10,20,0.6);border:1px solid rgba(226,232,240,0.15);color:#E2E8F0;font-size:13px;outline:none;min-width:200px;font-family:inherit}
+    .search-input:focus{border-color:#00E5FF}
+    .empty{text-align:center;padding:80px 20px;color:#64748B}
+    .empty .icon{font-size:64px;margin-bottom:16px}
+    .empty h3{font-size:18px;color:#94A3B8;margin-bottom:8px}
+    table.trash-table{width:100%;border-collapse:collapse;font-size:13px}
+    table.trash-table thead th{background:rgba(5,10,20,0.6);padding:12px 14px;text-align:left;font-weight:700;color:#94A3B8;font-size:11px;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid rgba(226,232,240,0.08)}
+    table.trash-table tbody td{padding:12px 14px;border-bottom:1px solid rgba(226,232,240,0.05);color:#E2E8F0;vertical-align:middle}
+    table.trash-table tbody tr:hover{background:rgba(0,229,255,0.04)}
+    .business-name{font-weight:600;color:#F8FAFC}
+    .url-cell{color:#94A3B8;font-size:11px;word-break:break-all;max-width:280px}
+    .deleted-at{color:#F59E0B;font-size:11px}
+    .platform-tag{padding:2px 8px;border-radius:4px;font-size:10px;font-weight:700;background:rgba(0,229,255,0.15);color:#00E5FF;text-transform:uppercase}
+    .status-trashed{padding:2px 8px;border-radius:4px;font-size:10px;font-weight:700;background:rgba(239,68,68,0.15);color:#EF4444;text-transform:uppercase}
+    .row-actions{display:flex;gap:6px}
+    .row-btn{padding:6px 10px;border-radius:5px;font-size:11px;font-weight:600;border:none;cursor:pointer;font-family:inherit}
+    .row-restore{background:rgba(16,185,129,0.15);color:#10B981;border:1px solid rgba(16,185,129,0.3)}
+    .row-restore:hover{background:rgba(16,185,129,0.3)}
+    .row-purge{background:rgba(239,68,68,0.15);color:#F87171;border:1px solid rgba(239,68,68,0.3)}
+    .row-purge:hover{background:rgba(239,68,68,0.3)}
+    .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);padding:12px 24px;border-radius:8px;font-size:13px;font-weight:600;z-index:100;opacity:0;transition:opacity .2s,transform .2s;pointer-events:none}
+    .toast.show{opacity:1;transform:translateX(-50%) translateY(-8px)}
+    .toast.success{background:rgba(16,185,129,0.95);color:#050A14}
+    .toast.error{background:rgba(239,68,68,0.95);color:#F8FAFC}
+    select.filter-select{padding:9px 12px;border-radius:6px;background:rgba(5,10,20,0.6);border:1px solid rgba(226,232,240,0.15);color:#E2E8F0;font-size:13px;outline:none;font-family:inherit}
+    .checkbox-cell{width:32px;text-align:center}
+    .checkbox-cell input{width:16px;height:16px;cursor:pointer;accent-color:#00E5FF}
+    .info-banner{margin-top:16px;padding:12px 16px;background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.25);border-radius:8px;font-size:12px;color:#FCD34D}
+    @media(max-width:700px){.container{padding:16px 12px 40px}.page-title{font-size:24px}.actions-row{flex-direction:column;align-items:stretch}.actions-row .right{justify-content:flex-start}}
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <a href="/" class="logo">
+      <div class="logo-icon">🗑</div>
+      <span>Trash</span>
+    </a>
+    <div class="nav-links">
+      <a href="/">Extract</a>
+      <a href="/leads">Leads</a>
+      <a href="/trash" class="active">Trash</a>
+      <a href="/pricing">Pricing</a>
+    </div>
+    <div id="auth-nav">
+      <a href="/login" class="auth-btn" id="loginLink" style="display:none">Sign In</a>
+      <span class="lead-badge" id="leadBadge" title="Leads used" style="display:none"></span>
+      <a href="/profile" class="avatar-circle" id="profileLink" style="display:none">S</a>
+      <a href="/admin" class="auth-btn" id="adminLink" style="display:none">Admin</a>
+      <button class="auth-btn" id="logoutBtn" style="display:none">Logout</button>
+    </div>
+  </nav>
+
+  <div class="container">
+    <div class="page-header">
+      <div>
+        <div class="page-title">🗑 Trash</div>
+        <div class="page-sub">Deleted leads are kept here. You can recover them back to your vault or permanently delete them.</div>
+      </div>
+      <div class="stat-pill" id="trashCount">0 leads</div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <span>Trashed Leads</span>
+      </div>
+      <div class="actions-row">
+        <div class="left">
+          <input type="text" class="search-input" id="trashSearch" placeholder="Search by name or URL…" />
+          <select class="filter-select" id="trashPlatform">
+            <option value="">All Platforms</option>
+            <option value="facebook">Facebook</option>
+            <option value="instagram">Instagram</option>
+            <option value="google_maps">Google Maps</option>
+            <option value="linkedin">LinkedIn</option>
+          </select>
+        </div>
+        <div class="right">
+          <button class="btn btn-restore" id="btnRestoreSelected" disabled>↩ Restore Selected (<span id="restoreCount">0</span>)</button>
+          <button class="btn btn-purge" id="btnPurgeSelected" disabled>✕ Permanently Delete Selected (<span id="purgeCount">0</span>)</button>
+          <button class="btn btn-empty" id="btnEmptyTrash">🗑 Empty Trash</button>
+        </div>
+      </div>
+      <div id="trashBody"></div>
+    </div>
+
+    <div class="info-banner">
+      💡 Tip: Deleting a lead moves it here. From here you can restore it (back to Lead Vault) or permanently delete it (gone forever).
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    const API_BASE = window.location.origin;
+    const token = localStorage.getItem('skarbol_token');
+
+    if (!token) { window.location.href = '/login?redirect=/trash'; }
+
+    let allTrashed = [];
+    let filteredTrashed = [];
+
+    function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[m]); }
+
+    function showToast(msg, type) {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.className = 'toast show ' + (type || 'success');
+      clearTimeout(showToast._t);
+      showToast._t = setTimeout(() => { t.className = 'toast'; }, 3500);
+    }
+
+    function updateCounts() {
+      const n = document.querySelectorAll('.trash-select:checked').length;
+      document.getElementById('restoreCount').textContent = n;
+      document.getElementById('purgeCount').textContent = n;
+      document.getElementById('btnRestoreSelected').disabled = (n === 0);
+      document.getElementById('btnPurgeSelected').disabled = (n === 0);
+    }
+
+    function applyFilters() {
+      const q = (document.getElementById('trashSearch').value || '').toLowerCase();
+      const pf = document.getElementById('trashPlatform').value;
+      filteredTrashed = allTrashed.filter(l => {
+        if (pf && (l.platform || '').toLowerCase() !== pf.toLowerCase()) return false;
+        if (q) {
+          const hay = ((l.business_name || '') + ' ' + (l.page_url || '')).toLowerCase();
+          if (!hay.includes(q)) return false;
+        }
+        return true;
+      });
+      renderTable();
+    }
+
+    function renderTable() {
+      const body = document.getElementById('trashBody');
+      document.getElementById('trashCount').textContent = filteredTrashed.length + ' lead' + (filteredTrashed.length === 1 ? '' : 's');
+      if (filteredTrashed.length === 0) {
+        body.innerHTML = '<div class="empty"><div class="icon">🗑</div><h3>Trash is empty</h3><p>Leads you delete from the Lead Vault will appear here.</p><p style="margin-top:16px;"><a href="/leads" style="color:#00E5FF;text-decoration:none">← Back to Lead Vault</a></p></div>';
+        updateCounts();
+        return;
+      }
+      let html = '<table class="trash-table"><thead><tr>';
+      html += '<th class="checkbox-cell"><input type="checkbox" id="selectAllTrash" /></th>';
+      html += '<th style="width:32px">#</th>';
+      html += '<th>Deleted</th>';
+      html += '<th>Name</th>';
+      html += '<th>Platform</th>';
+      html += '<th>Status</th>';
+      html += '<th>Page URL</th>';
+      html += '<th style="width:140px">Actions</th>';
+      html += '</tr></thead><tbody>';
+      filteredTrashed.forEach((l, i) => {
+        const url = esc(l.page_url || '');
+        const deletedAt = esc(l.deleted_at || '').replace('T', ' ').replace(/\.\d+Z?$/, '').slice(0, 16);
+        html += '<tr class="trashed-row">';
+        html += '<td class="checkbox-cell"><input type="checkbox" class="trash-select" data-url="' + url + '" /></td>';
+        html += '<td style="color:#64748B">' + (i + 1) + '</td>';
+        html += '<td class="deleted-at">' + deletedAt + '</td>';
+        html += '<td><span class="business-name">' + esc(l.business_name || '(no name)') + '</span></td>';
+        html += '<td><span class="platform-tag">' + esc(l.platform || '?') + '</span></td>';
+        html += '<td><span class="status-trashed">trashed</span></td>';
+        html += '<td class="url-cell">' + url + '</td>';
+        html += '<td><div class="row-actions">';
+        html += '<button class="row-btn row-restore" data-url="' + url + '" data-action="restore">↩ Restore</button>';
+        html += '<button class="row-btn row-purge" data-url="' + url + '" data-action="purge">✕ Delete</button>';
+        html += '</div></td>';
+        html += '</tr>';
+      });
+      html += '</tbody></table>';
+      body.innerHTML = html;
+      const sa = document.getElementById('selectAllTrash');
+      if (sa) sa.addEventListener('change', function() {
+        document.querySelectorAll('.trash-select').forEach(cb => cb.checked = this.checked);
+        updateCounts();
+      });
+      body.addEventListener('change', (e) => {
+        if (e.target.classList && e.target.classList.contains('trash-select')) updateCounts();
+      });
+      body.addEventListener('click', (e) => {
+        const btn = e.target.closest('.row-btn');
+        if (!btn) return;
+        const url = btn.getAttribute('data-url');
+        const action = btn.getAttribute('data-action');
+        if (action === 'restore') restoreSelected([url]);
+        else if (action === 'purge') purgeSelected([url]);
+      });
+      updateCounts();
+    }
+
+    async function loadTrash() {
+      try {
+        const resp = await fetch(API_BASE + '/api/leads/trash', { headers: { 'Authorization': 'Bearer ' + token } });
+        if (!resp.ok) {
+          if (resp.status === 401) { window.location.href = '/login?redirect=/trash'; return; }
+          throw new Error('HTTP ' + resp.status);
+        }
+        allTrashed = await resp.json();
+        applyFilters();
+      } catch (err) {
+        document.getElementById('trashBody').innerHTML = '<div class="empty"><div class="icon">⚠</div><h3>Failed to load trash</h3><p>' + esc(err.message) + '</p></div>';
+      }
+    }
+
+    function getSelected() {
+      return Array.from(document.querySelectorAll('.trash-select:checked')).map(cb => cb.getAttribute('data-url'));
+    }
+
+    async function restoreSelected(urls) {
+      if (!urls || !urls.length) return;
+      try {
+        const resp = await fetch(API_BASE + '/api/lead/bulk-restore', {
+          method: 'POST',
+          headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ page_urls: urls }),
+        });
+        const result = await resp.json();
+        if (resp.ok) {
+          showToast('Restored ' + result.restored_count + ' lead' + (result.restored_count === 1 ? '' : 's') + ' back to Lead Vault', 'success');
+          allTrashed = allTrashed.filter(l => !result.restored.includes(l.page_url));
+          applyFilters();
+        } else {
+          showToast('Error: ' + (result.error || resp.status), 'error');
+        }
+      } catch (err) { showToast('Network error', 'error'); }
+    }
+
+    async function purgeSelected(urls) {
+      if (!urls || !urls.length) return;
+      if (!(await scravenConfirm('Permanently delete ' + urls.length + ' lead' + (urls.length === 1 ? '' : 's') + '? This CANNOT be undone.'))) return;
+      try {
+        const resp = await fetch(API_BASE + '/api/lead/bulk-purge', {
+          method: 'POST',
+          headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ page_urls: urls }),
+        });
+        const result = await resp.json();
+        if (resp.ok) {
+          showToast('Permanently deleted ' + result.purged_count + ' lead' + (result.purged_count === 1 ? '' : 's'), 'success');
+          allTrashed = allTrashed.filter(l => !result.purged.includes(l.page_url));
+          applyFilters();
+        } else {
+          showToast('Error: ' + (result.error || resp.status), 'error');
+        }
+      } catch (err) { showToast('Network error', 'error'); }
+    }
+
+    document.getElementById('trashSearch').addEventListener('input', applyFilters);
+    document.getElementById('trashPlatform').addEventListener('change', applyFilters);
+    document.getElementById('btnRestoreSelected').addEventListener('click', () => restoreSelected(getSelected()));
+    document.getElementById('btnPurgeSelected').addEventListener('click', () => purgeSelected(getSelected()));
+    document.getElementById('btnEmptyTrash').addEventListener('click', () => {
+      if (allTrashed.length === 0) { showToast('Trash is already empty', 'error'); return; }
+      const all = allTrashed.map(l => l.page_url);
+      purgeSelected(all);
+    });
+
+    // ── Auth nav (mirror leads.html) ──
+    (async function() {
+      try {
+        const r = await fetch(API_BASE + '/api/auth/me', { headers: { 'Authorization': 'Bearer ' + token } });
+        if (r.ok) {
+          const u = await r.json();
+          const link = document.getElementById('profileLink');
+          if (u && u.name && link) {
+            link.textContent = u.name.charAt(0).toUpperCase();
+            link.style.display = 'flex';
+          }
+          if (u && u.role && (u.role === 'admin' || u.role === 'super_admin')) {
+            const a = document.getElementById('adminLink');
+            if (a) a.style.display = '';
+          }
+          document.getElementById('loginLink').style.display = 'none';
+          const lo = document.getElementById('logoutBtn');
+          if (lo) lo.style.display = '';
+        } else {
+          document.getElementById('loginLink').style.display = '';
+        }
+      } catch (_) {
+        document.getElementById('loginLink').style.display = '';
+      }
+    })();
+
+    const lo = document.getElementById('logoutBtn');
+    if (lo) lo.addEventListener('click', async () => {
+      try { await fetch(API_BASE + '/api/auth/logout', { method: 'POST', headers: { 'Authorization': 'Bearer ' + token } }); } catch (_) {}
+      localStorage.removeItem('skarbol_token');
+      localStorage.removeItem('skarbol_user');
+      window.location.href = '/login';
+    });
+
+    loadTrash();
+  </script>
+<script src="/assets/scraven-modal.js"></script>
+</body>
+</html>

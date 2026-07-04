@@ -1,0 +1,1940 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+  <title>Scraven — The Hunter</title>
+  <meta name="description" content="Advanced lead extraction, bulk import, inline editing, qualification, and export." />
+  <link rel="icon" type="image/svg+xml" href="assets/icon.svg" />
+  <link rel="icon" type="image/png" sizes="32x32" href="assets/icon32.png" />
+  <link rel="icon" type="image/png" sizes="128x128" href="assets/icon128.png" />
+  <link rel="apple-touch-icon" href="assets/icon192.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    :focus-visible { outline: 3px solid rgba(0, 229, 255, 0.25); outline-offset: 2px; }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #050A14; color: #E2E8F0; font-size: 16px; line-height: 1.6;
+      min-height: 100vh; -webkit-font-smoothing: antialiased;
+    }
+
+    .nav{width:100%;display:flex;align-items:center;gap:12px;padding:12px 24px;background:rgba(5,10,20,0.8);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);border-bottom:1px solid rgba(226,232,240,0.06);position:sticky;top:0;z-index:100}
+    .logo{display:flex;align-items:center;gap:10px;text-decoration:none;color:#F8FAFC;font-size:18px;font-weight:700;transition:transform .2s}
+    .logo:hover{transform:scale(1.03)}
+    .logo-icon{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#0A4FD9,#00E5FF);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;color:#fff;flex-shrink:0}
+    .nav-links{display:flex;align-items:center;gap:12px}
+    .nav-links a,.nav-links button{color:#94A3B8;text-decoration:none;font-size:14px;padding:8px 14px;border-radius:8px;transition:all .2s;background:none;border:none;cursor:pointer;font-family:inherit}
+    .nav-links a:hover,.nav-links button:hover{color:#F8FAFC;background:rgba(148,163,184,0.08)}
+    .auth-btn{background:linear-gradient(135deg,#0A4FD9,#00E5FF);color:#fff!important;font-weight:600;padding:8px 14px!important;border-radius:8px!important}
+    .auth-btn:hover{background:linear-gradient(135deg,#0A4FD9,#00E5FF)!important;opacity:0.9}
+    .avatar-circle img{width:36px;height:36px;border-radius:50%;object-fit:cover}
+.avatar-circle{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#0A4FD9,#00E5FF);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff!important;cursor:pointer;padding:0!important}
+    #auth-nav{display:flex;align-items:center;gap:8px;margin-left:auto}
+    .lead-badge{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:6px;background:rgba(0,229,255,0.08);border:1px solid rgba(0,229,255,0.1);font-size:11px;font-weight:600;color:#00E5FF;cursor:default}
+    .lead-badge.warning{color:#FBBF24;border-color:rgba(251,191,36,0.2);background:rgba(251,191,36,0.08)}
+    .lead-badge.danger{color:#EF4444;border-color:rgba(239,68,68,0.2);background:rgba(239,68,68,0.08)}
+    .lead-badge.unlimited{color:#10B981;border-color:rgba(16,185,129,0.2);background:rgba(16,185,129,0.08)}
+    .container{max-width:640px;width:100%;margin:0 auto;padding:24px 16px 60px}
+    @media(min-width:900px){.container{max-width:800px;padding:32px 24px 80px}}
+    .header{text-align:center;margin-bottom:48px}
+    .header h1{font-size:36px;font-weight:800;background:linear-gradient(135deg,#F8FAFC,#00E5FF);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:12px}
+    .header p{color:#94A3B8;font-size:16px;line-height:1.6}
+
+    .pro-teaser {
+      display: none; margin-bottom: 16px;
+      padding: 16px 20px; border-radius: 12px;
+      background: linear-gradient(135deg, rgba(10,79,217,0.12), rgba(0,229,255,0.06));
+      border: 1px solid rgba(0,229,255,0.15);
+    }
+    .pro-teaser h3 { font-size: 15px; font-weight: 700; color: #00E5FF; margin-bottom: 6px; }
+    .pro-teaser p { font-size: 13px; color: #94A3B8; line-height: 1.5; }
+    .pro-teaser .pro-btn {
+      display: inline-block; margin-top: 10px;
+      padding: 8px 18px; border-radius: 8px;
+      background: linear-gradient(135deg, #0A4FD9, #00E5FF);
+      color: #fff; font-size: 13px; font-weight: 600; text-decoration: none;
+      transition: opacity .2s;
+    }
+    .pro-teaser .pro-btn:hover { opacity: 0.9; }
+
+    .card {
+      background: rgba(14, 24, 37, 0.92);
+      backdrop-filter: blur(16px) saturate(180%);
+      -webkit-backdrop-filter: blur(16px) saturate(180%);
+      border: 1px solid rgba(226, 232, 240, 0.08);
+      border-radius: 16px; padding: 20px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.03);
+      margin-bottom: 16px; transition: box-shadow 300ms ease, border-color 300ms ease;
+    }
+    @media (min-width: 480px) { .card { padding: 24px; } }
+
+    .card-header {
+      font-size: 11px; font-weight: 700; color: #00E5FF;
+      text-transform: uppercase; letter-spacing: 0.8px;
+      margin-bottom: 16px; padding-bottom: 8px;
+      border-bottom: 1px solid rgba(226, 232, 240, 0.06);
+    }
+
+    .tab-bar {
+      display: flex; gap: 0; margin-bottom: 20px;
+      border-bottom: 1px solid rgba(226, 232, 240, 0.06);
+    }
+    .tab {
+      padding: 12px 20px; font-size: 14px; font-weight: 500; color: #64748B;
+      cursor: pointer; border-bottom: 2px solid transparent; font-family: 'Inter', sans-serif;
+      transition: all 250ms cubic-bezier(0.4, 0, 0.2, 1); background: none;
+    }
+    .tab.active { color: #00E5FF; border-bottom-color: #00E5FF; }
+    .tab:hover:not(.active) { color: #94A3B8; }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; animation: fadeSlideIn 300ms cubic-bezier(0.34, 1.56, 0.64, 1); }
+    @keyframes fadeSlideIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+    .platform-grid { display: flex; gap: 6px; margin-bottom: 16px; flex-wrap: wrap; }
+    .plat-btn {
+      flex: 1; min-width: 80px; min-height: 48px; padding: 12px;
+      border: 1px solid rgba(226, 232, 240, 0.08); border-radius: 10px;
+      background: rgba(26, 37, 56, 0.3); color: #64748B;
+      font-size: 13px; font-weight: 500; cursor: pointer; font-family: 'Inter', sans-serif;
+      text-align: center; transition: all 250ms cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative; overflow: hidden;
+    }
+    .plat-btn::after {
+      content: ''; position: absolute; inset: 0;
+      background: rgba(255,255,255,0.03); opacity: 0; transition: opacity 250ms ease;
+    }
+    .plat-btn i { margin-right: 6px; }
+    .plat-btn.active {
+      background: rgba(0, 229, 255, 0.08); border-color: rgba(0, 229, 255, 0.3); color: #00E5FF;
+      box-shadow: 0 0 20px rgba(0, 229, 255, 0.05);
+    }
+    .plat-btn:hover:not(.active) { background: rgba(26, 37, 56, 0.6); color: #94A3B8; }
+    .plat-btn:hover::after { opacity: 1; }
+    .plat-btn:active { transform: translateY(1px); }
+
+    .mode-switch {
+      display: flex; align-items: center; gap: 10px; margin-bottom: 16px;
+      padding: 12px 16px; border-radius: 10px;
+      background: rgba(5, 10, 20, 0.4); border: 1px solid rgba(226, 232, 240, 0.05);
+    }
+    .mode-switch label { font-size: 13px; color: #94A3B8; cursor: pointer; }
+    .toggle {
+      width: 40px; height: 22px; background: rgba(26, 37, 56, 0.6);
+      border-radius: 11px; position: relative; cursor: pointer;
+      border: 1px solid rgba(226, 232, 240, 0.1); transition: background 250ms ease; flex-shrink: 0;
+    }
+    .toggle.active { background: rgba(0, 229, 255, 0.3); border-color: #00E5FF; }
+    .toggle::after {
+      content: ''; position: absolute; top: 2px; left: 2px;
+      width: 16px; height: 16px; border-radius: 50%; background: #64748B;
+      transition: all 250ms cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .toggle.active::after { left: 20px; background: #00E5FF; }
+
+    .input-row { display: flex; gap: 8px; }
+    .input-row input, .input-row textarea {
+      flex: 1; padding: 14px 16px; border-radius: 10px;
+      border: 1px solid rgba(226, 232, 240, 0.1);
+      background: rgba(26, 37, 56, 0.5);
+      color: #F8FAFC; font-size: 16px; font-family: 'Inter', sans-serif;
+      outline: none; transition: border-color 250ms cubic-bezier(0.4, 0, 0.2, 1), box-shadow 250ms ease;
+      box-shadow: 0 0 0 0 rgba(0, 229, 255, 0);
+    }
+    .input-row input:focus, .input-row textarea:focus { border-color: #00E5FF; box-shadow: 0 0 0 3px rgba(0, 229, 255, 0.2); }
+    .input-row input::placeholder, .input-row textarea::placeholder { color: #475569; }
+    .input-row textarea { resize: vertical; min-height: 90px; font-size: 16px; line-height: 1.6; }
+
+    .btn-glow {
+      min-height: 48px; padding: 14px 24px; border: none; border-radius: 10px;
+      background: linear-gradient(135deg, #0A4FD9, #00E5FF);
+      color: #FFFFFF; font-size: 15px; font-weight: 600;
+      cursor: pointer; font-family: 'Inter', sans-serif; white-space: nowrap;
+      transition: all 250ms cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 4px 20px rgba(10, 79, 217, 0.45);
+      position: relative; overflow: hidden;
+    }
+    .btn-glow::after {
+      content: ''; position: absolute; inset: 0;
+      background: linear-gradient(135deg, rgba(255,255,255,0.1), transparent);
+      opacity: 0; transition: opacity 250ms ease;
+    }
+    .btn-glow:hover { box-shadow: 0 6px 28px rgba(10, 79, 217, 0.6); transform: translateY(-1px); }
+    .btn-glow:hover::after { opacity: 1; }
+    .btn-glow:active { transform: translateY(1px); opacity: 0.92; }
+    .btn-glow:disabled { opacity: 0.35; cursor: not-allowed; box-shadow: none; transform: none; }
+    .btn-glow.sm { min-height: 44px; padding: 10px 18px; font-size: 14px; box-shadow: 0 3px 12px rgba(10, 79, 217, 0.35); }
+
+    .btn-ghost {
+      min-height: 48px; padding: 12px 16px; border-radius: 10px;
+      border: 1px solid rgba(226, 232, 240, 0.08);
+      background: rgba(26, 37, 56, 0.3); color: #94A3B8;
+      font-size: 14px; font-weight: 500; cursor: pointer; font-family: 'Inter', sans-serif;
+      transition: all 250ms cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative; overflow: hidden;
+    }
+    .btn-ghost::after {
+      content: ''; position: absolute; inset: 0;
+      background: rgba(255,255,255,0.03); opacity: 0; transition: opacity 250ms ease;
+    }
+    .btn-ghost:hover { background: rgba(26, 37, 56, 0.6); color: #E2E8F0; border-color: rgba(226, 232, 240, 0.15); }
+    .btn-ghost:hover::after { opacity: 1; }
+    .btn-ghost:active { transform: translateY(1px); }
+    .btn-ghost.sm { min-height: 44px; padding: 10px 16px; font-size: 13px; }
+
+    .btn-outline {
+      min-height: 38px; padding: 8px 14px; border-radius: 8px;
+      border: 1px solid rgba(226, 232, 240, 0.1);
+      background: transparent; color: #94A3B8;
+      font-size: 12px; font-weight: 500; cursor: pointer; font-family: 'Inter', sans-serif;
+      transition: all 250ms cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .btn-outline:hover { background: rgba(26, 37, 56, 0.5); color: #E2E8F0; }
+    .btn-outline.danger { border-color: rgba(239, 68, 68, 0.2); color: #FCA5A5; }
+    .btn-outline.danger:hover { background: rgba(239, 68, 68, 0.1); }
+    .btn-outline.success { border-color: rgba(16, 185, 129, 0.2); color: #6EE7B7; }
+    .btn-outline.success:hover { background: rgba(16, 185, 129, 0.1); }
+
+    .badge {
+      display: inline-block; padding: 3px 10px; border-radius: 6px;
+      font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.3px;
+    }
+    .badge.new { background: rgba(59, 130, 246, 0.12); color: #93C5FD; }
+    .badge.qualified, .badge.won { background: rgba(16, 185, 129, 0.12); color: #6EE7B7; }
+    .badge.lost { background: rgba(239, 68, 68, 0.12); color: #FCA5A5; }
+    .badge.contacted { background: rgba(245, 158, 11, 0.12); color: #FCD34D; }
+    .badge.proposal { background: rgba(139, 92, 246, 0.12); color: #C4B5FD; }
+    .badge.meeting { background: rgba(245, 158, 11, 0.12); color: #FCD34D; }
+    .badge.duplicate { background: rgba(148, 163, 184, 0.12); color: #94A3B8; }
+    .badge.error-badge { background: rgba(239, 68, 68, 0.12); color: #FCA5A5; }
+
+    #loading {
+      display: none; text-align: center; padding: 48px 0;
+    }
+    .spinner {
+      width: 28px; height: 28px; border: 3px solid rgba(226, 232, 240, 0.06);
+      border-top-color: #00E5FF; border-radius: 50%;
+      animation: spin 0.8s linear infinite; margin: 0 auto 16px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    #loading p { color: #94A3B8; font-size: 14px; }
+    #loading .step { font-size: 12px; color: #475569; margin-top: 6px; }
+
+    .status-msg {
+      display: none; padding: 14px 16px; border-radius: 10px;
+      font-size: 13px; margin-bottom: 16px; line-height: 1.6;
+    }
+    .status-msg.success { display: block; background: rgba(16, 185, 129, 0.08); border-left: 4px solid #10B981; color: #6EE7B7; }
+    .status-msg.error { display: block; background: rgba(239, 68, 68, 0.08); border-left: 4px solid #EF4444; color: #FCA5A5; }
+    .status-msg.info { display: block; background: rgba(59, 130, 246, 0.08); border-left: 4px solid #3B82F6; color: #93C5FD; }
+    .status-msg.warning { display: block; background: rgba(245, 158, 11, 0.08); border-left: 4px solid #F59E0B; color: #FCD34D; }
+
+    .scroll-x { overflow-x: auto; -webkit-overflow-scrolling: touch; margin: 0 -4px; padding: 0 4px; }
+
+    .lead-table { width: 100%; border-collapse: separate; border-spacing: 0; min-width: 700px; }
+    .lead-table th {
+      font-size: 10px; font-weight: 600; color: #64748B; text-transform: uppercase;
+      letter-spacing: 0.5px; padding: 10px 8px; text-align: left;
+      border-bottom: 1px solid rgba(226, 232, 240, 0.06);
+      position: sticky; top: 0; background: rgba(14, 24, 37, 0.98);
+    }
+    .lead-table td { padding: 12px 8px; border-bottom: 1px solid rgba(14, 24, 37, 0.6); font-size: 13px; vertical-align: middle; }
+    .lead-table tr { transition: background 200ms ease; }
+    .lead-table tbody tr:hover { background: rgba(26, 37, 56, 0.3); }
+    .lead-table .lead-name {
+      cursor: pointer; font-weight: 600; color: #E2E8F0; transition: color 200ms ease;
+    }
+    .lead-table .lead-name:hover { color: #00E5FF; }
+
+    .filter-row {
+      display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap;
+    }
+    .filter-row select, .filter-row input {
+      padding: 10px 14px; border-radius: 8px;
+      border: 1px solid rgba(226, 232, 240, 0.1); background: rgba(26, 37, 56, 0.4);
+      color: #E2E8F0; font-size: 16px; font-family: 'Inter', sans-serif; outline: none;
+      transition: border-color 250ms ease, box-shadow 250ms ease;
+      box-shadow: 0 0 0 0 rgba(0, 229, 255, 0);
+    }
+    .filter-row select:focus, .filter-row input:focus { border-color: #00E5FF; box-shadow: 0 0 0 3px rgba(0, 229, 255, 0.2); }
+    .filter-row select { min-width: 120px; }
+
+    .result-count { font-size: 13px; color: #64748B; margin-bottom: 8px; }
+
+    .bulk-actions {
+      display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap;
+    }
+
+    .inline-edit {
+      background: transparent; border: none; border-bottom: 1px dashed rgba(0, 229, 255, 0.3);
+      color: #F8FAFC; font-size: 16px; font-family: 'Inter', sans-serif;
+      width: 100%; padding: 4px 0; outline: none;
+      transition: border-color 250ms cubic-bezier(0.4, 0, 0.2, 1), box-shadow 250ms ease, background 250ms ease;
+      border-radius: 2px;
+    }
+    .inline-edit:focus { border-bottom-color: #00E5FF; background: rgba(0, 229, 255, 0.04); }
+    .inline-edit:hover { border-bottom-color: rgba(0, 229, 255, 0.5); }
+    .inline-edit::placeholder { color: #475569; }
+
+    /* ── Detail Overlay ── */
+    .detail-overlay {
+      display: none; position: fixed; inset: 0; z-index: 100;
+      background: rgba(5, 10, 20, 0.5);
+      animation: fadeIn 200ms ease;
+    }
+    .detail-overlay.open { display: block; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+    .detail-panel {
+      position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+      width: 90vw; max-width: 560px; max-height: min(85vh, 85dvh); overflow-y: auto;
+      background: rgba(14, 24, 37, 0.98);
+      backdrop-filter: blur(24px) saturate(180%);
+      -webkit-backdrop-filter: blur(24px) saturate(180%);
+      border: 1px solid rgba(226, 232, 240, 0.1);
+      border-radius: 20px; padding: 24px;
+      padding-bottom: max(24px, env(safe-area-inset-bottom));
+      box-shadow: 0 24px 64px rgba(0, 0, 0, 0.6);
+      animation: slideUp 300ms cubic-bezier(0.34, 1.56, 0.64, 1);
+      z-index: 101;
+      -webkit-overflow-scrolling: touch;
+    }
+    @keyframes slideUp { from { opacity: 0; transform: translate(-50%, -40%); } to { opacity: 1; transform: translate(-50%, -50%); } }
+
+    .detail-panel .dp-header {
+      display: flex; justify-content: space-between; align-items: flex-start;
+      margin-bottom: 20px;
+    }
+    .detail-panel .dp-header h2 {
+      font-size: 20px; font-weight: 700; color: #F8FAFC; letter-spacing: -0.02em;
+      word-break: break-word; flex: 1; margin-right: 12px;
+    }
+    .dp-close {
+      width: 44px; height: 44px; border-radius: 10px;
+      background: rgba(26, 37, 56, 0.5); border: 1px solid rgba(226, 232, 240, 0.08);
+      color: #64748B; font-size: 18px; cursor: pointer; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      transition: all 250ms ease;
+    }
+    .dp-close:hover { background: rgba(239, 68, 68, 0.15); color: #FCA5A5; border-color: rgba(239, 68, 68, 0.2); }
+
+    .dp-score {
+      display: flex; align-items: center; gap: 12px;
+      padding: 14px 16px; border-radius: 12px;
+      background: rgba(5, 10, 20, 0.5); border: 1px solid rgba(226, 232, 240, 0.06);
+      margin-bottom: 20px;
+    }
+    .dp-score .sc {
+      width: 44px; height: 44px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px; font-weight: 800; flex-shrink: 0;
+    }
+    .dp-score .sc.red { background: #EF4444; color: #FFFFFF; box-shadow: 0 0 16px rgba(239, 68, 68, 0.25); }
+    .dp-score .sc.yellow { background: #F59E0B; color: #FFFFFF; box-shadow: 0 0 16px rgba(245, 158, 11, 0.25); }
+    .dp-score .sc.green { background: #10B981; color: #FFFFFF; box-shadow: 0 0 16px rgba(16, 185, 129, 0.25); }
+
+    .dp-section { margin-bottom: 16px; }
+    .dp-section .dp-sectitle {
+      font-size: 10px; font-weight: 700; color: #00E5FF;
+      text-transform: uppercase; letter-spacing: 0.6px;
+      margin-bottom: 8px; padding-bottom: 6px;
+      border-bottom: 1px solid rgba(226, 232, 240, 0.06);
+    }
+    .dp-field {
+      display: flex; align-items: center; padding: 8px 0;
+      border-bottom: 1px solid rgba(14, 24, 37, 0.5);
+    }
+    .dp-field:last-child { border-bottom: none; }
+    .dp-label { font-size: 12px; color: #64748B; min-width: 80px; flex-shrink: 0; }
+    .dp-value {
+      flex: 1; font-size: 14px; color: #E2E8F0; text-align: right; word-break: break-word;
+    }
+    .dp-value .inline-edit { text-align: right; }
+
+    .dp-actions {
+      display: flex; gap: 8px; margin-top: 20px; flex-wrap: wrap;
+      position: sticky; bottom: 0; background: rgba(14, 24, 37, 0.98);
+      padding-top: 12px; border-top: 1px solid rgba(226, 232, 240, 0.06);
+      z-index: 1;
+    }
+    .dp-actions .btn-glow { flex: 1; min-width: 100px; }
+    .dp-actions .btn-outline { flex: 1; min-width: 80px; }
+
+    .footer {
+      text-align: center; padding: 32px 0 24px;
+      font-size: 12px; color: #475569;
+    }
+    .footer .brand-name { color: #64748B; }
+    .pagination-bar {
+      display: flex; align-items: center; justify-content: space-between;
+      flex-wrap: wrap; gap: 8px; margin-top: 16px; font-size: 13px;
+    }
+    .page-info { color: #64748B; font-size: 12px; }
+    .page-controls { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+    .page-btn {
+      background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1);
+      color: #CBD5E1; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 14px;
+      transition: all 200ms ease; min-width: 40px; min-height: 40px; text-align: center;
+      font-family: 'Inter', sans-serif; font-weight: 500;
+    }
+    .page-btn:hover:not(:disabled) { background: rgba(255,255,255,0.12); border-color: rgba(0,229,255,0.3); transform: translateY(-1px); }
+    .page-btn:active:not(:disabled) { transform: translateY(1px); }
+    .page-btn:disabled { opacity: 0.3; cursor: default; }
+    .page-btn.active { background: rgba(0,229,255,0.15); border-color: #00E5FF; color: #00E5FF; box-shadow: 0 0 12px rgba(0,229,255,0.1); }
+    .page-nums { display: flex; gap: 4px; }
+
+    @media (max-width: 768px) {
+      .header h1 { font-size: 28px; }
+    }
+    @media (max-width: 640px) {
+      .nav { flex-wrap: wrap; gap: 6px; padding: 8px 12px; }
+      .nav-links { flex-wrap: wrap; gap: 4px; }
+      .nav-links a, .nav-links button { font-size: 12px; padding: 5px 10px; }
+      .auth-btn{font-size:12px!important;padding:5px 10px!important}
+      .lead-badge { font-size: 10px; padding: 2px 6px; }
+      .header h1 { font-size: 24px; }
+      .tab { padding: 10px 14px; font-size: 13px; }
+      .platform-grid { gap: 4px; }
+      .plat-btn { min-width: 70px; padding: 10px; font-size: 12px; }
+      .input-row { flex-direction: column; }
+      .input-row .btn-glow { width: 100%; }
+      .filter-row select { min-width: 90px; flex: 1; }
+      .filter-row input[type="date"] { flex: 1; min-width: 0; }
+      .pagination-bar { flex-direction: column; align-items: stretch; text-align: center; }
+      .page-controls { justify-content: center; }
+      .page-nums { flex-wrap: wrap; justify-content: center; }
+      .bulk-actions .btn-outline { flex: 1; text-align: center; }
+      .detail-panel { width: 96vw; padding: 16px; padding-bottom: max(16px, env(safe-area-inset-bottom)); top: 2vh; left: 2vw; transform: none; max-height: 96dvh; }
+      @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+      .detail-panel .dp-header h2 { font-size: 17px; }
+      .dp-field { flex-direction: column; align-items: flex-start; gap: 2px; padding: 10px 0; }
+      .dp-label { min-width: auto; }
+      .dp-value { text-align: left; width: 100%; }
+      .dp-value .inline-edit { text-align: left; }
+      .dp-actions .btn-glow { min-width: 0; }
+      .dp-actions .btn-outline { min-width: 0; }
+      .mode-switch { flex-wrap: wrap; }
+      .lead-table { min-width: 550px; }
+      .scroll-x { margin: 0 -8px; padding: 0 8px; }
+    }
+    @media (max-width: 480px) {
+      .nav-links a, .nav-links button { font-size: 11px; padding: 4px 8px; }
+      .auth-btn{font-size:11px!important;padding:4px 8px!important}
+      .container { padding: 12px; }
+      .card { padding: 16px; border-radius: 12px; }
+      .header h1 { font-size: 22px; }
+      .lead-table { min-width: 480px; }
+      .lead-table th { font-size: 9px; padding: 8px 4px; }
+      .lead-table td { font-size: 12px; padding: 10px 4px; }
+      .plat-btn { min-width: 0; font-size: 11px; padding: 8px; }
+      .plat-btn i { margin-right: 4px; }
+      .filter-row select, .filter-row input { font-size: 16px; padding: 8px 10px; }
+      .detail-panel { border-radius: 16px; padding: 14px; }
+    }
+    @media (max-width: 360px) {
+      .nav-links a, .nav-links button { font-size: 10px; padding: 3px 6px; }
+      .auth-btn{font-size:10px!important;padding:3px 6px!important}
+      .logo-icon { width: 28px; height: 28px; font-size: 14px; }
+      .logo span { font-size: 14px; }
+      .lead-badge { font-size: 9px; padding: 1px 5px; }
+      .container { padding: 8px; }
+    }
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <a href="/" class="logo">
+      <div class="logo-icon">S</div>
+      <span>Scraven</span>
+    </a>
+    <div class="nav-links">
+      <a href="/">Extract</a>
+      <a href="/leads">Leads</a>
+      <a href="/trash" id="trashNav">Trash <span id="trashBadge" style="display:none;background:#EF4444;color:#fff;font-size:10px;padding:1px 6px;border-radius:8px;margin-left:4px">0</span></a>
+      <a href="/pricing">Pricing</a>
+    </div>
+    <div id="auth-nav">
+        <a href="/login" class="auth-btn" id="loginLink">Sign In</a>
+        <span class="lead-badge" id="leadBadge" title="Leads used" style="display:none"></span>
+        <a href="/profile" class="avatar-circle" id="profileLink" style="display:none">S</a>
+        <a href="/admin" class="auth-btn" id="adminLink" style="display:none">Admin</a>
+        <button class="auth-btn" id="logoutBtn" style="display:none">Logout</button>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container">
+    <div class="header">
+      <h1>Lead Manager</h1>
+      <p>Bulk extraction, inline editing, qualification, and export — all in one place</p>
+    </div>
+
+    <div id="proTeaser" class="pro-teaser">
+      <h3>Unlock Unlimited Leads</h3>
+      <p>You're on the Free plan (20 lifetime leads). Upgrade to Pro for unlimited extraction, LinkedIn scraping, bulk mode, and priority support.</p>
+      <a href="/pricing" class="pro-btn">See Plans &rarr;</a>
+    </div>
+
+    <div class="tab-bar">
+      <button class="tab active" data-tab="extract">Extract</button>
+      <button class="tab" data-tab="history">History</button>
+    </div>
+
+    <div id="tab-extract" class="tab-content active">
+      <div class="card">
+        <div class="card-header">Platform</div>
+        <div class="platform-grid" id="platformTabs">
+          <button class="plat-btn active" data-platform="facebook"><i class="fab fa-facebook"></i> Facebook</button>
+          <button class="plat-btn" data-platform="instagram"><i class="fab fa-instagram"></i> Instagram</button>
+          <button class="plat-btn" data-platform="linkedin"><i class="fab fa-linkedin"></i> LinkedIn</button>
+        </div>
+
+        <div class="mode-switch">
+          <div class="toggle" id="bulkToggle"></div>
+          <label for="bulkToggle">Bulk mode — paste multiple URLs</label>
+        </div>
+
+        <div id="singleInput">
+          <div class="input-row">
+            <input type="url" id="leadUrl" placeholder="https://facebook.com/pagename" autocomplete="url" />
+            <button id="btnExtract" class="btn-glow">Extract</button>
+            <button id="btnPasteExtract" class="btn-ghost" title="Paste from clipboard &amp; extract">📋 Paste</button>
+          </div>
+        </div>
+
+        <div id="bulkInput" style="display:none">
+          <div class="input-row" style="flex-direction:column">
+            <textarea id="bulkUrls" placeholder="https://facebook.com/page1&#10;https://facebook.com/page2&#10;https://instagram.com/handle&#10;https://linkedin.com/company/name"></textarea>
+            <div class="bulk-actions">
+              <button id="btnBulkExtract" class="btn-glow" style="flex:1">Extract All</button>
+              <button id="btnClearUrls" class="btn-ghost">Clear</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="loading">
+        <div class="spinner"></div>
+        <p id="loadText">Extracting...</p>
+        <div class="step" id="loadStep"></div>
+      </div>
+
+      <div id="error" class="status-msg" style="display:none"></div>
+
+      <div id="results" style="display:none">
+<div class="card" style="padding:0;overflow:hidden">
+          <div style="padding:16px 20px;border-bottom:1px solid rgba(226,232,240,0.06);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+            <span class="result-count" id="resultCount">0 results</span>
+            <label id="lblNotifyTelegram" style="display:inline-flex;align-items:center;gap:6px;font-size:12px;color:#CBD5E1;cursor:pointer;user-select:none;padding:6px 10px;border-radius:6px;background:rgba(0,229,255,0.06);border:1px solid rgba(0,229,255,0.18)">
+              <input type="checkbox" id="chkNotifyTelegram" checked style="width:14px;height:14px;accent-color:#00E5FF;cursor:pointer" />
+              📣 Send to Telegram
+            </label>
+            <span id="lblTelegramLocked" style="display:none;font-size:11px;color:#94A3B8;padding:6px 10px;border-radius:6px;background:rgba(148,163,184,0.08);border:1px solid rgba(148,163,184,0.15)">
+              🔒 Telegram alerts are reserved for admin users
+            </span>
+            <div style="display:flex;gap:6px;flex-wrap:wrap">
+              <button id="btnSaveAll" class="btn-glow sm">Save Selected</button>
+              <button id="btnExportXlsx" class="btn-ghost sm">XLSX</button>
+              <button id="btnExportTxt" class="btn-ghost sm">TXT</button>
+              <button id="btnExportMd" class="btn-ghost sm">MD</button>
+              <button id="btnExportPdf" class="btn-ghost sm">PDF</button>
+              <button id="btnExportCsv" class="btn-ghost sm">CSV</button>
+              <button id="btnApifyMissing" class="btn-ghost sm" title="Re-extract via Apify for any leads missing phone or email (slow)">⚡ Apify (missing)</button>
+              <button id="btnClearResults" class="btn-ghost sm">Clear</button>
+            </div>
+          </div>
+          <div class="scroll-x">
+            <table class="lead-table" id="resultsTable">
+              <thead>
+                <tr>
+                  <th style="width:24px"><input type="checkbox" id="selectAll" /></th>
+                  <th>Name</th>
+                  <th>Platform</th>
+                  <th>Category</th>
+                  <th>Followers</th>
+                  <th>Email</th>
+                  <th>Phone</th>
+                  <th>Score</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="resultsBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="tab-history" class="tab-content">
+      <div class="card">
+        <div class="card-header">Lead Vault</div>
+        <div class="filter-row">
+          <select id="filterStatus">
+            <option value="">All Statuses</option>
+            <option value="new">New</option>
+            <option value="contacted">Contacted</option>
+            <option value="qualified">Qualified</option>
+            <option value="meeting">Meeting</option>
+            <option value="proposal">Proposal</option>
+            <option value="won">Won</option>
+            <option value="lost">Lost</option>
+          </select>
+          <input type="text" id="filterSearch" placeholder="Search name..." style="flex:1;min-width:120px" />
+          <input type="date" id="filterDateFrom" title="From date" style="min-width:130px" />
+          <input type="date" id="filterDateTo" title="To date" style="min-width:130px" />
+          <button id="btnRefresh" class="btn-ghost sm">Refresh</button>
+          <button id="btnHistDeleteSelected" class="btn-ghost sm" style="color:#EF4444;border-color:rgba(239,68,68,0.3)">🗑 Delete Selected <span id="histDeleteCount">(0)</span></button>
+          <button id="btnHistXlsx" class="btn-ghost sm">XLSX</button>
+          <button id="btnHistTxt" class="btn-ghost sm">TXT</button>
+          <button id="btnHistMd" class="btn-ghost sm">MD</button>
+          <button id="btnHistPdf" class="btn-ghost sm">PDF</button>
+          <button id="btnHistCsv" class="btn-ghost sm">CSV</button>
+          <button id="btnHistApify" class="btn-ghost sm" title="Re-extract selected via Apify (slow, ~60s each)">⚡ Apify</button>
+        </div>
+        <div class="scroll-x">
+          <table class="lead-table" id="historyTable">
+            <thead>
+              <tr>
+                <th style="width:24px"><input type="checkbox" id="selectAllHist" /></th>
+                <th style="width:32px">#</th>
+                <th>Saved At</th>
+                <th>Name</th>
+                <th>Platform</th>
+                <th>Category</th>
+                <th>Score</th>
+                <th>Status</th>
+                <th>Email</th>
+                <th>Phone</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="historyBody"></tbody>
+          </table>
+        </div>
+        <div class="pagination-bar" id="historyPagination">
+          <div class="page-info" id="pageInfo"></div>
+          <div class="page-controls">
+            <button class="page-btn" id="pagePrev">‹</button>
+            <span class="page-nums" id="pageNums"></span>
+            <button class="page-btn" id="pageNext">›</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer">
+      <span class="brand-name">Scraven</span> &mdash; The Hunter
+    </div>
+  </div>
+
+  <!-- Detail Panel -->
+  <div class="detail-overlay" id="detailOverlay"></div>
+  <div class="detail-panel" id="detailPanel" style="display:none">
+    <div class="dp-header">
+      <h2 id="detailName">—</h2>
+      <button class="dp-close" id="detailClose">&times;</button>
+    </div>
+    <div class="dp-score" id="detailScoreRow">
+      <div class="sc" id="detailScoreBadge">-</div>
+      <div id="detailScoreText" style="font-size:13px;color:#94A3B8"></div>
+    </div>
+    <div class="dp-section">
+      <div class="dp-sectitle">Page Info</div>
+      <div class="dp-field"><span class="dp-label">Name</span><div class="dp-value"><input class="inline-edit" id="de_name" /></div></div>
+      <div class="dp-field"><span class="dp-label">URL</span><div class="dp-value"><input class="inline-edit" id="de_url" /></div></div>
+      <div class="dp-field"><span class="dp-label">Platform</span><div class="dp-value" id="de_platform"></div></div>
+      <div class="dp-field"><span class="dp-label">Category</span><div class="dp-value"><input class="inline-edit" id="de_category" /></div></div>
+      <div class="dp-field"><span class="dp-label">Followers</span><div class="dp-value"><input class="inline-edit" id="de_followers" /></div></div>
+    </div>
+    <div class="dp-section">
+      <div class="dp-sectitle">Contact</div>
+      <div class="dp-field"><span class="dp-label">Email</span><div class="dp-value"><input class="inline-edit" id="de_email" /></div></div>
+      <div class="dp-field"><span class="dp-label">Phone</span><div class="dp-value"><input class="inline-edit" id="de_phone" /></div></div>
+      <div class="dp-field"><span class="dp-label">Website</span><div class="dp-value"><input class="inline-edit" id="de_website" /></div></div>
+      <div class="dp-field"><span class="dp-label">Address</span><div class="dp-value"><input class="inline-edit" id="de_address" /></div></div>
+    </div>
+    <div class="dp-section">
+      <div class="dp-sectitle">Activity</div>
+      <div class="dp-field"><span class="dp-label">Last Post</span><div class="dp-value"><input class="inline-edit" id="de_lastPost" /></div></div>
+    </div>
+    <div class="dp-actions">
+      <button id="detailSave" class="btn-glow">Save Lead</button>
+      <button id="detailQualify" class="btn-outline success">Qualify</button>
+      <button id="detailRemove" class="btn-outline danger">Remove</button>
+    </div>
+  </div>
+
+  <script>
+    const API_BASE = window.location.origin;
+    const APP_TOKEN = localStorage.getItem('skarbol_token') || '';
+    var token = APP_TOKEN;
+    if (!APP_TOKEN) { window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname); }
+    function authHeaders() { return { 'Authorization': 'Bearer ' + APP_TOKEN, 'Content-Type': 'application/json' }; }
+    let APP_USER = null;
+    try { APP_USER = JSON.parse(localStorage.getItem('skarbol_user') || 'null'); } catch (_) { APP_USER = null; }
+    function userIsAdmin() { return APP_USER && (APP_USER.role === 'admin' || APP_USER.role === 'super_admin'); }
+
+    // ── Tab switching ──
+    document.querySelectorAll('.tab').forEach(t => {
+      t.addEventListener('click', () => {
+        document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(x => x.classList.remove('active'));
+        t.classList.add('active');
+        document.getElementById('tab-' + t.dataset.tab).classList.add('active');
+        if (t.dataset.tab === 'history') { loadHistory(); refreshTrashBadge(); }
+      });
+    });
+
+    async function refreshTrashBadge() {
+      try {
+        const resp = await fetch(API_BASE + '/api/trash/stats', { headers: { 'Authorization': 'Bearer ' + token } });
+        if (!resp.ok) return;
+        const d = await resp.json();
+        const badge = document.getElementById('trashBadge');
+        if (badge) {
+          if (d.trashed_count > 0) {
+            badge.style.display = 'inline';
+            badge.textContent = d.trashed_count;
+          } else {
+            badge.style.display = 'none';
+          }
+        }
+      } catch (_) {}
+    }
+    refreshTrashBadge();
+
+    // ── Platform tabs ──
+    let currentPlatform = 'facebook';
+    document.querySelectorAll('.plat-btn').forEach(t => {
+      t.addEventListener('click', () => {
+        document.querySelectorAll('.plat-btn').forEach(x => x.classList.remove('active'));
+        t.classList.add('active');
+        currentPlatform = t.dataset.platform;
+        const ph = { facebook: 'https://facebook.com/pagename', instagram: 'https://instagram.com/handle', linkedin: 'https://linkedin.com/company/name' };
+        document.getElementById('leadUrl').placeholder = ph[currentPlatform] || 'https://...';
+      });
+    });
+
+    // ── Bulk mode toggle ──
+    const bulkToggle = document.getElementById('bulkToggle');
+    bulkToggle.addEventListener('click', () => {
+      bulkToggle.classList.toggle('active');
+      document.getElementById('singleInput').style.display = bulkToggle.classList.contains('active') ? 'none' : '';
+      document.getElementById('bulkInput').style.display = bulkToggle.classList.contains('active') ? '' : 'none';
+    });
+
+    document.getElementById('btnClearUrls').addEventListener('click', () => { document.getElementById('bulkUrls').value = ''; });
+
+    // ── Extract single ──
+    document.getElementById('btnExtract').addEventListener('click', extractSingle);
+    document.getElementById('leadUrl').addEventListener('keydown', e => { if (e.key === 'Enter') extractSingle(); });
+    document.getElementById('btnPasteExtract').addEventListener('click', async () => {
+      try {
+        const text = await navigator.clipboard.readText();
+        if (text) { document.getElementById('leadUrl').value = text; extractSingle(); return; }
+      } catch (_) {}
+      document.getElementById('leadUrl').focus(); document.getElementById('leadUrl').select();
+    });
+
+    async function extractSingle() {
+      const url = document.getElementById('leadUrl').value.trim();
+      if (!url) { showError('Please enter a URL.'); return; }
+      hideError(); showLoading('Extracting...', 'Fetching page data');
+      try {
+        const dup = await checkDuplicate(url);
+        if (dup) {
+          hideLoading();
+          if (!(await scravenConfirm('Duplicate: "' + dup.business_name + '" already exists (saved ' + dup.date + '). Extract anyway?'))) return;
+          showLoading('Extracting...', 'Fetching page data');
+        }
+        const result = await extractUrl(url);
+        if (result.error) throw new Error(result.error);
+        renderResults([result]);
+      } catch (err) { hideLoading(); showError(err.message); }
+    }
+
+    // ── Bulk extract ──
+    document.getElementById('btnBulkExtract').addEventListener('click', extractBulk);
+
+    async function extractBulk() {
+      const raw = document.getElementById('bulkUrls').value.trim();
+      const urls = raw.split('\n').map(u => u.trim()).filter(u => u);
+      if (!urls.length) { showError('Paste at least one URL.'); return; }
+      hideError(); showLoading('Extracting ' + urls.length + ' URLs...', '0/' + urls.length);
+      const results = [];
+      for (let i = 0; i < urls.length; i++) {
+        document.getElementById('loadStep').textContent = (i + 1) + '/' + urls.length;
+        try {
+          const dup = await checkDuplicate(urls[i]);
+          if (dup) { results.push({ url: urls[i], business_name: dup.business_name, _duplicate: true }); continue; }
+          const r = await extractUrl(urls[i]);
+          results.push(r.error ? { url: urls[i], business_name: 'Error: ' + r.error, _error: true } : r);
+        } catch (e) { results.push({ url: urls[i], business_name: 'Error', _error: true }); }
+      }
+      hideLoading();
+      if (results.length) renderResults(results);
+      else showError('No results extracted.');
+    }
+
+     async function extractUrl(url) {
+      const endpoint = currentPlatform === 'instagram' ? '/api/extract-instagram' : '/api/extract-facebook';
+      const resp = await fetch(API_BASE + endpoint, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url }),
+      });
+      const result = await resp.json();
+      if (!result.ok) return { error: result.error || 'Extraction failed' };
+      result.data.platform = currentPlatform;
+      return result.data;
+    }
+
+    async function checkDuplicate(url) {
+      try { const r = await fetch(API_BASE + '/api/lead?url=' + encodeURIComponent(url), { headers: authHeaders() }); if (r.ok) return await r.json(); } catch (_) {}
+      return null;
+    }
+
+    // ── Rendering results ──
+    let currentResults = [];
+
+    function renderResults(data) {
+      hideLoading();
+      currentResults = data;
+      // Persist extracted URLs so Apify button works even after page refresh
+      try {
+        localStorage.setItem('scraven_last_urls', JSON.stringify(data.map(l => l.page_url).filter(Boolean)));
+      } catch (_) {}
+      document.getElementById('results').style.display = '';
+      document.getElementById('resultCount').textContent = data.length + ' result' + (data.length !== 1 ? 's' : '');
+      const tbody = document.getElementById('resultsBody');
+      tbody.innerHTML = '';
+      data.forEach((lead, i) => {
+        const tr = document.createElement('tr');
+        const isErr = lead._error, isDup = lead._duplicate;
+        tr.innerHTML = `
+          <td><input type="checkbox" class="lead-select" data-idx="${i}" ${isErr || isDup ? 'disabled' : ''} /></td>
+          <td><span class="lead-name" onclick="openDetail(${i})">${esc(lead.business_name || '—')}</span></td>
+          <td><span class="badge ${isErr ? 'error-badge' : isDup ? 'duplicate' : 'new'}">${isErr ? 'Error' : isDup ? 'Duplicate' : esc(lead.platform || currentPlatform)}</span></td>
+          <td style="color:#94A3B8;font-size:12px">${esc(lead.category || '—')}</td>
+          <td>${esc(lead.followers || '—')}</td>
+          <td style="font-size:12px">${esc(lead.email || '—')}</td>
+          <td style="font-size:12px">${esc(lead.phone || '—')}</td>
+          <td><strong>${lead.qualification_score || '?'}</strong></td>
+          <td>
+            <div style="display:flex;gap:4px;flex-wrap:wrap">
+              ${!isErr && !isDup ? `<button class="btn-outline success sm" onclick="quickAction(${i},'qualify')">Q</button>` : ''}
+              ${!isErr && !isDup ? `<button class="btn-glow sm" onclick="saveSingle(${i})">Save</button>` : ''}
+              ${!isErr && !isDup ? `<button class="btn-outline danger sm" onclick="quickAction(${i},'disqualify')">X</button>` : ''}
+              ${!isErr && !isDup && lead.page_url && (!lead.phone || !lead.email) ? `<button class="btn-outline sm" onclick="tryApifyForLead(${i})" title="Re-extract via Apify to fill missing phone/email (slow, ~60s)">⚡</button>` : ''}
+            </div>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    // ── Select all ──
+    document.getElementById('selectAll').addEventListener('change', function() {
+      document.querySelectorAll('.lead-select:not(:disabled)').forEach(cb => cb.checked = this.checked);
+    });
+
+    // ── Save single ──
+    async function saveSingle(idx) {
+      const lead = currentResults[idx];
+      if (!lead) return;
+      showLoading('Saving...', '');
+      const chkNt = document.getElementById('chkNotifyTelegram');
+      const notifyTelegram = (chkNt && chkNt.checked && userIsAdmin()) ? true : false;
+      const payload = {
+        date: new Date().toISOString().split('T')[0], platform: lead.platform || currentPlatform,
+        business_name: lead.business_name || '', page_url: lead.page_url || lead.url || '',
+        followers: lead.followers || '', email: lead.email || '', phone: lead.phone || '',
+        website: lead.website || '', has_website: lead.website ? 'true' : 'false',
+        address: lead.address || '', last_post_date: lead.last_post_date || '',
+        category: lead.category || '', qualification_score: parseInt(lead.qualification_score) || 5,
+        status: 'new', notes: 'Extracted via Lead Manager Pro.',
+        notify_telegram: notifyTelegram,
+      };
+      try {
+        const resp = await fetch(API_BASE + '/api/lead', {
+          method: 'POST', headers: authHeaders(), body: JSON.stringify(payload),
+        });
+        const result = await resp.json();
+        hideLoading();
+        document.getElementById('results').style.display = 'block';
+        if (!resp.ok) {
+          showStatus('Save failed: ' + (result.error || resp.status), 'error');
+          return;
+        }
+        const rows = document.querySelectorAll('.lead-select');
+        if (rows[idx]) { rows[idx].disabled = true; rows[idx].checked = false; }
+        const btns = document.querySelectorAll('.lead-table tbody tr td:last-child');
+        if (btns[idx]) btns[idx].innerHTML = '<span style="color:#10B981;font-size:12px">✓ Saved</span>';
+        const suffix = notifyTelegram ? ' (+ Telegram)' : ' (DB only)';
+        showStatus('Saved: ' + (lead.business_name || 'Unknown') + suffix, 'success');
+      } catch (err) { hideLoading(); document.getElementById('results').style.display = 'block'; showStatus('Save failed: ' + err.message, 'error'); }
+    }
+
+    document.getElementById('btnSaveAll').addEventListener('click', async () => {
+      const toSave = currentResults.filter((l, i) => {
+        const cb = document.querySelectorAll('.lead-select')[i]; return cb && cb.checked && !cb.disabled;
+      });
+      if (!toSave.length) { showStatus('Select leads first.', 'warning'); return; }
+      showLoading('Saving ' + toSave.length + ' leads...', '');
+      let saved = 0;
+      for (let i = 0; i < toSave.length; i++) {
+        document.getElementById('loadStep').textContent = (i + 1) + '/' + toSave.length;
+        try { await saveSingle(currentResults.indexOf(toSave[i])); saved++; } catch {}
+      }
+      hideLoading();
+      document.getElementById('results').style.display = 'block';
+      showStatus('Saved ' + saved + '/' + toSave.length, 'success');
+    });
+
+    document.getElementById('btnClearResults').addEventListener('click', () => {
+      hideLoading(); currentResults = [];
+      document.getElementById('results').style.display = 'none';
+      document.getElementById('resultsBody').innerHTML = '';
+    });
+
+    // ── Per-lead: Re-extract via Apify to fill missing phone/email ──
+    async function tryApifyForLead(idx) {
+      const lead = currentResults[idx];
+      const leadUrl = lead.page_url || lead.url;
+      if (!lead || !leadUrl) { showStatus('No page URL for this lead', 'error'); return; }
+      showLoading('Apify re-extracting...', 'Fetching ' + (lead.business_name || leadUrl));
+      try {
+        const resp = await fetch(API_BASE + '/api/extract-facebook/apify', {
+          method: 'POST', signal: AbortSignal.timeout(360000), headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url: leadUrl }),
+        });
+        const result = await resp.json();
+        if (!result.ok) throw new Error(result.error || 'Apify failed');
+        const ar = result.data;
+        // Merge into currentResults
+        let updated = [];
+        ['business_name','category','followers','email','phone','website','address'].forEach(k => {
+          if (ar[k] && !lead[k]) { lead[k] = ar[k]; updated.push(k); }
+        });
+        if (ar.website) { lead.website = ar.website; lead.has_website = true; }
+        if (ar.address) lead.address = ar.address;
+        if (updated.length) {
+          renderResults(currentResults);
+          showStatus('Updated via Apify: ' + updated.join(', '), 'success');
+        } else {
+          showStatus('Apify returned same data — no new fields', 'warning');
+        }
+      } catch (err) { hideLoading(); showStatus('Apify error: ' + err.message, 'error'); }
+    }
+
+    // ── Bulk: Apify for all rows missing phone/email ──
+    document.getElementById('btnApifyMissing').addEventListener('click', async () => {
+      // Process any FB lead that has a page_url (Apify will fill any missing field)
+      let targets = currentResults.filter(l => (l.page_url || l.url) && (l.platform || '').toLowerCase() !== 'instagram');
+      // Fallback: if currentResults is empty (page was refreshed), use last extracted URLs from localStorage
+      if (!targets.length) {
+        try {
+          const lastUrls = JSON.parse(localStorage.getItem('scraven_last_urls') || '[]');
+          if (lastUrls.length) {
+            targets = lastUrls.map(url => ({ page_url: url, business_name: url.split('/').filter(Boolean).pop() }));
+            showStatus('Using last extracted URLs from cache', 'info');
+          }
+        } catch (_) {}
+      }
+      if (!targets.length) {
+        // Last resort: show inline URL input panel
+        const url = await showInlineUrlPrompt();
+        if (!url || !url.includes('facebook.com')) { showStatus('Cancelled — extract a page first.', 'info'); return; }
+        targets = [{ page_url: url.trim(), business_name: url.split('/').filter(Boolean).pop() }];
+      }
+      const missingFields = targets.filter(l => !l.phone || !l.email).length;
+      const msg = missingFields > 0
+        ? `Re-extract ${targets.length} lead(s) via Apify? (~${targets.length * 60}s)`
+        : `Re-extract ${targets.length} lead(s) via Apify? (~${targets.length * 60}s — will only fill empty fields)`;
+      if (!(await scravenConfirm(msg))) return;
+      let done = 0, updated = 0;
+      for (const lead of targets) {
+        const leadUrl = lead.page_url || lead.url;
+        showLoading('Apify re-extracting...', `(${++done}/${targets.length}) ${lead.business_name || leadUrl}`);
+        try {
+          const resp = await fetch(API_BASE + '/api/extract-facebook/apify', {
+            method: 'POST', signal: AbortSignal.timeout(360000), headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ url: leadUrl }),
+          });
+          const result = await resp.json();
+          if (result.ok) {
+            const ar = result.data;
+            // Update in-memory lead if it exists, else create new
+            const existing = currentResults.find(l => (l.page_url || l.url) === leadUrl);
+            const target = existing || lead;
+            ['business_name','category','followers','email','phone','website','address'].forEach(k => {
+              if (ar[k] && !target[k]) { target[k] = ar[k]; updated++; }
+            });
+            if (ar.website) { target.website = ar.website; target.has_website = true; }
+            if (!existing) currentResults.push(target);
+          }
+        } catch (_) {}
+      }
+      hideLoading();
+      renderResults(currentResults);
+      renderResults(currentResults);
+      showStatus(`Apify done. ${updated} fields filled across ${targets.length} leads.`, 'success');
+    });
+
+    async function quickAction(idx, action) {
+      const lead = currentResults[idx];
+      if (!lead || !(lead.page_url || lead.url)) { showStatus('Missing page URL.', 'error'); return; }
+      try {
+        const resp = await fetch(API_BASE + '/api/lead/action', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action, business_name: lead.business_name || '' }),
+        });
+        const result = await resp.json();
+        showStatus(result.message || (action === 'qualify' ? 'Qualified' : 'Removed'), resp.ok ? 'success' : 'error');
+      } catch (err) { showStatus('Action failed: ' + err.message, 'error'); }
+    }
+
+    // ── Inline URL Prompt (modal input instead of browser prompt) ──
+    function showInlineUrlPrompt() {
+      return new Promise((resolve) => {
+        const overlay = document.createElement('div');
+        overlay.className = 'detail-overlay open';
+        overlay.style.cssText = 'position:fixed;inset:0;background:rgba(5,10,20,0.85);z-index:200;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(3px)';
+        overlay.innerHTML = `
+          <div style="background:linear-gradient(180deg,#0A1224,#050A14);border:1px solid rgba(0,229,255,0.25);border-radius:14px;padding:24px;width:90%;max-width:440px;box-shadow:0 20px 60px rgba(0,0,0,0.5)">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+              <div style="font-size:16px;font-weight:700;color:#F8FAFC">⚡ Apify Re-Extract</div>
+              <button id="iupCancel" style="background:transparent;border:1px solid rgba(255,255,255,0.15);color:#94A3B8;width:30px;height:30px;border-radius:6px;cursor:pointer;font-size:18px;line-height:1">×</button>
+            </div>
+            <div style="font-size:13px;color:#94A3B8;margin-bottom:14px">No leads found in the Results tab. Paste a Facebook page URL to extract via Apify (~60-180s).</div>
+            <input type="url" id="iupInput" placeholder="https://www.facebook.com/DWLnewmarket" style="width:100%;padding:11px 13px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:#F8FAFC;font-size:14px;margin-bottom:14px;font-family:inherit" />
+            <div style="display:flex;gap:8px">
+              <button id="iupOk" style="flex:1;padding:11px;background:linear-gradient(135deg,#0A4FD9,#00E5FF);color:#fff;border:none;border-radius:8px;font-weight:600;cursor:pointer;font-size:14px">⚡ Run Apify</button>
+              <button id="iupCancel2" style="padding:11px 18px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.15);color:#94A3B8;border-radius:8px;cursor:pointer;font-size:14px">Cancel</button>
+            </div>
+          </div>
+        `;
+        document.body.appendChild(overlay);
+        const input = overlay.querySelector('#iupInput');
+        const ok = overlay.querySelector('#iupOk');
+        const cancel = overlay.querySelector('#iupCancel');
+        const cancel2 = overlay.querySelector('#iupCancel2');
+        setTimeout(() => input.focus(), 50);
+        function done(val) { document.body.removeChild(overlay); resolve(val); }
+        ok.onclick = () => done(input.value.trim());
+        cancel.onclick = cancel2.onclick = () => done(null);
+        overlay.onclick = (e) => { if (e.target === overlay) done(null); };
+        input.onkeydown = (e) => { if (e.key === 'Enter') done(input.value.trim()); if (e.key === 'Escape') done(null); };
+      });
+    }
+
+// ── Lead Detail Panel ──
+    let detailLead = null;
+    let detailIdx = -1;
+
+    function openDetail(idx) {
+      const lead = currentResults[idx];
+      if (!lead || lead._error) return;
+      detailLead = lead; detailIdx = idx; detailIsHistory = false;
+      document.getElementById('detailName').textContent = lead.business_name || 'Unknown';
+      document.getElementById('de_name').value = lead.business_name || '';
+      document.getElementById('de_url').value = lead.page_url || lead.url || '';
+      document.getElementById('de_platform').textContent = lead.platform || currentPlatform;
+      document.getElementById('de_category').value = lead.category || '';
+      document.getElementById('de_followers').value = lead.followers || '';
+      document.getElementById('de_email').value = lead.email || '';
+      document.getElementById('de_phone').value = lead.phone || '';
+      document.getElementById('de_website').value = lead.website || '';
+      document.getElementById('de_address').value = lead.address || '';
+      document.getElementById('de_lastPost').value = lead.last_post_date || '';
+      const s = parseInt(lead.qualification_score) || 0;
+      const badge = document.getElementById('detailScoreBadge');
+      badge.textContent = s;
+      badge.className = 'sc';
+      if (s <= 4) { badge.classList.add('red'); document.getElementById('detailScoreText').textContent = 'Low priority — verify before outreach'; }
+      else if (s <= 6) { badge.classList.add('yellow'); document.getElementById('detailScoreText').textContent = 'Promising — add to outreach queue'; }
+      else { badge.classList.add('green'); document.getElementById('detailScoreText').textContent = 'Strong lead — prioritize outreach'; }
+      document.getElementById('detailOverlay').classList.add('open');
+      document.getElementById('detailPanel').style.display = '';
+    }
+
+    function closeDetail() {
+      if (detailLead && !detailIsHistory) {
+        const newUrl = document.getElementById('de_url').value.trim();
+        detailLead.business_name = document.getElementById('de_name').value.trim();
+        if (newUrl) { detailLead.page_url = newUrl; detailLead.url = newUrl; }
+        detailLead.category = document.getElementById('de_category').value.trim();
+        detailLead.followers = document.getElementById('de_followers').value.trim();
+        detailLead.email = document.getElementById('de_email').value.trim();
+        detailLead.phone = document.getElementById('de_phone').value.trim();
+        detailLead.website = document.getElementById('de_website').value.trim();
+        detailLead.address = document.getElementById('de_address').value.trim();
+        detailLead.last_post_date = document.getElementById('de_lastPost').value.trim();
+        if (detailIdx >= 0) renderResults(currentResults);
+      }
+      document.getElementById('detailOverlay').classList.remove('open');
+      document.getElementById('detailPanel').style.display = 'none';
+      detailLead = null; detailIdx = -1; detailIsHistory = false;
+    }
+
+    document.getElementById('detailClose').addEventListener('click', closeDetail);
+    document.getElementById('detailOverlay').addEventListener('click', closeDetail);
+
+    document.getElementById('detailSave').addEventListener('click', async () => {
+      if (!detailLead) return;
+      if (detailIsHistory) { await saveHistoryLead(); return; }
+      // Sync edits for results mode
+      const newUrl = document.getElementById('de_url').value.trim();
+      detailLead.business_name = document.getElementById('de_name').value.trim();
+      if (newUrl) { detailLead.page_url = newUrl; detailLead.url = newUrl; }
+      detailLead.category = document.getElementById('de_category').value.trim();
+      detailLead.followers = document.getElementById('de_followers').value.trim();
+      detailLead.email = document.getElementById('de_email').value.trim();
+      detailLead.phone = document.getElementById('de_phone').value.trim();
+      detailLead.website = document.getElementById('de_website').value.trim();
+      detailLead.address = document.getElementById('de_address').value.trim();
+      detailLead.last_post_date = document.getElementById('de_lastPost').value.trim();
+      await saveSingle(detailIdx);
+    });
+
+    document.getElementById('detailQualify').addEventListener('click', async () => {
+      if (!detailLead) return;
+      await quickAction(detailIdx, 'qualify');
+    });
+
+    document.getElementById('detailRemove').addEventListener('click', async () => {
+      if (!detailLead) return;
+      await quickAction(detailIdx, 'disqualify');
+      closeDetail();
+    });
+
+    // ── History tab ──
+    let allLeads = [];
+    let currentPage = 1;
+
+    function filterLeads(leads) {
+      const search = document.getElementById('filterSearch').value.trim().toLowerCase();
+      const dateFrom = document.getElementById('filterDateFrom').value;
+      const dateTo = document.getElementById('filterDateTo').value;
+      return leads.filter(l => {
+        if (search && !(l.business_name || '').toLowerCase().includes(search)) return false;
+        const d = (l.date || '').substring(0, 10);
+        if (dateFrom && d < dateFrom) return false;
+        if (dateTo && d > dateTo) return false;
+        return true;
+      });
+    }
+
+    function getFilteredLeads() {
+      const status = document.getElementById('filterStatus').value;
+      if (status) return filterLeads(allLeads.filter(l => (l.status || '').toLowerCase() === status.toLowerCase()));
+      return filterLeads(allLeads);
+    }
+
+    function renderPagination(dates, page) {
+      const totalDates = dates.length;
+      if (page > totalDates) page = totalDates;
+      if (page < 1) page = 1;
+      currentPage = page;
+      let leadCount = 0;
+      dates.forEach(d => leadCount += d.count);
+      const info = document.getElementById('pageInfo');
+      info.textContent = leadCount + ' leads across ' + totalDates + ' date' + (totalDates !== 1 ? 's' : '') + ' · newest first';
+      const nums = document.getElementById('pageNums');
+      nums.innerHTML = '';
+      const maxVisible = 7;
+      let start = Math.max(1, page - Math.floor(maxVisible / 2));
+      let end = Math.min(totalDates, start + maxVisible - 1);
+      if (end - start + 1 < maxVisible) start = Math.max(1, end - maxVisible + 1);
+      for (let p = start; p <= end; p++) {
+        const btn = document.createElement('button');
+        btn.className = 'page-btn' + (p === page ? ' active' : '');
+        btn.textContent = dates[p - 1].date.slice(5) + '(' + dates[p - 1].count + ')';
+        btn.title = dates[p - 1].date;
+        btn.onclick = () => { currentPage = p; renderPage(p); };
+        nums.appendChild(btn);
+      }
+      document.getElementById('pagePrev').disabled = page <= 1;
+      document.getElementById('pageNext').disabled = page >= totalDates;
+      document.getElementById('pagePrev').onclick = () => { if (page > 1) renderPage(page - 1); };
+      document.getElementById('pageNext').onclick = () => { if (page < totalDates) renderPage(page + 1); };
+    }
+
+    function renderPage(page) {
+      const filtered = getFilteredLeads();
+      // Group by date, with newest day first
+      const groups = {};
+      // allLeads is in CSV order (oldest first), so higher index = more recently saved.
+      // Reverse filtered so that within each group the default order is newest-first.
+      const reversed = [...filtered].reverse();
+      reversed.forEach(l => {
+        const d = (l.date || 'unknown').substring(0, 10);
+        if (!groups[d]) groups[d] = [];
+        groups[d].push(l);
+      });
+      const dates = Object.keys(groups).sort().reverse().map(d => ({ date: d, leads: groups[d], count: groups[d].length }));
+      if (page > dates.length) page = dates.length || 1;
+      if (page < 1) page = 1;
+      renderPagination(dates, page);
+      const tbody = document.getElementById('historyBody');
+      tbody.innerHTML = '';
+      const day = dates[page - 1];
+      if (!day) { tbody.innerHTML = '<tr><td colspan="11" style="text-align:center;padding:32px;color:#475569">No leads match your filters.</td></tr>'; return; }
+      // Sort within the day: status='new' first, then by allLeads index descending (newest first)
+      day.leads.sort((a, b) => {
+        const aNew = (a.status || '').toLowerCase() === 'new' ? 0 : 1;
+        const bNew = (b.status || '').toLowerCase() === 'new' ? 0 : 1;
+        if (aNew !== bNew) return aNew - bNew;
+        return (allLeads.indexOf(b) || 0) - (allLeads.indexOf(a) || 0);
+      });
+      day.leads.forEach((l, i) => {
+        const tr = document.createElement('tr');
+        const dateDisp = l.date && l.date.length > 10 ? l.date.slice(0, 16) : day.date;
+        tr.innerHTML = `
+          <td><input type="checkbox" class="hist-select" data-url="${esc(l.page_url || '')}" /></td>
+          <td style="text-align:center;font-size:11px;color:#64748B">${i + 1}</td>
+          <td style="white-space:nowrap;font-size:11px;color:#64748B">${esc(dateDisp)}</td>
+          <td><span class="lead-name" onclick="openHistoryDetail('${esc(l.page_url || '')}')">${esc(l.business_name || '—')}</span></td>
+          <td><span class="badge">${esc(l.platform || '—')}</span></td>
+          <td style="font-size:12px;color:#94A3B8">${esc(l.category || '—')}</td>
+          <td><strong>${l.qualification_score || '?'}</strong></td>
+          <td><span class="badge ${(l.status || 'new').toLowerCase()}">${esc(l.status || 'new')}</span></td>
+          <td style="font-size:12px;word-break:break-all">${esc(l.email || '—')}</td>
+          <td style="font-size:12px">${esc(l.phone || '—')}</td>
+          <td>
+            <div style="display:flex;gap:4px;flex-wrap:wrap">
+              <button class="btn-outline success sm" onclick="updateStatus('${esc(l.page_url)}','qualified')">Qualify</button>
+              <button class="btn-outline sm" onclick="updateStatus('${esc(l.page_url)}','contacted')">Contact</button>
+              ${l.page_url && (l.platform || '').toLowerCase() === 'facebook' ? `<button class="btn-outline sm" onclick="apifyHistoryLead('${esc(l.page_url)}')" title="Re-extract via Apify to fill missing phone/email">⚡</button>` : ''}
+              <button class="btn-outline danger sm" onclick="deleteLead('${esc(l.page_url)}')">Delete</button>
+            </div>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    async function loadHistory() {
+      currentPage = 1;
+      try {
+        const resp = await fetch(API_BASE + '/api/leads', { headers: authHeaders() });
+        if (!resp.ok) {
+          throw new Error('HTTP ' + resp.status);
+        }
+        const leads = await resp.json();
+        if (!Array.isArray(leads)) {
+          throw new Error('Invalid response (not an array)');
+        }
+        allLeads = leads;
+        const sa = document.getElementById('selectAllHist');
+        if (sa) sa.checked = false;
+        renderPage(1);
+        updateHistDeleteCount();
+      } catch (err) {
+        document.getElementById('historyBody').innerHTML = '<tr><td colspan="11" style="text-align:center;padding:32px;color:#475569">Failed to load: ' + err.message + '</td></tr>';
+      }
+    }
+
+    async function updateStatus(pageUrl, status) {
+      try {
+        const resp = await fetch(API_BASE + '/api/lead/status', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ page_url: pageUrl, status }),
+        });
+        const result = await resp.json();
+        showStatus(result.message || 'Updated', resp.ok ? 'success' : 'error');
+        if (resp.ok) loadHistory();
+      } catch (err) { showStatus('Failed: ' + err.message, 'error'); }
+    }
+
+    async function deleteLead(pageUrl) {
+      if (!(await scravenConfirm('Move this lead to Trash? You can recover it from /trash.'))) return;
+      try {
+        const resp = await fetch(API_BASE + '/api/lead/delete', {
+          method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+          body: JSON.stringify({ page_url: pageUrl }),
+        });
+        const result = await resp.json();
+        showStatus(result.message || 'Moved to Trash', resp.ok ? 'success' : 'error');
+        if (resp.ok) loadHistory();
+      } catch (err) { showStatus('Failed: ' + err.message, 'error'); }
+    }
+
+    document.getElementById('btnRefresh').addEventListener('click', loadHistory);
+    document.getElementById('filterStatus').addEventListener('change', loadHistory);
+    document.getElementById('filterSearch').addEventListener('input', loadHistory);
+    document.getElementById('filterDateFrom').addEventListener('change', loadHistory);
+    document.getElementById('filterDateTo').addEventListener('change', loadHistory);
+    document.getElementById('selectAllHist').addEventListener('change', function() {
+      document.querySelectorAll('.hist-select').forEach(cb => cb.checked = this.checked);
+      updateHistDeleteCount();
+    });
+    document.getElementById('historyBody').addEventListener('change', (e) => {
+      if (e.target.classList && e.target.classList.contains('hist-select')) {
+        updateHistDeleteCount();
+      }
+    });
+    function updateHistDeleteCount() {
+      const n = document.querySelectorAll('.hist-select:checked').length;
+      const el = document.getElementById('histDeleteCount');
+      if (el) el.textContent = '(' + n + ')';
+    }
+    document.getElementById('btnHistDeleteSelected').addEventListener('click', async () => {
+      const btn = document.getElementById('btnHistDeleteSelected');
+      const oldText = btn.innerHTML;
+      let selected;
+      try {
+        selected = getSelectedHistoryLeads() || [];
+      } catch (err) {
+        console.error('getSelectedHistoryLeads failed:', err);
+        selected = [];
+      }
+      if (!selected.length) {
+        showStatus('No leads selected. Tick the checkboxes next to leads you want to delete.', 'error');
+        btn.innerHTML = oldText;
+        return;
+      }
+      if (!(await scravenConfirm('Move ' + selected.length + ' lead' + (selected.length === 1 ? '' : 's') + ' to Trash? You can recover them from /trash.'))) return;
+      btn.disabled = true;
+      btn.innerHTML = 'Moving…';
+      try {
+        const resp = await fetch(API_BASE + '/api/lead/bulk-trash', {
+          method: 'POST',
+          headers: authHeaders(),
+          body: JSON.stringify({ page_urls: selected.map(l => l.page_url).filter(Boolean) }),
+        });
+        let result;
+        try { result = await resp.json(); } catch (e) { result = {}; }
+        if (resp.ok) {
+          showStatus('Moved ' + (result.moved_count || 0) + ' lead' + ((result.moved_count || 0) === 1 ? '' : 's') + ' to Trash · <a href="/trash" style="color:#00E5FF">View Trash</a>' + (result.failed_count ? ' (' + result.failed_count + ' failed)' : ''), 'success');
+          const sa = document.getElementById('selectAllHist');
+          if (sa) sa.checked = false;
+          loadHistory();
+        } else {
+          showStatus('Error: ' + (result.error || resp.status), 'error');
+        }
+      } catch (err) {
+        console.error('bulk-trash failed:', err);
+        showStatus('Could not connect to server', 'error');
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = oldText;
+        updateHistDeleteCount();
+      }
+    });
+
+    // ── Export helpers ──
+    const EXPORT_COLS = ['date','platform','business_name','email','phone','website','category','followers','qualification_score','status','address','page_url'];
+    const EXPORT_LABELS = ['Date','Platform','Business Name','Email','Phone','Website','Category','Followers','Score','Status','Address','Page URL'];
+
+    function getSelectedFromResults() {
+      return currentResults.filter((l, i) => {
+        const cb = document.querySelectorAll('.lead-select'); return cb[i] && cb[i].checked && !cb[i].disabled;
+      });
+    }
+
+    function leadsToRows(leads) {
+      return leads.map(l => EXPORT_COLS.map(c => String(l[c] || '')));
+    }
+
+    // ── History Detail View ──
+    let detailIsHistory = false;
+
+    function openHistoryDetail(pageUrl) {
+      const lead = allLeads.find(l => l.page_url === pageUrl);
+      if (!lead) { showStatus('Lead not found.', 'error'); return; }
+      detailLead = lead;
+      detailIdx = allLeads.indexOf(lead);
+      detailIsHistory = true;
+
+      document.getElementById('detailName').textContent = lead.business_name || 'Unknown';
+      document.getElementById('de_name').value = lead.business_name || '';
+      document.getElementById('de_url').value = lead.page_url || '';
+      document.getElementById('de_platform').textContent = lead.platform || '—';
+      document.getElementById('de_category').value = lead.category || '';
+      document.getElementById('de_followers').value = lead.followers || '';
+      document.getElementById('de_email').value = lead.email || '';
+      document.getElementById('de_phone').value = lead.phone || '';
+      document.getElementById('de_website').value = lead.website || '';
+      document.getElementById('de_address').value = lead.address || '';
+      document.getElementById('de_lastPost').value = lead.last_post_date || '';
+      const s = parseInt(lead.qualification_score) || 0;
+      const badge = document.getElementById('detailScoreBadge');
+      badge.textContent = s;
+      badge.className = 'sc';
+      if (s <= 4) { badge.classList.add('red'); document.getElementById('detailScoreText').textContent = 'Low priority — verify before outreach'; }
+      else if (s <= 6) { badge.classList.add('yellow'); document.getElementById('detailScoreText').textContent = 'Promising — add to outreach queue'; }
+      else { badge.classList.add('green'); document.getElementById('detailScoreText').textContent = 'Strong lead — prioritize outreach'; }
+      document.getElementById('detailOverlay').classList.add('open');
+      document.getElementById('detailPanel').style.display = '';
+    }
+
+    async function saveHistoryLead() {
+      if (!detailLead) return;
+      const data = {
+        date: detailLead.date || new Date().toISOString().split('T')[0],
+        platform: detailLead.platform || '',
+        business_name: document.getElementById('de_name').value.trim(),
+        page_url: document.getElementById('de_url').value.trim(),
+        followers: document.getElementById('de_followers').value.trim(),
+        email: document.getElementById('de_email').value.trim(),
+        phone: document.getElementById('de_phone').value.trim(),
+        website: document.getElementById('de_website').value.trim(),
+        has_website: document.getElementById('de_website').value.trim() ? 'true' : 'false',
+        address: document.getElementById('de_address').value.trim(),
+        last_post_date: document.getElementById('de_lastPost').value.trim(),
+        category: document.getElementById('de_category').value.trim(),
+        qualification_score: parseInt(detailLead.qualification_score) || 5,
+        status: detailLead.status || 'new',
+        notes: detailLead.notes || '',
+      };
+      showLoading('Updating...', '');
+      try {
+        const resp = await fetch(API_BASE + '/api/lead', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data),
+        });
+        hideLoading();
+        if (resp.ok) {
+          showStatus('Updated: ' + data.business_name, 'success');
+          loadHistory();
+        } else {
+          const err = await resp.json();
+          showStatus(err.message || 'Update failed', 'error');
+        }
+      } catch (err) { hideLoading(); showStatus('Update failed: ' + err.message, 'error'); }
+    }
+
+    function getHistoryLeads() {
+      return getFilteredLeads();
+    }
+
+    function downloadFile(content, filename, mime) {
+      const blob = new Blob([content], { type: mime + ';charset=utf-8' });
+      const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+      a.download = filename; a.click(); URL.revokeObjectURL(a.href);
+    }
+
+    // ── Brand constants used by every export ──
+    const BRAND = {
+      name: 'Skarbol Tech',
+      tagline: 'Always on the hunt for your next customer.',
+      site: 'skarboltech.com',
+      primary: '#0A4FD9',
+      accent: '#00E5FF',
+      dark: '#050A14',
+      text: '#1E293B',
+      muted: '#64748B',
+    };
+    let REPORT_TITLE_DEFAULT = 'Lead Vault Export';
+
+    function nowFormatted() {
+      const d = new Date();
+      const pad = n => String(n).padStart(2, '0');
+      return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+    }
+
+    function exportXlsx(leads, name) {
+      if (!leads.length) { showStatus('No leads to export.', 'warning'); return; }
+      window.__lastExportCount = leads.length;
+      REPORT_TITLE_DEFAULT = name.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+      const fmt = nowFormatted();
+      const aoa = [];
+      aoa.push([BRAND.name.toUpperCase()]);
+      aoa.push([BRAND.tagline]);
+      aoa.push([]);
+      aoa.push(['Report', name]);
+      aoa.push(['Generated', fmt]);
+      aoa.push(['Website', BRAND.site]);
+      aoa.push(['Total Leads', leads.length]);
+      aoa.push([]);
+      aoa.push(EXPORT_LABELS);
+      for (const l of leads) aoa.push(EXPORT_COLS.map(c => l[c] || ''));
+      aoa.push([]);
+      aoa.push(['— Scraven · Skarbol Tech · Confidential — for internal use only —']);
+
+      const ws = XLSX.utils.aoa_to_sheet(aoa);
+
+      ws['!cols'] = EXPORT_COLS.map((c) => {
+        if (c === 'page_url') return { wch: 36 };
+        if (c === 'business_name' || c === 'address') return { wch: 30 };
+        if (c === 'email') return { wch: 28 };
+        if (c === 'phone') return { wch: 16 };
+        return { wch: 16 };
+      });
+
+      const merges = [
+        { s: { r: 0, c: 0 }, e: { r: 0, c: EXPORT_COLS.length - 1 } },
+        { s: { r: 1, c: 0 }, e: { r: 1, c: EXPORT_COLS.length - 1 } },
+        { s: { r: 2, c: 0 }, e: { r: 2, c: EXPORT_COLS.length - 1 } },
+        { s: { r: 3, c: 1 }, e: { r: 3, c: EXPORT_COLS.length - 1 } },
+        { s: { r: 4, c: 1 }, e: { r: 4, c: EXPORT_COLS.length - 1 } },
+        { s: { r: 5, c: 1 }, e: { r: 5, c: EXPORT_COLS.length - 1 } },
+        { s: { r: 6, c: 1 }, e: { r: 6, c: EXPORT_COLS.length - 1 } },
+        { s: { r: 7, c: 0 }, e: { r: 7, c: EXPORT_COLS.length - 1 } },
+      ];
+      ws['!merges'] = merges;
+
+      function styleCell(ws, addr, font, fill) {
+        if (!ws[addr]) ws[addr] = { t: 's', v: '' };
+        ws[addr].s = {
+          font: font || {},
+          fill: fill ? { patternType: 'solid', fgColor: { rgb: fill } } : undefined,
+          alignment: { horizontal: fill ? 'center' : 'left', vertical: 'center' },
+        };
+      }
+
+      const P = BRAND.primary.replace('#','').toUpperCase();
+
+      styleCell(ws, 'A1', { bold: true, sz: 18, color: { rgb: 'FFFFFFFF' } }, 'FF' + P);
+      styleCell(ws, 'A2', { italic: true, sz: 11, color: { rgb: 'FFFFFFFF' } }, 'FF050A14');
+      styleCell(ws, 'A3', null, 'FF00E5FF');
+      for (let i = 3; i <= 6; i++) {
+        styleCell(ws, 'A' + (i + 1), { bold: true, color: { rgb: 'FF' + P } });
+        styleCell(ws, 'B' + (i + 1), { color: { rgb: 'FF1E293B' } });
+      }
+      styleCell(ws, 'A8', null, 'FF' + P);
+
+      const headerRowIdx = 9;
+      for (let c = 0; c < EXPORT_COLS.length; c++) {
+        styleCell(ws, XLSX.utils.encode_cell({ r: headerRowIdx - 1, c }), { bold: true, color: { rgb: 'FFFFFFFF' } }, 'FF' + P);
+      }
+      for (let r = headerRowIdx; r < aoa.length - 2; r++) {
+        if ((r - headerRowIdx) % 2 === 1) {
+          for (let c = 0; c < EXPORT_COLS.length; c++) {
+            const addr = XLSX.utils.encode_cell({ r, c });
+            if (ws[addr]) ws[addr].s = Object.assign({}, ws[addr].s || {}, { fill: { patternType: 'solid', fgColor: { rgb: 'FFF1F5F9' } } });
+          }
+        }
+      }
+
+      const footerRow = aoa.length;
+      styleCell(ws, 'A' + footerRow, { italic: true, sz: 10, color: { rgb: 'FF64748B' } }, 'FFF8FAFC');
+
+      ws['!rows'] = [];
+      ws['!rows'][0] = { hpt: 32 };
+      ws['!rows'][1] = { hpt: 22 };
+      ws['!rows'][2] = { hpt: 5 };
+      for (let r = 3; r <= 6; r++) ws['!rows'][r] = { hpt: 18 };
+      ws['!rows'][7] = { hpt: 5 };
+      ws['!rows'][8] = { hpt: 24 };
+      for (let r = 9; r < aoa.length - 1; r++) ws['!rows'][r] = { hpt: 18 };
+      ws['!rows'][footerRow - 1] = { hpt: 28 };
+
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Leads');
+      XLSX.writeFile(wb, name + '.xlsx');
+      showStatus('Exported ' + leads.length + ' leads (.xlsx)', 'success');
+    }
+
+    function exportTxt(leads, name) {
+      if (!leads.length) { showStatus('No leads to export.', 'warning'); return; }
+      window.__lastExportCount = leads.length;
+      REPORT_TITLE_DEFAULT = name.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+      const fmt = nowFormatted();
+      const width = 100;
+      const sep = '='.repeat(width);
+      const dash = '-'.repeat(width);
+      const padCenter = (s, w) => {
+        const t = w - 2;
+        const left = Math.floor((t - s.length) / 2);
+        return '|' + ' '.repeat(left) + s + ' '.repeat(t - s.length - left) + '|';
+      };
+      const leadColWidths = [19, 10, 28, 28, 16, 28, 12, 12, 10, 10, 24, 36];
+      const padRow = (cells, align) => {
+        const out = [];
+        for (let i = 0; i < cells.length; i++) {
+          const w = leadColWidths[i] || 14;
+          const s = String(cells[i] || '').slice(0, w);
+          if (align === 'center') {
+            const left = Math.floor((w - s.length) / 2);
+            out.push(' ' + ' '.repeat(left) + s + ' '.repeat(w - s.length - left) + ' ');
+          } else {
+            out.push(' ' + s + ' '.repeat(w - s.length) + ' ');
+          }
+        }
+        return '|' + out.join('|') + '|';
+      };
+      const headRow = padRow(EXPORT_LABELS, 'center');
+      const divider = '|' + leadColWidths.map(w => '-'.repeat(w + 2)).join('|') + '|';
+
+      const header = [
+        sep,
+        padCenter('', width),
+        padCenter(BRAND.name.toUpperCase(), width),
+        padCenter(BRAND.tagline, width),
+        padCenter('', width),
+        padCenter('LEAD VAULT EXPORT', width),
+        padCenter('Report:  ' + REPORT_TITLE_DEFAULT, width),
+        padCenter('Generated: ' + fmt, width),
+        padCenter('Website: ' + BRAND.site, width),
+        padCenter('Total Leads: ' + leads.length, width),
+        padCenter('', width),
+        sep,
+        '',
+      ].join('\n');
+
+      const table = [headRow, divider, ...leads.map(l => padRow(EXPORT_COLS.map(c => l[c] || ''), 'left'))];
+
+      const footer = [
+        '',
+        dash,
+        padCenter('SCRAVEN · SKARBOL TECH · CONFIDENTIAL — FOR INTERNAL USE ONLY', width),
+        padCenter('Generated ' + fmt + ' · ' + BRAND.site, width),
+        sep,
+      ].join('\n');
+
+      downloadFile(header + table.join('\n') + '\n' + footer, name + '.txt', 'text/plain');
+      showStatus('Exported ' + leads.length + ' leads (.txt)', 'success');
+    }
+
+    function exportMd(leads, name) {
+      if (!leads.length) { showStatus('No leads to export.', 'warning'); return; }
+      window.__lastExportCount = leads.length;
+      REPORT_TITLE_DEFAULT = name.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+      const fmt = nowFormatted();
+      const header = [
+        '<div align="center" style="background:linear-gradient(135deg,' + BRAND.primary + ',' + BRAND.accent + ');color:#fff;padding:20px 16px;border-radius:6px;margin-bottom:14px">',
+        '  <h1 style="margin:0;font-size:24px">' + BRAND.name + '</h1>',
+        '  <p style="margin:4px 0 0;font-size:12px;opacity:.95">' + BRAND.tagline + '</p>',
+        '</div>',
+        '',
+        '| Field | Value |',
+        '|---|---|',
+        '| **Report** | ' + REPORT_TITLE_DEFAULT + ' |',
+        '| **Generated** | ' + fmt + ' |',
+        '| **Website** | ' + BRAND.site + ' |',
+        '| **Total Leads** | ' + leads.length + ' |',
+        '',
+        '## Lead Vault',
+        '',
+      ].join('\n');
+
+      const sep = '| ' + EXPORT_LABELS.map(l => l.replace(/\|/g, '\\|')).join(' | ') + ' |';
+      const divider = '|' + EXPORT_LABELS.map(() => ' :--- ').join('|') + '|';
+      const rows = leads.map(l => '| ' + EXPORT_COLS.map(c => String(l[c] || '').replace(/\|/g, '\\|').replace(/\n/g,' ')).join(' | ') + ' |');
+
+      const footer = [
+        '',
+        '---',
+        '',
+        '<div align="center" style="background:#F8FAFC;border-top:3px solid ' + BRAND.primary + ';padding:10px;font-size:11px;color:#64748B;border-radius:4px">',
+        '  <strong style="color:' + BRAND.primary + '">Scraven</strong> · Skarbol Tech · Confidential — for internal use only',
+        '  <br>Generated ' + fmt + ' · ' + BRAND.site,
+        '</div>',
+      ].join('\n');
+
+      downloadFile(header + sep + '\n' + divider + '\n' + rows.join('\n') + '\n' + footer, name + '.md', 'text/markdown');
+      showStatus('Exported ' + leads.length + ' leads (.md)', 'success');
+    }
+
+    function exportPdf(leads, name) {
+      if (!leads.length) { showStatus('No leads to export.', 'warning'); return; }
+      window.__lastExportCount = leads.length;
+      REPORT_TITLE_DEFAULT = name.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+      const fmt = nowFormatted();
+      const leadColWidths = ['6%','7%','15%','16%','10%','15%','7%','7%','7%','6%','12%','15%'];
+      const P = BRAND.primary;
+      const headRow = '<tr>' + EXPORT_LABELS.map((label, i) => '<th style="background:' + P + ';color:#fff;padding:8px 6px;font-size:10px;text-align:left;border:1px solid ' + P + ';width:' + leadColWidths[i] + '">' + esc(label) + '</th>').join('') + '</tr>';
+      const rows = leads.map((l, idx) => {
+        const bg = idx % 2 === 0 ? '#FFFFFF' : '#F8FAFC';
+        return '<tr style="background:' + bg + '">' + EXPORT_COLS.map((c) => '<td style="padding:6px;border:1px solid #E2E8F0;font-size:10px;color:#1E293B;vertical-align:top">' + esc(l[c] || '—') + '</td>').join('') + '</tr>';
+      }).join('');
+      const tableHtml = '<table style="width:100%;border-collapse:collapse;margin-top:12px">' + headRow + rows + '</table>';
+
+      const letterhead = [
+        '<div style="background:linear-gradient(135deg,' + P + ',' + BRAND.accent + ');color:#fff;padding:20px 24px;border-radius:6px;margin-bottom:18px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">',
+        '  <div>',
+        '    <div style="font-size:24px;font-weight:800;letter-spacing:.5px">' + BRAND.name + '</div>',
+        '    <div style="font-size:11px;margin-top:2px;opacity:.95">' + BRAND.tagline + '</div>',
+        '  </div>',
+        '  <div style="text-align:right;font-size:10px;line-height:1.6;opacity:.95">',
+        '    <div><strong>Report</strong> ' + esc(REPORT_TITLE_DEFAULT) + '</div>',
+        '    <div><strong>Generated</strong> ' + esc(fmt) + '</div>',
+        '    <div><strong>Website</strong> ' + esc(BRAND.site) + '</div>',
+        '    <div><strong>Total Leads</strong> ' + leads.length + '</div>',
+        '  </div>',
+        '</div>',
+      ].join('');
+
+      const footer = [
+        '<div style="margin-top:24px;padding:12px 18px;border-top:3px solid ' + P + ';background:#F8FAFC;font-size:10px;color:#64748B;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;border-radius:4px">',
+        '  <div><strong style="color:' + P + '">Scraven</strong> · Skarbol Tech · Lead Vault Export</div>',
+        '  <div style="opacity:.7">Confidential — for internal use only · Generated ' + esc(fmt) + '</div>',
+        '</div>',
+      ].join('');
+
+      const css = [
+        '@page { size: A4 landscape; margin: 14mm 12mm; }',
+        '@media print { .noprint { display: none !important; } body { padding: 0; } }',
+        'body{font-family:Inter,-apple-system,sans-serif;padding:18px;color:#1E293B;font-size:11px}',
+        '.btn-print{position:fixed;top:14px;right:14px;background:' + P + ';color:#fff;border:none;padding:10px 18px;border-radius:6px;cursor:pointer;font-weight:600;z-index:99}',
+        'h1{font-size:18px;margin:6px 0 12px}',
+      ].join('');
+
+      const html = '<html><head><meta charset="utf-8"><title>' + esc(name) + '</title><style>' + css + '</style></head><body><button class="btn-print noprint" onclick="window.print()">🖨 Print / Save as PDF</button>' + letterhead + '<h1>' + esc(REPORT_TITLE_DEFAULT) + '</h1>' + tableHtml + footer + '</body></html>';
+
+      const win = window.open('', '_blank');
+      if (!win) { showStatus('Popup blocked — allow popups for PDF export.', 'error'); return; }
+      win.document.write(html);
+      win.document.close();
+      win.focus();
+    }
+
+    function exportCsv(leads, name) {
+      if (!leads.length) { showStatus('No leads to export.', 'warning'); return; }
+      window.__lastExportCount = leads.length;
+      const fmt = nowFormatted();
+      const esc = v => {
+        const s = String(v == null ? '' : v);
+        return /[",\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+      };
+      const lines = [EXPORT_LABELS.map(esc).join(',')];
+      for (const l of leads) lines.push(EXPORT_COLS.map(c => esc(l[c])).join(','));
+      // Append a metadata footer as commented rows (Excel/Sheets will treat as text)
+      lines.push('');
+      lines.push('# ' + BRAND.name);
+      lines.push('# ' + BRAND.tagline);
+      lines.push('# Website: ' + BRAND.site);
+      lines.push('# Report: ' + name);
+      lines.push('# Generated: ' + fmt);
+      lines.push('# Total Leads: ' + leads.length);
+      downloadFile(lines.join('\n'), name + '.csv', 'text/csv');
+      showStatus('Exported ' + leads.length + ' leads (.csv)', 'success');
+    }
+
+    // ── Export from results section (selected leads) ──
+    document.getElementById('btnExportXlsx').addEventListener('click', () => {
+      const selected = getSelectedFromResults();
+      if (!selected.length) { showStatus('Select leads first.', 'warning'); return; }
+      exportXlsx(selected, 'extracted_leads');
+    });
+    document.getElementById('btnExportTxt').addEventListener('click', () => {
+      const selected = getSelectedFromResults();
+      if (!selected.length) { showStatus('Select leads first.', 'warning'); return; }
+      exportTxt(selected, 'extracted_leads');
+    });
+    document.getElementById('btnExportMd').addEventListener('click', () => {
+      const selected = getSelectedFromResults();
+      if (!selected.length) { showStatus('Select leads first.', 'warning'); return; }
+      exportMd(selected, 'extracted_leads');
+    });
+    document.getElementById('btnExportPdf').addEventListener('click', () => {
+      const selected = getSelectedFromResults();
+      if (!selected.length) { showStatus('Select leads first.', 'warning'); return; }
+      exportPdf(selected, 'Extracted Leads');
+    });
+    document.getElementById('btnExportCsv').addEventListener('click', () => {
+      const selected = getSelectedFromResults();
+      if (!selected.length) { showStatus('Select leads first.', 'warning'); return; }
+      exportCsv(selected, 'extracted_leads');
+    });
+
+    // ── Export from history section (currently filtered) ──
+    function getSelectedHistoryLeads() {
+      const checked = document.querySelectorAll('.hist-select:checked');
+      if (!checked.length) return [];
+      const urls = new Set();
+      checked.forEach(cb => { const u = (cb.dataset.url || '').trim(); if (u) urls.add(u); });
+      if (!urls.size) return [];
+      return allLeads.filter(l => urls.has((l.page_url || '').trim()));
+    }
+
+    function getExportLeads() {
+      const selected = getSelectedHistoryLeads();
+      if (selected && selected.length) return selected;
+      return getHistoryLeads();
+    }
+
+    document.getElementById('btnHistXlsx').addEventListener('click', () => {
+      const leads = getExportLeads(); if (!leads.length) { showStatus('No leads to export.', 'warning'); return; }
+      exportXlsx(leads, 'leads_export');
+    });
+    document.getElementById('btnHistTxt').addEventListener('click', () => {
+      const leads = getExportLeads(); if (!leads.length) { showStatus('No leads to export.', 'warning'); return; }
+      exportTxt(leads, 'leads_export');
+    });
+    document.getElementById('btnHistMd').addEventListener('click', () => {
+      const leads = getExportLeads(); if (!leads.length) { showStatus('No leads to export.', 'warning'); return; }
+      exportMd(leads, 'leads_export');
+    });
+    document.getElementById('btnHistPdf').addEventListener('click', () => {
+      const leads = getExportLeads(); if (!leads.length) { showStatus('No leads to export.', 'warning'); return; }
+      exportPdf(leads, 'Leads Export');
+    });
+    document.getElementById('btnHistCsv').addEventListener('click', () => {
+      const leads = getExportLeads(); if (!leads.length) { showStatus('No leads to export.', 'warning'); return; }
+      exportCsv(leads, 'leads_export');
+    });
+
+    // ── Bulk: Apify for selected history leads ──
+    document.getElementById('btnHistApify').addEventListener('click', async () => {
+      const checked = document.querySelectorAll('.hist-select:checked');
+      const urls = [];
+      checked.forEach(cb => { if (cb.dataset.url) urls.push(cb.dataset.url); });
+      if (!urls.length) {
+        // Fall back: process all currently filtered FB leads missing phone/email
+        const fbMissing = getHistoryLeads().filter(l => (l.platform || '').toLowerCase() === 'facebook' && (!l.phone || !l.email));
+        if (!fbMissing.length) {
+          showStatus('Select rows or ensure you have FB leads missing phone/email', 'warning');
+          return;
+        }
+        if (!(await scravenConfirm(`No rows selected. Re-extract ${fbMissing.length} FB leads missing phone/email? (~${fbMissing.length * 60}s)`))) return;
+        for (const l of fbMissing) urls.push(l.page_url);
+      } else {
+        if (!(await scravenConfirm(`Re-extract ${urls.length} selected leads via Apify? (~${urls.length * 60}s)`))) return;
+      }
+      let done = 0, updated = 0;
+      for (const url of urls) {
+        showLoading('Apify re-extracting...', `(${++done}/${urls.length}) ${url}`);
+        try {
+          const resp = await fetch(API_BASE + '/api/extract-facebook/apify', {
+            method: 'POST', signal: AbortSignal.timeout(360000), headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ url }),
+          });
+          const result = await resp.json();
+          if (result.ok) {
+            const ar = result.data;
+            // Update in-memory lead
+            const lead = allLeads.find(l => l.page_url === url);
+            if (lead) {
+              ['business_name','category','followers','email','phone','website','address'].forEach(k => {
+                if (ar[k] && !lead[k]) { lead[k] = ar[k]; updated++; }
+              });
+              if (ar.website) { lead.website = ar.website; lead.has_website = true; }
+            }
+          }
+        } catch (_) {}
+      }
+      hideLoading();
+      loadHistory();
+      showStatus(`Apify done. ${updated} fields filled across ${urls.length} leads. Reload to see updated data.`, 'success');
+    });
+
+    // ── Per-row: Apify for a single history lead ──
+    async function apifyHistoryLead(url) {
+      if (!url) return;
+      if (!(await scravenConfirm(`Re-extract this lead via Apify? (~60s)\n${url}`))) return;
+      showLoading('Apify re-extracting...', url);
+      try {
+        const resp = await fetch(API_BASE + '/api/extract-facebook/apify', {
+          method: 'POST', signal: AbortSignal.timeout(360000), headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url }),
+        });
+        const result = await resp.json();
+        if (!result.ok) throw new Error(result.error || 'Apify failed');
+        const ar = result.data;
+        const lead = allLeads.find(l => l.page_url === url);
+        let updated = [];
+        if (lead) {
+          ['business_name','category','followers','email','phone','website','address'].forEach(k => {
+            if (ar[k] && !lead[k]) { lead[k] = ar[k]; updated.push(k); }
+          });
+          if (ar.website) { lead.website = ar.website; lead.has_website = true; }
+        }
+        loadHistory();
+        showStatus(updated.length ? 'Updated: ' + updated.join(', ') : 'Apify returned same data', updated.length ? 'success' : 'warning');
+      } catch (err) { hideLoading(); showStatus('Apify error: ' + err.message, 'error'); }
+    }
+
+    // ── Helpers ──
+    function esc(s) { if (!s) return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+    function showStatus(msg, type) {
+      const el = document.getElementById('error');
+      if (!el) return;
+      el.className = 'status-msg ' + type;
+      if (/<[a-z][^>]*>/i.test(msg)) el.innerHTML = msg; else el.textContent = msg;
+      el.style.display = 'block';
+      setTimeout(() => { el.style.display = 'none'; }, 4000);
+    }
+    function showError(msg) { showStatus(msg, 'error'); }
+    function hideError() { const el = document.getElementById('error'); if (el) el.style.display = 'none'; }
+    function showLoading(text, step) {
+      document.getElementById('loading').style.display = 'block';
+      document.getElementById('loadText').textContent = text || 'Loading...';
+      document.getElementById('loadStep').textContent = step || '';
+      document.getElementById('results').style.display = 'none';
+    }
+    function hideLoading() { document.getElementById('loading').style.display = 'none'; }
+
+    /* ── Auth UI ── */
+    (function() {
+      window.addEventListener('pageshow', function(e) { if (e.persisted) location.reload(); });
+    })();
+
+    (function initAuth() {
+      const token = localStorage.getItem('skarbol_token');
+      let user;
+      try { user = JSON.parse(localStorage.getItem('skarbol_user') || 'null'); } catch(e) { user = null; }
+      if (!token) {
+        window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname);
+        return;
+      }
+      fetch(API_BASE + '/api/auth/me', { headers: { 'Authorization': 'Bearer ' + token } })
+        .then(r => { if (r.status === 401) { localStorage.removeItem('skarbol_token'); localStorage.removeItem('skarbol_user'); throw new Error('unauth'); } if (!r.ok) throw new Error('fetch_failed'); return r.json() })
+        .then(u => {
+          localStorage.setItem('skarbol_user', JSON.stringify(u));
+          renderLeadsAuth(u);
+        })
+        .catch(() => {
+          if (user && user.name) { renderLeadsAuth(user); return; }
+          window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname);
+        });
+    })();
+
+    function renderLeadsAuth(user) {
+      document.getElementById('loginLink').style.display = 'none';
+      const avatar = document.getElementById('profileLink');
+      avatar.textContent = user.name.charAt(0).toUpperCase();
+      avatar.style.display = 'flex';
+      avatar.className = 'avatar-circle';
+      avatar.href = '/profile'; avatar.title = 'Profile';
+      APP_USER = user;
+      try { localStorage.setItem('skarbol_user', JSON.stringify(user)); } catch (_) {}
+      const isAdminUser = (user.role === 'admin' || user.role === 'super_admin');
+      if (isAdminUser) {
+        document.getElementById('adminLink').style.display = 'inline-flex';
+      }
+      // Show Telegram option only for admin users; show locked label for others
+      const tgLabel = document.getElementById('telegramOptionLabel');
+      if (tgLabel) tgLabel.style.display = isAdminUser ? 'inline-flex' : 'none';
+      const tgLocked = document.getElementById('lblTelegramLocked');
+      if (tgLocked) tgLocked.style.display = isAdminUser ? 'none' : 'inline-flex';
+      (function(){ var i=new Image(); i.onload=function(){ avatar.innerHTML=''; avatar.style.background='none'; avatar.style.padding='0'; avatar.appendChild(i); }; i.onerror=function(){}; i.src=API_BASE+'/api/avatars/'+user.id+'.jpg?t='+Date.now(); })();
+      document.getElementById('logoutBtn').style.display = 'flex';
+
+      const token = localStorage.getItem('skarbol_token');
+      fetch(API_BASE + '/api/auth/leads-remaining', { headers: { 'Authorization': 'Bearer ' + token } })
+        .then(r => r.json())
+        .then(data => {
+          const badge = document.getElementById('leadBadge');
+          badge.style.display = 'inline-flex';
+          badge.textContent = data.leads_used + '/' + (data.leads_limit >= 999999 ? '∞' : data.leads_limit);
+          if (data.leads_limit >= 999999) badge.className = 'lead-badge unlimited';
+          else if (data.leads_remaining <= 3) badge.className = 'lead-badge danger';
+          else if (data.leads_remaining <= 8) badge.className = 'lead-badge warning';
+          else badge.className = 'lead-badge';
+
+          const teaser = document.getElementById('proTeaser');
+          if (data.subscription_tier !== 'pro' && user.role !== 'admin' && user.role !== 'super_admin') {
+            teaser.style.display = 'block';
+          }
+        })
+        .catch(() => {});
+
+      document.getElementById('logoutBtn').addEventListener('click', async () => {
+        await fetch(API_BASE + '/api/auth/logout', { method: 'POST', headers: { 'Authorization': 'Bearer ' + token } }).catch(() => {});
+        localStorage.removeItem('skarbol_token');
+        localStorage.removeItem('skarbol_user');
+        window.location.reload();
+      });
+    }
+  </script>
+  <script>document.querySelectorAll('.nav-links > a').forEach(function(a){var h=a.getAttribute('href');if(h===location.pathname||(h!=='/'&&location.pathname.startsWith(h))){a.style.color='#F8FAFC';a.style.background='rgba(148,163,184,0.08)';a.style.fontWeight='600'}})</script>
+<script src="/assets/scraven-modal.js"></script>
+</body>
+</html>

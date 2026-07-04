@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Scraven — Profile</title>
+  <meta name="description" content="Manage your Scraven account profile." />
+  <link rel="icon" type="image/svg+xml" href="assets/icon.svg" />
+  <link rel="icon" type="image/png" sizes="32x32" href="assets/icon32.png" />
+  <link rel="apple-touch-icon" href="assets/icon192.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    :focus-visible { outline: 3px solid rgba(0, 229, 255, 0.25); outline-offset: 2px; }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #050A14; color: #E2E8F0; font-size: 16px; line-height: 1.6;
+      min-height: 100dvh; -webkit-font-smoothing: antialiased;
+    }
+    .container { max-width: 520px; margin: 0 auto; padding: 16px; }
+    .card {
+      background: rgba(14, 24, 37, 0.92);
+      backdrop-filter: blur(16px) saturate(180%);
+      -webkit-backdrop-filter: blur(16px) saturate(180%);
+      border: 1px solid rgba(226, 232, 240, 0.08);
+      border-radius: 16px; padding: 20px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255,255,255,0.03);
+      margin-bottom: 16px;
+    }
+    .card-header {
+      font-size: 11px; font-weight: 700; color: #00E5FF;
+      text-transform: uppercase; letter-spacing: 0.8px;
+      margin-bottom: 16px; padding-bottom: 8px;
+      border-bottom: 1px solid rgba(226, 232, 240, 0.06);
+    }
+    .form-group { margin-bottom: 16px; }
+    .form-group:last-child { margin-bottom: 0; }
+    .form-group label {
+      display: block; font-size: 11px; font-weight: 600; color: #94A3B8;
+      text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;
+    }
+    .form-group input {
+      width: 100%; padding: 12px 14px; border-radius: 8px;
+      border: 1px solid rgba(226, 232, 240, 0.1);
+      background: rgba(26, 37, 56, 0.5); color: #F8FAFC;
+      font-size: 16px; font-family: 'Inter', sans-serif; outline: none;
+      transition: border-color 250ms ease, box-shadow 250ms ease;
+      box-shadow: 0 0 0 0 rgba(0, 229, 255, 0);
+    }
+    .form-group input:focus { border-color: #00E5FF; box-shadow: 0 0 0 3px rgba(0, 229, 255, 0.2); }
+    .form-group input::placeholder { color: #475569; }
+    .pw-wrap { position: relative; }
+    .pw-wrap input { padding-right: 44px; }
+    .pw-toggle {
+      position: absolute; right: 4px; top: 50%; transform: translateY(-50%);
+      background: none; border: none; cursor: pointer; padding: 8px;
+      color: #64748B; display: flex; align-items: center; justify-content: center;
+      transition: color .2s;
+    }
+    .pw-toggle:hover { color: #94A3B8; }
+    .form-group input:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-primary {
+      min-height: 44px; padding: 12px 20px; border: none; border-radius: 8px;
+      background: linear-gradient(135deg, #0A4FD9, #00E5FF);
+      color: #FFFFFF; font-size: 14px; font-weight: 600;
+      cursor: pointer; font-family: 'Inter', sans-serif;
+      transition: all 250ms cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 4px 16px rgba(10, 79, 217, 0.4);
+      position: relative; overflow: hidden;
+    }
+    .btn-primary::after {
+      content: ''; position: absolute; inset: 0;
+      background: linear-gradient(135deg, rgba(255,255,255,0.1), transparent);
+      opacity: 0; transition: opacity 250ms ease;
+    }
+    .btn-primary:hover { box-shadow: 0 6px 24px rgba(10, 79, 217, 0.6); transform: translateY(-1px); }
+    .btn-primary:hover::after { opacity: 1; }
+    .btn-primary:active { transform: translateY(1px); opacity: 0.92; }
+    .btn-primary:disabled { opacity: 0.35; cursor: not-allowed; box-shadow: none; transform: none; }
+    .btn-danger {
+      min-height: 44px; padding: 12px 20px; border: none; border-radius: 8px;
+      background: linear-gradient(135deg, #DC2626, #EF4444);
+      color: #FFFFFF; font-size: 14px; font-weight: 600;
+      cursor: pointer; font-family: 'Inter', sans-serif;
+      transition: all 250ms ease; box-shadow: 0 4px 16px rgba(220, 38, 38, 0.4);
+    }
+    .btn-danger:hover { box-shadow: 0 6px 24px rgba(220, 38, 38, 0.6); transform: translateY(-1px); }
+    .btn-danger:active { transform: translateY(1px); opacity: 0.92; }
+    .status-msg {
+      display: none; padding: 12px 16px; border-radius: 10px; margin-bottom: 16px;
+      font-size: 13px; line-height: 1.6;
+    }
+    .status-msg.show { display: block; }
+    .status-msg.success { background: rgba(16, 185, 129, 0.08); border-left: 4px solid #10B981; color: #6EE7B7; }
+    .status-msg.error { background: rgba(239, 68, 68, 0.08); border-left: 4px solid #EF4444; color: #FCA5A5; }
+    .spinner-sm {
+      display: inline-block; width: 16px; height: 16px;
+      border: 2px solid rgba(255,255,255,0.2); border-top-color: #FFFFFF;
+      border-radius: 50%; animation: spin 0.6s linear infinite;
+      vertical-align: middle; margin-right: 6px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .flex-row { display: flex; gap: 8px; flex-wrap: wrap; }
+    .flex-row .btn-primary, .flex-row .btn-danger { flex: 1; }
+    .user-email { font-size: 13px; color: #64748B; margin-top: -8px; margin-bottom: 16px; }
+    .avatar-upload { text-align: center; padding: 8px 0 16px; }
+    .avatar-upload .preview-wrap {
+      width: 96px; height: 96px; border-radius: 50%; margin: 0 auto 12px;
+      position: relative; cursor: pointer; overflow: hidden;
+      background: rgba(26, 37, 56, 0.5); border: 2px solid rgba(226,232,240,0.08);
+      transition: border-color 0.2s;
+    }
+    .avatar-upload .preview-wrap:hover { border-color: #0A4FD9; }
+    .avatar-upload .preview-wrap img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .avatar-upload .preview-wrap .initials {
+      width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;
+      font-size: 36px; font-weight: 700; color: #fff;
+      background: linear-gradient(135deg,#0A4FD9,#00E5FF);
+    }
+    .avatar-upload .preview-wrap .overlay {
+      position: absolute; inset: 0; background: rgba(0,0,0,0.5); display: flex;
+      align-items: center; justify-content: center; opacity: 0; transition: opacity 0.2s;
+      color: #fff; font-size: 12px; font-weight: 600;
+    }
+    .avatar-upload .preview-wrap:hover .overlay { opacity: 1; }
+    .avatar-upload input[type="file"] { display: none; }
+    .avatar-upload .upload-btn {
+      font-size: 13px; color: #00E5FF; cursor: pointer; font-weight: 500;
+      background: none; border: none; font-family: inherit; text-decoration: underline;
+    }
+    .avatar-upload .upload-btn:hover { color: #0A4FD9; }
+    .avatar-upload .upload-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .avatar-upload .save-btn {
+      display:inline-block;padding:10px 24px;border:none;border-radius:8px;
+      background:linear-gradient(135deg,#0A4FD9,#00E5FF);color:#fff;
+      font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;
+      transition:all .2s;
+    }
+    .avatar-upload .save-btn:hover{box-shadow:0 4px 20px rgba(10,79,217,0.5);transform:translateY(-1px)}
+    .avatar-upload .save-btn:disabled{opacity:0.35;cursor:not-allowed;box-shadow:none;transform:none}
+    .avatar-upload .save-btn .spinner-sm{display:inline-block;width:16px;height:16px;border:2px solid rgba(255,255,255,0.2);border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite;vertical-align:middle;margin-right:6px}
+    .crop-overlay{position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,0.85);display:none;align-items:center;justify-content:center;padding:24px}
+    .crop-modal{background:#0E1825;border-radius:16px;padding:24px;max-width:500px;width:100%;border:1px solid rgba(226,232,240,0.08)}
+    .crop-modal h3{font-size:16px;font-weight:700;color:#F8FAFC;margin-bottom:4px}
+    .crop-modal p{font-size:12px;color:#64748B;margin-bottom:16px}
+    .crop-area{position:relative;width:100%;aspect-ratio:1;max-width:400px;margin:0 auto;overflow:hidden;border-radius:50%;background:#1A2538;cursor:grab}
+    .crop-area img{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:100%;height:auto;pointer-events:none;user-select:none}
+    .crop-area.dragging{cursor:grabbing}
+    .zoom-row{display:flex;align-items:center;gap:12px;margin:12px 0}
+    .zoom-row input[type="range"]{flex:1;-webkit-appearance:none;height:4px;border-radius:2px;background:rgba(148,163,184,0.2);outline:none}
+    .zoom-row input[type="range"]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:#0A4FD9;cursor:pointer;border:2px solid #00E5FF}
+    .zoom-row span{font-size:12px;color:#64748B;min-width:40px;text-align:right}
+    .crop-actions{display:flex;gap:8px;margin-top:16px;justify-content:flex-end}
+    .crop-actions .cbtn{padding:10px 20px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:none;font-family:inherit;transition:all .2s}
+    .crop-actions .cbtn-cancel{background:rgba(148,163,184,0.1);color:#94A3B8}
+    .crop-actions .cbtn-cancel:hover{background:rgba(148,163,184,0.2);color:#F8FAFC}
+    .crop-actions .cbtn-save{background:linear-gradient(135deg,#0A4FD9,#00E5FF);color:#fff}
+    .crop-actions .cbtn-save:hover{box-shadow:0 4px 20px rgba(10,79,217,0.5);transform:translateY(-1px)}
+    .crop-actions .cbtn-save:disabled{opacity:0.35;cursor:not-allowed}
+    @media (max-width: 480px) { .card { padding: 16px; } .flex-row { flex-direction: column; } }
+    .nav{width:100%;display:flex;align-items:center;gap:12px;padding:12px 24px;background:rgba(5,10,20,0.8);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);border-bottom:1px solid rgba(226,232,240,0.06);position:sticky;top:0;z-index:100}
+    .logo{display:flex;align-items:center;gap:10px;text-decoration:none;color:#F8FAFC;font-size:18px;font-weight:700;transition:transform .2s}
+    .logo:hover{transform:scale(1.03)}
+    .logo-icon{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#0A4FD9,#00E5FF);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;color:#fff;flex-shrink:0}
+    .nav-links{display:flex;align-items:center;gap:12px}
+    .nav-links a,.nav-links button{color:#94A3B8;text-decoration:none;font-size:14px;padding:8px 14px;border-radius:8px;transition:all .2s;background:none;border:none;cursor:pointer;font-family:inherit}
+    .nav-links a:hover,.nav-links button:hover{color:#F8FAFC;background:rgba(148,163,184,0.08)}
+    #auth-nav{display:flex;align-items:center;gap:8px;margin-left:auto}
+    @media(max-width:600px){.nav{flex-wrap:wrap;gap:8px;padding:8px 12px}.nav-links{flex-wrap:wrap;gap:4px}.nav-links a,.nav-links button{font-size:12px;padding:6px 10px}.auth-btn{font-size:12px!important;padding:6px 10px!important}}
+    @media(max-width:480px){.nav{flex-wrap:wrap;gap:6px;padding:8px 12px}.nav-links{flex-wrap:wrap;gap:4px}.nav-links a,.nav-links button{font-size:11px;padding:4px 8px}.auth-btn{font-size:11px!important;padding:4px 8px!important}}
+    @media(max-width:360px){.nav-links a,.nav-links button{font-size:10px;padding:3px 6px}.auth-btn{font-size:10px!important;padding:3px 6px!important}.logo-icon{width:28px;height:28px;font-size:14px}.logo span{font-size:14px}}
+    .auth-btn{background:linear-gradient(135deg,#0A4FD9,#00E5FF);color:#fff!important;font-weight:600;padding:8px 14px!important;border-radius:8px!important}
+    .auth-btn:hover{background:linear-gradient(135deg,#0A4FD9,#00E5FF)!important;opacity:0.9}
+    .avatar-circle img{width:36px;height:36px;border-radius:50%;object-fit:cover}
+.avatar-circle{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#0A4FD9,#00E5FF);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff;cursor:pointer;text-decoration:none!important;padding:0!important}
+    .lead-badge{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:6px;background:rgba(0,229,255,0.08);border:1px solid rgba(0,229,255,0.1);font-size:11px;font-weight:600;color:#00E5FF;cursor:default}
+    .lead-badge.warning{color:#FBBF24;border-color:rgba(251,191,36,0.2);background:rgba(251,191,36,0.08)}
+    .lead-badge.danger{color:#EF4444;border-color:rgba(239,68,68,0.2);background:rgba(239,68,68,0.08)}
+    .lead-badge.unlimited{color:#10B981;border-color:rgba(16,185,129,0.2);background:rgba(16,185,129,0.08)}
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <a href="/" class="logo">
+      <div class="logo-icon">S</div>
+      <span>Scraven</span>
+    </a>
+    <div class="nav-links">
+      <a href="/">Extract</a>
+      <a href="/leads">Leads</a>
+      <a href="/pricing">Pricing</a>
+    </div>
+    <div id="auth-nav">
+        <a href="/login" class="auth-btn" id="loginLink">Sign In</a>
+        <span class="lead-badge" id="leadBadge" title="Leads used" style="display:none"></span>
+        <a href="/profile" class="avatar-circle" id="profileLink" style="display:none">S</a>
+        <a href="/admin" class="auth-btn" id="adminLink" style="display:none">Admin</a>
+        <button class="auth-btn" id="logoutBtn" style="display:none">Logout</button>
+      </div>
+  </nav>
+  <div class="container">
+
+    <div id="statusMsg" class="status-msg"></div>
+
+    <div class="card">
+      <div class="card-header">Profile Picture</div>
+      <div class="avatar-upload">
+        <div class="preview-wrap" id="avatarWrap" onclick="document.getElementById('avatarInput').click()">
+          <div class="initials" id="avatarInitials">S</div>
+          <img id="avatarPreview" style="display:none" alt="Avatar" />
+          <div class="overlay">Change</div>
+        </div>
+        <input type="file" id="avatarInput" accept="image/jpeg,image/png,image/webp" />
+        <div style="margin-top:8px"><button class="save-btn" id="btnSaveAvatar" style="display:none">Save Picture</button></div>
+        <div id="avatarStatus" style="font-size:12px;color:#64748B;margin-top:4px"></div>
+      </div>
+    </div>
+    <div class="crop-overlay" id="cropOverlay">
+      <div class="crop-modal">
+        <h3>Crop &amp; Save</h3>
+        <p>Drag to reposition &middot; Use slider to zoom</p>
+        <div class="crop-area" id="cropArea">
+          <img id="cropImage" alt="Crop preview" />
+        </div>
+        <div class="zoom-row">
+          <label style="font-size:12px;color:#94A3B8">Zoom</label>
+          <input type="range" id="zoomSlider" min="50" max="200" value="100" step="5" />
+          <span id="zoomLabel">100%</span>
+        </div>
+        <div class="crop-actions">
+          <button class="cbtn cbtn-cancel" id="cropCancel">Cancel</button>
+          <button class="cbtn cbtn-save" id="cropSave">Save</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">Profile Information</div>
+      <div class="form-group">
+        <label for="name">Full Name</label>
+        <input type="text" id="name" placeholder="Your name" />
+      </div>
+      <div class="form-group">
+        <label for="email">Email</label>
+        <input type="email" id="email" placeholder="you@example.com" />
+      </div>
+      <button id="btnSaveProfile" class="btn-primary" style="width:100%">Save Changes</button>
+    </div>
+
+    <div class="card">
+      <div class="card-header">Change Password</div>
+      <div class="form-group">
+        <label for="oldPassword">Current Password</label>
+        <div class="pw-wrap">
+          <input type="password" id="oldPassword" placeholder="Enter current password" />
+          <button type="button" class="pw-toggle" onclick="togglePw('oldPassword', this)" tabindex="-1" aria-label="Toggle"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
+        </div>
+      </div>
+      <div class="form-group">
+        <label for="newPassword">New Password</label>
+        <div class="pw-wrap">
+          <input type="password" id="newPassword" placeholder="At least 6 characters" />
+          <button type="button" class="pw-toggle" onclick="togglePw('newPassword', this)" tabindex="-1" aria-label="Toggle"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
+        </div>
+      </div>
+      <button id="btnChangePassword" class="btn-primary" style="width:100%">Update Password</button>
+    </div>
+
+    <div class="card">
+      <div class="card-header">Notifications</div>
+      <div class="form-group" style="display:flex; align-items:center; gap:10px;">
+        <input type="checkbox" id="prefNotifyTelegram" style="width:18px; height:18px; accent-color:#00E5FF;" />
+        <label for="prefNotifyTelegram" style="flex:1; cursor:pointer;">
+          <strong>Send Telegram alerts on new leads</strong>
+          <div style="font-size:11px; color:#94A3B8; margin-top:2px;">When OFF, new leads are saved to the database but no Telegram message is sent. You can still override this per-lead from the extension popup.</div>
+        </label>
+      </div>
+      <div id="prefStatus" style="font-size:11px; color:#94A3B8; min-height:14px;"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">Session</div>
+      <div class="flex-row">
+        <button id="btnLogout" class="btn-danger">Sign Out</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const API_BASE = window.location.origin;
+    const token = localStorage.getItem('skarbol_token');
+    const userData = JSON.parse(localStorage.getItem('skarbol_user') || '{}');
+
+    if (!token) { window.location.href = '/login?redirect=/profile'; }
+
+    const statusEl = document.getElementById('statusMsg');
+
+    document.getElementById('name').value = userData.name || '';
+    document.getElementById('email').value = userData.email || '';
+
+    document.getElementById('btnSaveProfile').addEventListener('click', async () => {
+      const name = document.getElementById('name').value.trim();
+      const email = document.getElementById('email').value.trim();
+      if (!name) { showStatus('Name is required', 'error'); return; }
+      setLoading(true);
+      try {
+        const resp = await fetch(API_BASE + '/api/auth/profile', {
+          method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+          body: JSON.stringify({ name, email }),
+        });
+        const result = await resp.json();
+        if (resp.ok) {
+          const u = JSON.parse(localStorage.getItem('skarbol_user') || '{}');
+          u.name = name; u.email = email || u.email;
+          localStorage.setItem('skarbol_user', JSON.stringify(u));
+          showStatus('Profile updated', 'success');
+        } else { showStatus(result.error || 'Failed', 'error'); }
+      } catch (e) { showStatus('Connection error', 'error'); }
+      finally { setLoading(false); }
+    });
+
+    /* ── Avatar Upload with Crop ── */
+    const avatarInput = document.getElementById('avatarInput');
+    const avatarImg = document.getElementById('avatarPreview');
+    const avatarInitials = document.getElementById('avatarInitials');
+    const avatarStatus = document.getElementById('avatarStatus');
+    const saveBtn = document.getElementById('btnSaveAvatar');
+    const cropOverlay = document.getElementById('cropOverlay');
+    const cropImage = document.getElementById('cropImage');
+    const cropArea = document.getElementById('cropArea');
+    const zoomSlider = document.getElementById('zoomSlider');
+    const zoomLabel = document.getElementById('zoomLabel');
+
+    var selectedFile = null;
+    var cropZoom = 100;
+
+    // Load existing avatar
+    (function loadAvatar() {
+      var img = new Image();
+      img.onload = function() { avatarImg.src = API_BASE + '/api/avatars/' + userData.id + '.jpg?t=' + Date.now(); avatarImg.style.display = 'block'; avatarInitials.style.display = 'none'; };
+      img.onerror = function() { avatarImg.style.display = 'none'; avatarInitials.style.display = 'flex'; avatarInitials.textContent = (userData.name || userData.email || 'S')[0].toUpperCase(); };
+      img.src = API_BASE + '/api/avatars/' + userData.id + '.jpg?t=' + Date.now();
+    })();
+
+    avatarInput.addEventListener('change', function() {
+      if (this.files && this.files[0]) {
+        var file = this.files[0];
+        if (file.size > 2 * 1024 * 1024) { avatarStatus.textContent = 'Image must be under 2MB'; return; }
+        selectedFile = file;
+        var reader = new FileReader();
+        reader.onload = function(e) {
+          avatarImg.src = e.target.result; avatarImg.style.display = 'block'; avatarInitials.style.display = 'none';
+          openCrop(e.target.result);
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+
+    function openCrop(src) {
+      cropImage.src = src;
+      cropOverlay.style.display = 'flex';
+      cropZoom = 100;
+      zoomSlider.value = 100;
+      zoomLabel.textContent = '100%';
+      cropImage.style.width = '100%';
+      cropImage.style.maxWidth = 'none';
+      document.getElementById('cropSave').disabled = false;
+      document.getElementById('cropSave').textContent = 'Save';
+      avatarStatus.textContent = 'Drag image or use zoom slider to adjust';
+    }
+
+    // Zoom slider
+    zoomSlider.addEventListener('input', function() {
+      cropZoom = parseInt(this.value);
+      zoomLabel.textContent = cropZoom + '%';
+      cropImage.style.width = cropZoom + '%';
+    });
+
+    // Drag to reposition within crop area
+    (function() {
+      var isDown = false, startX, startY, imgLeft = 0, imgTop = 0;
+      var img = cropImage;
+      cropArea.addEventListener('mousedown', function(e) {
+        isDown = true; cropArea.classList.add('dragging');
+        startX = e.clientX - imgLeft; startY = e.clientY - imgTop;
+      });
+      document.addEventListener('mousemove', function(e) {
+        if (!isDown) return;
+        imgLeft = e.clientX - startX; imgTop = e.clientY - startY;
+        img.style.left = imgLeft + 'px'; img.style.top = imgTop + 'px';
+      });
+      document.addEventListener('mouseup', function() { isDown = false; cropArea.classList.remove('dragging'); });
+      // Touch
+      cropArea.addEventListener('touchstart', function(e) {
+        var t = e.touches[0]; isDown = true;
+        startX = t.clientX - imgLeft; startY = t.clientY - imgTop;
+      });
+      cropArea.addEventListener('touchmove', function(e) {
+        if (!isDown) return; e.preventDefault();
+        var t = e.touches[0]; imgLeft = t.clientX - startX; imgTop = t.clientY - startY;
+        img.style.left = imgLeft + 'px'; img.style.top = imgTop + 'px';
+      });
+      cropArea.addEventListener('touchend', function() { isDown = false; });
+    })();
+
+    // Cancel
+    document.getElementById('cropCancel').addEventListener('click', function() {
+      cropOverlay.style.display = 'none';
+      selectedFile = null;
+      avatarInput.value = '';
+      // Restore preview to existing avatar
+      var img = new Image();
+      img.onload = function() { avatarImg.src = img.src; avatarImg.style.display = 'block'; avatarInitials.style.display = 'none'; };
+      img.onerror = function() { avatarImg.style.display = 'none'; avatarInitials.style.display = 'flex'; };
+      img.src = API_BASE + '/api/avatars/' + userData.id + '.jpg?t=' + Date.now();
+      saveBtn.style.display = 'none';
+      avatarStatus.textContent = '';
+    });
+
+    // Save cropped image
+    document.getElementById('cropSave').addEventListener('click', function() {
+      var btn = this; btn.disabled = true; btn.innerHTML = '<span class="spinner-sm"></span>Saving...';
+      var canvas = document.createElement('canvas');
+      var size = 256;
+      canvas.width = size; canvas.height = size;
+      var ctx = canvas.getContext('2d');
+
+      var rect = cropArea.getBoundingClientRect();
+      var imgRect = cropImage.getBoundingClientRect();
+
+      // Calculate source rectangle (intersection of crop area and image, in image coordinates)
+      var sx = Math.max(0, rect.left - imgRect.left);
+      var sy = Math.max(0, rect.top - imgRect.top);
+      var sw = Math.min(imgRect.right, rect.right) - Math.max(imgRect.left, rect.left);
+      var sh = Math.min(imgRect.bottom, rect.bottom) - Math.max(imgRect.top, rect.top);
+
+      var scaleX = cropImage.naturalWidth / imgRect.width;
+      var scaleY = cropImage.naturalHeight / imgRect.height;
+
+      ctx.drawImage(cropImage, sx * scaleX, sy * scaleY, sw * scaleX, sh * scaleY, 0, 0, size, size);
+
+      canvas.toBlob(function(blob) {
+        var form = new FormData();
+        form.append('avatar', blob, 'avatar.jpg');
+        fetch(API_BASE + '/api/auth/avatar', { method: 'POST', headers: { 'Authorization': 'Bearer ' + token }, body: form })
+          .then(function(r){ return r.json(); })
+          .then(function(result){
+            if (result.status === 'uploaded') {
+              cropOverlay.style.display = 'none';
+              avatarStatus.textContent = 'Saved! Refreshing...';
+              saveBtn.style.display = 'none';
+              setTimeout(function(){ location.reload(); }, 1000);
+            } else { avatarStatus.textContent = result.error || 'Upload failed'; btn.disabled = false; btn.innerHTML = 'Save'; }
+          })
+          .catch(function(){ avatarStatus.textContent = 'Connection error'; btn.disabled = false; btn.innerHTML = 'Save'; });
+      }, 'image/jpeg', 0.9);
+    });
+
+    document.getElementById('btnChangePassword').addEventListener('click', async () => {
+      const old = document.getElementById('oldPassword').value;
+      const pw = document.getElementById('newPassword').value;
+      if (!old || !pw) { showStatus('Fill in both fields', 'error'); return; }
+      if (pw.length < 6) { showStatus('Password must be 6+ characters', 'error'); return; }
+      setLoadingPassword(true);
+      try {
+        const resp = await fetch(API_BASE + '/api/auth/change-password', {
+          method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+          body: JSON.stringify({ old_password: old, new_password: pw }),
+        });
+        const result = await resp.json();
+        if (resp.ok) { showStatus('Password updated', 'success'); document.getElementById('oldPassword').value = ''; document.getElementById('newPassword').value = ''; }
+        else { showStatus(result.error || 'Failed', 'error'); }
+      } catch (e) { showStatus('Connection error', 'error'); }
+      finally { setLoadingPassword(false); }
+    });
+
+    document.getElementById('btnLogout').addEventListener('click', async () => {
+      await fetch(API_BASE + '/api/auth/logout', { method: 'POST', headers: { 'Authorization': 'Bearer ' + token } }).catch(() => {});
+      localStorage.removeItem('skarbol_token');
+      localStorage.removeItem('skarbol_user');
+      window.location.href = '/login';
+    });
+
+    const prefChk = document.getElementById('prefNotifyTelegram');
+    const prefStatus = document.getElementById('prefStatus');
+    (async function loadPrefs() {
+      try {
+        const r = await fetch(API_BASE + '/api/user/preferences', { headers: { 'Authorization': 'Bearer ' + token } });
+        if (r.ok) {
+          const d = await r.json();
+          prefChk.checked = !!d.telegram_notifications;
+        }
+      } catch (_) {}
+    })();
+
+    let prefTimer = null;
+    prefChk.addEventListener('change', () => {
+      if (prefTimer) clearTimeout(prefTimer);
+      prefStatus.textContent = 'Saving…';
+      prefTimer = setTimeout(async () => {
+        try {
+          const r = await fetch(API_BASE + '/api/user/preferences', {
+            method: 'POST',
+            headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ telegram_notifications: prefChk.checked })
+          });
+          if (r.ok) {
+            prefStatus.textContent = prefChk.checked ? '✓ Telegram alerts enabled' : '✓ Telegram alerts disabled (DB-only mode)';
+            prefStatus.style.color = prefChk.checked ? '#10B981' : '#F59E0B';
+            setTimeout(() => { prefStatus.textContent = ''; }, 4000);
+          } else {
+            prefStatus.textContent = '✗ Failed to save';
+            prefStatus.style.color = '#EF4444';
+          }
+        } catch (_) {
+          prefStatus.textContent = '✗ Network error';
+          prefStatus.style.color = '#EF4444';
+        }
+      }, 250);
+    });
+
+    function showStatus(msg, type) { statusEl.textContent = msg; statusEl.className = 'status-msg show ' + type; setTimeout(() => statusEl.classList.remove('show'), 4000); }
+    function setLoading(on) {
+      document.querySelectorAll('#name, #email, #btnSaveProfile').forEach(function(el){ el.disabled = on; });
+      const btn = document.getElementById('btnSaveProfile');
+      if (on) { btn.innerHTML = '<span class="spinner-sm"></span>Saving...'; } else { btn.innerHTML = 'Save Changes'; }
+    }
+    function setLoadingPassword(on) {
+      document.querySelectorAll('#oldPassword, #newPassword, #btnChangePassword').forEach(function(el){ el.disabled = on; });
+      const btn = document.getElementById('btnChangePassword');
+      if (on) { btn.innerHTML = '<span class="spinner-sm"></span>Updating...'; } else { btn.innerHTML = 'Update Password'; }
+    }
+    function togglePw(id, btn) {
+      const inp = document.getElementById(id);
+      const isPassword = inp.type === 'password';
+      inp.type = isPassword ? 'text' : 'password';
+      btn.innerHTML = isPassword
+        ? '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>'
+        : '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
+    }
+  </script>
+  <script>
+    (function(){
+      var token = localStorage.getItem('skarbol_token');
+      if (token) {
+        var user;
+        try { user = JSON.parse(localStorage.getItem('skarbol_user') || 'null'); } catch(e) { user = null; }
+        if (user && user.name) {
+          document.getElementById('loginLink').style.display = 'none';
+          document.getElementById('leadBadge').style.display = 'inline-flex';
+          document.getElementById('profileLink').style.display = 'flex';
+          document.getElementById('profileLink').textContent = user.name.charAt(0).toUpperCase();
+          (function(){ var i=new Image(); i.onload=function(){ var a=document.getElementById('profileLink'); a.innerHTML=''; a.style.background='none'; a.style.padding='0'; a.appendChild(i); }; i.onerror=function(){}; i.src=window.location.origin+'/api/avatars/'+user.id+'.jpg?t='+Date.now(); })();
+          document.getElementById('logoutBtn').style.display = 'inline-flex';
+          if (user.role === 'admin' || user.role === 'super_admin') {
+            document.getElementById('adminLink').style.display = 'inline-flex';
+          }
+          fetch(window.location.origin + '/api/auth/leads-remaining', {
+            headers: {'Authorization': 'Bearer ' + token}
+          }).then(function(r){return r.json()}).then(function(data){
+            var badge = document.getElementById('leadBadge');
+            badge.textContent = data.leads_used + '/' + (data.leads_limit >= 999999 ? '∞' : data.leads_limit);
+            if (data.leads_limit >= 999999) badge.className = 'lead-badge unlimited';
+            else if (data.leads_remaining <= 3) badge.className = 'lead-badge danger';
+            else if (data.leads_remaining <= 8) badge.className = 'lead-badge warning';
+            else badge.className = 'lead-badge';
+          }).catch(function(){});
+          document.getElementById('logoutBtn').addEventListener('click', function(){
+            fetch(window.location.origin + '/api/auth/logout', {method:'POST',headers:{'Authorization':'Bearer '+token}}).catch(function(){});
+            localStorage.removeItem('skarbol_token');
+            localStorage.removeItem('skarbol_user');
+            location.reload();
+          });
+        }
+      }
+    })();
+  </script>
+  <script>document.querySelectorAll('.nav-links > a').forEach(function(a){var h=a.getAttribute('href');if(h===location.pathname||(h!=='/'&&location.pathname.startsWith(h))){a.style.color='#F8FAFC';a.style.background='rgba(148,163,184,0.08)';a.style.fontWeight='600'}})</script>
+</body>
+</html>
