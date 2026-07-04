@@ -1,0 +1,42 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: var(--font-geist-mono);
+  --color-background: #050A14;
+  --color-foreground: #E2E8F0;
+  --color-card: #0E1825;
+  --color-card-foreground: #E2E8F0;
+  --color-popover: #0E1825;
+  --color-popover-foreground: #E2E8F0;
+  --color-primary: #0A4FD9;
+  --color-primary-foreground: #FFFFFF;
+  --color-secondary: #1A2538;
+  --color-secondary-foreground: #94A3B8;
+  --color-muted: #1A2538;
+  --color-muted-foreground: #64748B;
+  --color-accent: #00E5FF;
+  --color-accent-foreground: #050A14;
+  --color-destructive: #EF4444;
+  --color-border: rgba(226,232,240,0.08);
+  --color-input: rgba(226,232,240,0.1);
+  --color-ring: #00E5FF;
+  --radius: 0.625rem;
+}
+
+@layer base {
+  * { @apply border-border outline-ring/50; }
+  body { @apply bg-background text-foreground antialiased; }
+  html { @apply font-sans; }
+}
+
+.gradient-text {
+  background: linear-gradient(135deg, #F8FAFC, #00E5FF);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}

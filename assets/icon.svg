@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <linearGradient id="brandGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0A4FD9"/>
+      <stop offset="100%" stop-color="#00E5FF"/>
+    </linearGradient>
+    <linearGradient id="glowGrad" x1="60%" y1="60%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00E5FF" stop-opacity="0.25"/>
+      <stop offset="100%" stop-color="#00E5FF" stop-opacity="0"/>
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="2" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+  <!-- Background -->
+  <rect width="64" height="64" rx="14" fill="#050A14"/>
+  <!-- Border -->
+  <rect x="2.5" y="2.5" width="59" height="59" rx="11.5" fill="none" stroke="url(#brandGrad)" stroke-width="1.2" opacity="0.5"/>
+  <!-- Glow -->
+  <ellipse cx="52" cy="52" rx="14" ry="14" fill="url(#glowGrad)"/>
+  <!-- S monogram -->
+  <text x="32" y="43" font-family="'Inter', -apple-system, 'Segoe UI', sans-serif" font-size="34" font-weight="800" fill="url(#brandGrad)" text-anchor="middle" letter-spacing="-1" filter="url(#glow)">S</text>
+  <!-- Cyan accent dot -->
+  <circle cx="50" cy="50" r="1.5" fill="#00E5FF" opacity="0.6"/>
+</svg>

@@ -1,0 +1,42 @@
+services:
+  - type: web
+    name: scraven-api
+    runtime: python
+    plan: free
+    region: oregon
+    branch: main
+    rootDir: .
+    buildCommand: |
+      pip install --upgrade pip
+      pip install -r requirements.txt
+      python -m playwright install chromium
+      python -m playwright install-deps chromium
+    startCommand: python server.py
+    healthCheckPath: /api/health
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
+      - key: DATABASE_URL
+        fromDatabase:
+          name: scraven-db
+          property: connectionString
+      - key: SECRET_KEY
+        generateValue: true
+      - key: APIFY_TOKEN
+        sync: false
+      - key: FB_COOKIES_JSON
+        sync: false
+      - key: ALLOWED_ORIGINS
+        value: https://scraven.netlify.app,https://scraven-hunter.netlify.app
+      - key: PORT
+        value: "10000"
+      - key: WEB_CONCURRENCY
+        value: "1"
+    autoDeploy: true
+
+databases:
+  - name: scraven-db
+    plan: free
+    region: oregon
+    databaseName: scraven
+    user: scraven

@@ -1,0 +1,47 @@
+{
+  "manifest_version": 3,
+  "name": "Skarbol Lead Gen",
+  "version": "1.1.0",
+  "description": "Extract lead data from Facebook & Instagram business pages and save to Skarbol Tech lead-gen system.",
+  "permissions": [
+    "activeTab",
+    "scripting",
+    "storage",
+    "tabs"
+  ],
+  "host_permissions": [
+    "https://www.facebook.com/*",
+    "https://m.facebook.com/*",
+    "https://www.instagram.com/*",
+    "http://localhost:8800/*",
+    "http://127.0.0.1:8800/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": ["https://www.facebook.com/*", "https://m.facebook.com/*"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": ["https://www.instagram.com/*"],
+      "js": ["content-instagram.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "128": "icons/icon128.png"
+    }
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "web_accessible_resources": [{
+    "resources": ["interceptor.js"],
+    "matches": ["https://www.facebook.com/*", "https://m.facebook.com/*"]
+  }],
+  "icons": {
+    "128": "icons/icon128.png"
+  }
+}

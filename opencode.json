@@ -1,0 +1,12 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "permission": {
+    "skill": {
+      "comprehensive-audit": "allow",
+      "audit-website": "allow"
+    },
+    "bash": {
+      "python3 /home/skarbolt/kb/lead-gen/leads-yesterday.sh": "allow"
+    }
+  }
+}

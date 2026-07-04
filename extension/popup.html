@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Skarbol Lead Gen</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      width: 380px;
+      padding: 16px;
+      background: #050A14;
+      color: #E2E8F0;
+      font-size: 13px;
+    }
+    h1 {
+      font-size: 16px;
+      font-weight: 700;
+      margin-bottom: 4px;
+      color: #F8FAFC;
+    }
+    .subtitle {
+      font-size: 11px;
+      color: #94A3B8;
+      margin-bottom: 16px;
+    }
+    .field { margin-bottom: 10px; }
+    .field-label {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: #94A3B8;
+      margin-bottom: 2px;
+    }
+    .field-value {
+      font-size: 13px;
+      color: #E2E8F0;
+      word-break: break-all;
+    }
+    .field-value.empty { color: #94A3B8; font-style: italic; }
+    .score-section {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px;
+      border-radius: 8px;
+      margin: 12px 0;
+      background: #0E1825;
+      border: 1px solid #1A2538;
+    }
+    .score-badge {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      font-weight: 800;
+      flex-shrink: 0;
+    }
+    .score-badge.red { background: #EF4444; color: #fff; }
+    .score-badge.yellow { background: #F59E0B; color: #fff; }
+    .score-badge.green { background: #10B981; color: #fff; }
+    .score-text { font-size: 12px; color: #94A3B8; line-height: 1.4; }
+    .actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+    .actions button {
+      flex: 1;
+      min-width: 100px;
+      padding: 10px 12px;
+      border: none;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.15s;
+      font-family: 'Inter', sans-serif;
+    }
+    .actions button:hover { opacity: 0.85; }
+    .btn-save { background: linear-gradient(135deg, #0A4FD9, #00E5FF); color: #fff; }
+    .btn-copy { background: #1A2538; color: #E2E8F0; }
+    .btn-copy:disabled { opacity: 0.4; cursor: default; }
+    .status {
+      margin-top: 12px;
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      display: none;
+      color: #F8FAFC;
+    }
+    .status.success { display: block; background: rgba(16, 185, 129, 0.15); border-left: 3px solid #10B981; }
+    .status.error { display: block; background: rgba(239, 68, 68, 0.15); border-left: 3px solid #EF4444; }
+    .no-data {
+      text-align: center;
+      padding: 30px 0;
+      color: #94A3B8;
+    }
+    .no-data p { margin-top: 8px; font-size: 12px; }
+    .manual-inputs {
+      margin-top: 12px;
+      padding: 12px;
+      background: #0E1825;
+      border-radius: 8px;
+      border: 1px solid #1A2538;
+    }
+    .manual-inputs .section-title {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: #00E5FF;
+      margin-bottom: 8px;
+      font-weight: 600;
+    }
+    .manual-inputs .input-group {
+      margin-bottom: 8px;
+    }
+    .manual-inputs .input-group:last-child { margin-bottom: 0; }
+    .manual-inputs label {
+      font-size: 10px;
+      color: #94A3B8;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      display: block;
+      margin-bottom: 2px;
+    }
+    .manual-inputs input {
+      width: 100%;
+      padding: 8px 10px;
+      border-radius: 6px;
+      border: 1px solid #1A2538;
+      background: #050A14;
+      color: #E2E8F0;
+      font-size: 13px;
+      font-family: 'Inter', sans-serif;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    .manual-inputs input:focus {
+      border-color: #00E5FF;
+    }
+    .manual-inputs input::placeholder {
+      color: #475569;
+    }
+    .divider {
+      height: 1px;
+      background: #1A2538;
+      margin: 12px 0;
+    }
+    .auth-banner {
+      background: rgba(245, 158, 11, 0.12);
+      border-left: 3px solid #F59E0B;
+      padding: 10px 12px;
+      border-radius: 6px;
+      margin-bottom: 12px;
+      font-size: 12px;
+      line-height: 1.4;
+    }
+    .auth-banner strong { color: #F59E0B; }
+    .auth-banner .token-row { display: flex; gap: 6px; margin-top: 8px; }
+    .auth-banner input {
+      flex: 1;
+      padding: 6px 8px;
+      border-radius: 4px;
+      border: 1px solid #1A2538;
+      background: #050A14;
+      color: #E2E8F0;
+      font-size: 11px;
+      font-family: monospace;
+      outline: none;
+    }
+    .auth-banner input:focus { border-color: #F59E0B; }
+    .auth-banner button {
+      padding: 6px 10px;
+      border: none;
+      border-radius: 4px;
+      background: #F59E0B;
+      color: #050A14;
+      font-weight: 600;
+      font-size: 11px;
+      cursor: pointer;
+    }
+    .save-options {
+      margin-top: 10px;
+      padding: 8px 10px;
+      background: #0E1825;
+      border-radius: 6px;
+      border: 1px solid #1A2538;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .save-options input[type="checkbox"] {
+      width: 16px;
+      height: 16px;
+      cursor: pointer;
+      accent-color: #00E5FF;
+    }
+    .save-options label {
+      font-size: 12px;
+      color: #CBD5E1;
+      cursor: pointer;
+      user-select: none;
+    }
+    .save-options .hint {
+      font-size: 10px;
+      color: #64748B;
+      margin-left: auto;
+    }
+  </style>
+</head>
+<body>
+  <h1>Skarbol Lead Gen</h1>
+  <div class="subtitle">Facebook &amp; Instagram Lead Extractor</div>
+
+  <div id="loading" class="no-data">
+    <div style="font-size:24px;">⏳</div>
+    <p>Waiting for page data…</p>
+  </div>
+
+  <div id="noPage" class="no-data" style="display:none;">
+    <div style="font-size:24px;">📄</div>
+    <p>Not on a supported page.<br />Open a Facebook or Instagram business page to extract leads.</p>
+  </div>
+
+  <div id="dataSection" style="display:none;">
+    <div id="authBanner" class="auth-banner" style="display:none;">
+      <strong>⚠ Not connected</strong> — Save leads will fail until you connect.
+      <div class="token-row">
+        <input type="text" id="tokenInput" placeholder="Paste API token from web app" />
+        <button id="btnSaveToken">Save</button>
+      </div>
+      <div style="margin-top:6px; font-size:10px; color:#94A3B8;">
+        Get it: open <code style="color:#00E5FF">http://localhost:8800/leads</code>, sign in, then DevTools → <code style="color:#00E5FF">localStorage.getItem('token')</code>
+      </div>
+    </div>
+
+    <div id="fields"></div>
+
+    <div class="manual-inputs">
+      <div class="section-title">✏️ Manual Input</div>
+      <div class="input-group">
+        <label for="manualEmail">Email</label>
+        <input type="email" id="manualEmail" placeholder="Enter email if not found above" />
+      </div>
+      <div class="input-group">
+        <label for="manualPhone">Phone</label>
+        <input type="text" id="manualPhone" placeholder="Enter phone if not found above" />
+      </div>
+    </div>
+
+    <div class="score-section">
+      <div id="scoreBadge" class="score-badge">-</div>
+      <div class="score-text">
+        <strong>Qualification Score</strong><br />
+        <span id="scoreDetail">Calculating…</span>
+      </div>
+    </div>
+
+    <div class="save-options">
+      <input type="checkbox" id="chkNotifyTelegram" checked />
+      <label for="chkNotifyTelegram">📣 Send to Telegram agent</label>
+      <span class="hint">uncheck to save DB-only</span>
+    </div>
+
+    <div class="actions">
+      <button id="btnSave" class="btn-save">Save Lead</button>
+      <button id="btnCopyEmail" class="btn-copy">Copy Email</button>
+      <button id="btnCopyPhone" class="btn-copy">Copy Phone</button>
+    </div>
+
+    <div id="status" class="status"></div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
