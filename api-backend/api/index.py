@@ -46,15 +46,16 @@ def require_auth():
     if not auth.startswith('Bearer '):
         return None
     token = auth[7:]
-    rows = query('sessions', params={'select': '*,users(*)', 'token': f'eq.{token}'})
+    rows = query('sessions', params={'token': f'eq.{token}', 'limit': '1'})
     if not rows or isinstance(rows, dict) or len(rows) == 0:
         return None
-    s = rows[0]
-    if 'users' not in s:
+    user_id = rows[0].get('user_id')
+    if not user_id:
         return None
-    u = s['users']
-    u['id'] = u.get('id')
-    return u
+    users = query('users', params={'id': f'eq.{user_id}', 'limit': '1'})
+    if not users or isinstance(users, dict) or len(users) == 0:
+        return None
+    return users[0]
 
 
 
