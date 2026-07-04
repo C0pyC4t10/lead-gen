@@ -1,4 +1,4 @@
-import os, hashlib, secrets, json
+import os, hashlib, secrets, json, sys
 from datetime import datetime, timezone
 from flask import Flask, request, jsonify
 import psycopg2
@@ -69,12 +69,6 @@ def init_db():
     conn.commit()
     conn.close()
 
-with app.app_context():
-    try:
-        init_db()
-    except Exception as e:
-        print(f"DB init (expected on first deploy if no DB yet): {e}")
-
 def hash_password(password, salt=None):
     if salt is None:
         salt = secrets.token_hex(16)
@@ -93,10 +87,19 @@ def require_auth():
     conn.close()
     return dict(user) if user else None
 
+@app.errorhandler(Exception)
+def handle_error(e):
+    return jsonify({'error': str(e), 'type': type(e).__name__}), 500
+
 # ── Health ──
 @app.route('/api/health')
 def health():
-    return jsonify({'status': 'ok'})
+    try:
+        conn = get_db()
+        conn.close()
+        return jsonify({'status': 'ok', 'db': 'connected'})
+    except Exception as e:
+        return jsonify({'status': 'error', 'db': str(e)}), 500
 
 # ── Auth ──
 @app.route('/api/auth/register', methods=['POST'])
@@ -115,9 +118,9 @@ def register():
         return jsonify({'error': 'Email already registered'}), 409
     salt, pw_hash = hash_password(password)
     now = datetime.now(timezone.utc).isoformat()
-    c.execute('INSERT INTO users (name, email, password_hash, password_salt, created_at, updated_at) VALUES (%s,%s,%s,%s,%s,%s)',
+    c.execute('INSERT INTO users (name, email, password_hash, password_salt, created_at, updated_at) VALUES (%s,%s,%s,%s,%s,%s) RETURNING id',
               (name, email, pw_hash, salt, now, now))
-    uid = c.fetchone()[0] if hasattr(c, 'fetchone') else None
+    uid = c.fetchone()[0]
     conn.commit()
     token = secrets.token_hex(32)
     c.execute('INSERT INTO sessions (user_id, token, created_at) VALUES (%s,%s,%s)', (uid, token, now))
