@@ -32,7 +32,7 @@
 # ── Proxy API calls to Render backend ──────────────────────────
 [[redirects]]
   from = "/api/*"
-  to = "https://scraven-api.onrender.com/api/:splat"
+  to = "https://lead-gen-api.fly.dev/api/:splat"
   status = 200
   force = true
 

@@ -5,7 +5,7 @@ const nextConfig: NextConfig = {
     return [
       {
         source: "/api/:path*",
-        destination: "https://lead-gen-api.onrender.com/api/:path*",
+        destination: "https://lead-gen-api.fly.dev/api/:path*",
       },
     ];
   },
