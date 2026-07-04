@@ -16,3 +16,7 @@ canvas_output/
 __snapshots__/
 *.xlsx
 *.csv
+.venv/
+venv/
+__pycache__/
+*.log
