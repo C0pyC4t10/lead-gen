@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Scraven — Admin</title>
+  <meta name="description" content="Scraven administration." />
+  <link rel="icon" type="image/svg+xml" href="assets/icon.svg" />
+  <link rel="icon" type="image/png" sizes="32x32" href="assets/icon32.png" />
+  <link rel="apple-touch-icon" href="assets/icon192.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'Inter',system-ui,-apple-system,sans-serif;background:#050A14;color:#E2E8F0;min-height:100dvh;-webkit-font-smoothing:antialiased}
+    .nav{width:100%;display:flex;align-items:center;gap:12px;padding:12px 24px;background:rgba(5,10,20,0.8);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);border-bottom:1px solid rgba(226,232,240,0.06);position:sticky;top:0;z-index:100}
+    .logo{display:flex;align-items:center;gap:10px;text-decoration:none;color:#F8FAFC;font-size:18px;font-weight:700;transition:transform .2s}
+    .logo:hover{transform:scale(1.03)}
+    .logo-icon{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#0A4FD9,#00E5FF);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;color:#fff;flex-shrink:0}
+    .nav-links{display:flex;align-items:center;gap:12px}
+    .nav-links a,.nav-links button{color:#94A3B8;text-decoration:none;font-size:14px;padding:8px 14px;border-radius:8px;transition:all .2s;background:none;border:none;cursor:pointer;font-family:inherit}
+    .nav-links a:hover,.nav-links button:hover{color:#F8FAFC;background:rgba(148,163,184,0.08)}
+    #auth-nav{display:flex;align-items:center;gap:8px;margin-left:auto}
+    .auth-btn{background:linear-gradient(135deg,#0A4FD9,#00E5FF);color:#fff!important;font-weight:600;padding:8px 14px!important;border-radius:8px!important}
+    .auth-btn:hover{background:linear-gradient(135deg,#0A4FD9,#00E5FF)!important;opacity:0.9}
+    .avatar-circle img{width:36px;height:36px;border-radius:50%;object-fit:cover}
+    .avatar-circle{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#0A4FD9,#00E5FF);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff;cursor:pointer;text-decoration:none!important;padding:0!important}
+    .lead-badge{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:6px;background:rgba(0,229,255,0.08);border:1px solid rgba(0,229,255,0.1);font-size:11px;font-weight:600;color:#00E5FF;cursor:default}
+    .lead-badge.warning{color:#FBBF24;border-color:rgba(251,191,36,0.2);background:rgba(251,191,36,0.08)}
+    .lead-badge.danger{color:#EF4444;border-color:rgba(239,68,68,0.2);background:rgba(239,68,68,0.08)}
+    .lead-badge.unlimited{color:#10B981;border-color:rgba(16,185,129,0.2);background:rgba(16,185,129,0.08)}
+    .container{max-width:960px;margin:0 auto;padding:24px}
+    .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:24px}
+    .stat-card{background:rgba(14,24,37,0.92);backdrop-filter:blur(16px);border:1px solid rgba(226,232,240,0.08);border-radius:12px;padding:16px;text-align:center}
+    .stat-card .stat-value{font-size:28px;font-weight:800;color:#F8FAFC}
+    .stat-card .stat-label{font-size:11px;color:#64748B;text-transform:uppercase;letter-spacing:0.5px;margin-top:4px}
+    .card{background:rgba(14,24,37,0.92);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1px solid rgba(226,232,240,0.08);border-radius:16px;padding:20px;margin-bottom:16px}
+    .card-header{font-size:11px;font-weight:700;color:#00E5FF;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:16px;padding-bottom:8px;border-bottom:1px solid rgba(226,232,240,0.06)}
+    .scroll-x{overflow-x:auto;-webkit-overflow-scrolling:touch}
+    table{width:100%;border-collapse:collapse}
+    th{font-size:10px;font-weight:600;color:#64748B;text-transform:uppercase;letter-spacing:0.5px;padding:10px 8px;text-align:left;border-bottom:1px solid rgba(226,232,240,0.06)}
+    td{padding:12px 8px;border-bottom:1px solid rgba(14,24,37,0.6);font-size:13px;vertical-align:middle}
+    tr{transition:background .2s}
+    tbody tr:hover{background:rgba(26,37,56,0.3)}
+    .badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:600;text-transform:uppercase}
+    .badge.super_admin{background:rgba(251,191,36,0.12);color:#FBBF24}
+    .badge.admin{background:rgba(0,229,255,0.12);color:#00E5FF}
+    .badge.pro{background:rgba(16,185,129,0.12);color:#34D399}
+    .badge.user{background:rgba(148,163,184,0.12);color:#94A3B8}
+    .role-select{background:#0E1825;border:1px solid rgba(226,232,240,0.08);color:#E2E8F0;font-size:12px;font-family:inherit;padding:4px 6px;border-radius:6px;cursor:pointer;outline:none}
+    .role-select:focus-visible{border-color:#00E5FF}
+    .btn-sm{padding:6px 12px;border-radius:6px;border:1px solid rgba(239,68,68,0.2);background:transparent;color:#FCA5A5;font-size:11px;font-weight:500;cursor:pointer;font-family:'Inter',sans-serif;transition:all .2s}
+    .btn-sm:hover{background:rgba(239,68,68,0.1)}
+    .btn-sm:disabled{opacity:0.4;cursor:default}
+    .btn-glow{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:10px 22px;border-radius:10px;border:none;background:linear-gradient(135deg,#0A4FD9,#00E5FF);color:#fff;font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;transition:all .2s;text-decoration:none}
+    .btn-glow:hover{box-shadow:0 4px 20px rgba(0,229,255,0.25);transform:translateY(-1px)}
+    .status-msg{display:none;padding:12px 16px;border-radius:10px;margin-bottom:16px;font-size:13px}
+    .status-msg.show{display:block}
+    .status-msg.success{background:rgba(16,185,129,0.08);border-left:4px solid #10B981;color:#6EE7B7}
+    .status-msg.error{background:rgba(239,68,68,0.08);border-left:4px solid #EF4444;color:#FCA5A5}
+    @media(max-width:768px){.container{padding:16px}}
+    @media(max-width:640px){.card{padding:14px}.stats-grid{grid-template-columns:repeat(2,1fr)}}
+    @media(max-width:600px){.nav{flex-wrap:wrap;gap:8px;padding:8px 12px}.nav-links{flex-wrap:wrap;gap:4px}.nav-links a,.nav-links button{font-size:12px;padding:6px 10px}.auth-btn{font-size:12px!important;padding:6px 10px!important}}
+    @media(max-width:480px){.nav{flex-wrap:wrap;gap:6px;padding:8px 12px}.nav-links{flex-wrap:wrap;gap:4px}.nav-links a,.nav-links button{font-size:11px;padding:4px 8px}.auth-btn{font-size:11px!important;padding:4px 8px!important}}
+    @media(max-width:360px){.nav-links a,.nav-links button{font-size:10px;padding:3px 6px}.auth-btn{font-size:10px!important;padding:3px 6px!important}.logo-icon{width:28px;height:28px;font-size:14px}.logo span{font-size:14px}}
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <a href="/" class="logo">
+      <div class="logo-icon">S</div>
+      <span>Scraven</span>
+    </a>
+    <div class="nav-links">
+      <a href="/">Extract</a>
+      <a href="/leads">Leads</a>
+      <a href="/pricing">Pricing</a>
+    </div>
+    <div id="auth-nav">
+        <a href="/login" class="auth-btn" id="loginLink">Sign In</a>
+        <span class="lead-badge" id="leadBadge" title="Leads used" style="display:none"></span>
+        <a href="/profile" class="avatar-circle" id="profileLink" style="display:none">S</a>
+        <a href="/admin" class="auth-btn" id="adminLink" style="display:none">Admin</a>
+        <button class="auth-btn" id="logoutBtn" style="display:none">Logout</button>
+      </div>
+  </nav>
+  <div class="container">
+    <div id="statusMsg" class="status-msg"></div>
+
+    <div class="stats-grid" id="statsGrid">
+      <div class="stat-card"><div class="stat-value" id="statLeads">—</div><div class="stat-label">Total Leads</div></div>
+      <div class="stat-card"><div class="stat-value" id="statUsers">—</div><div class="stat-label">Users</div></div>
+      <div class="stat-card"><div class="stat-value" id="statSuperAdmin">—</div><div class="stat-label">Super Admins</div></div>
+      <div class="stat-card"><div class="stat-value" id="statAdmin">—</div><div class="stat-label">Admins</div></div>
+      <div class="stat-card"><div class="stat-value" id="statPro">—</div><div class="stat-label">Pro Users</div></div>
+      <div class="stat-card"><div class="stat-value" id="statThisMonth">—</div><div class="stat-label">This Month<div id="statMonthLabel" style="font-size:9px;color:#475569;margin-top:2px;text-transform:none"></div></div></div>
+      <div class="stat-card"><div class="stat-value" id="statQualified">—</div><div class="stat-label">Qualified</div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">Users</div>
+      <div class="scroll-x">
+        <table>
+          <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Joined</th><th>Remove</th></tr></thead>
+          <tbody id="usersBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const API_BASE = window.location.origin;
+    const token = localStorage.getItem('skarbol_token');
+    let userData = JSON.parse(localStorage.getItem('skarbol_user') || '{}');
+
+    if (!token) { window.location.href = '/login?redirect=/admin'; }
+
+    (async () => {
+      try {
+        const r = await fetch(API_BASE + '/api/auth/me', {
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+        if (r.ok) {
+          const u = await r.json();
+          if (u && u.role) {
+            localStorage.setItem('skarbol_user', JSON.stringify(u));
+            userData = u;
+          }
+        }
+      } catch (e) {}
+      if (userData.role !== 'admin' && userData.role !== 'super_admin') {
+        window.location.href = '/';
+      }
+    })().then(() => { loadData(); });
+
+    function setLoading(on) {
+      document.querySelectorAll('.stat-value').forEach(el => {
+        if (on) { el.dataset.val = el.textContent; el.textContent = '...'; el.style.opacity = '0.4'; }
+        else {
+          if (el.textContent === '...') el.textContent = el.dataset.val || '—';
+          el.style.opacity = '1';
+        }
+      });
+    }
+
+    function handleUnauthorized() {
+      localStorage.removeItem('skarbol_token'); localStorage.removeItem('skarbol_user');
+      window.location.href = '/login?redirect=/admin';
+    }
+
+    async function loadData() {
+      setLoading(true);
+      document.getElementById('retryBtn')?.remove();
+      let hasError = false;
+      try {
+        const [statsResp, usersResp] = await Promise.all([
+          fetch(API_BASE + '/api/admin/stats?token=' + encodeURIComponent(token)),
+          fetch(API_BASE + '/api/admin/users?token=' + encodeURIComponent(token)),
+        ]);
+        if (statsResp.status === 401 || usersResp.status === 401) { handleUnauthorized(); return; }
+        if (statsResp.status === 403 || usersResp.status === 403) { showStatus('Access denied. Admin privileges required.', 'error'); setLoading(false); return; }
+        if (statsResp.ok) {
+          const statsText = await statsResp.json().catch(() => null);
+          if (statsText && typeof statsText === 'object') {
+            document.getElementById('statLeads').textContent = statsText.total_leads ?? 0;
+            document.getElementById('statUsers').textContent = statsText.total_users ?? 0;
+            document.getElementById('statSuperAdmin').textContent = statsText.role_counts?.super_admin ?? 0;
+            document.getElementById('statAdmin').textContent = statsText.role_counts?.admin ?? 0;
+            document.getElementById('statPro').textContent = statsText.role_counts?.pro ?? 0;
+            document.getElementById('statThisMonth').textContent = statsText.this_month ?? 0;
+            const ml = document.getElementById('statMonthLabel');
+            if (ml && statsText.month_label) ml.textContent = statsText.month_label;
+            document.getElementById('statQualified').textContent = statsText.statuses?.qualified ?? 0;
+          } else { hasError = true; showStatus('Invalid stats response', 'error'); }
+        } else { hasError = true; showStatus('Stats API error (' + statsResp.status + ')', 'error'); }
+        if (usersResp.ok) {
+          const usersText = await usersResp.json().catch(() => null);
+          renderUsers(Array.isArray(usersText) ? usersText : []);
+        } else { hasError = true; showStatus('Users API error (' + usersResp.status + ')', 'error'); }
+        setLoading(false);
+        if (hasError) addRetryButton();
+      } catch (e) {
+        setLoading(false);
+        showStatus('Failed to load data', 'error');
+        addRetryButton();
+      }
+    }
+
+    function addRetryButton() {
+      if (document.getElementById('retryBtn')) return;
+      const btn = document.createElement('button');
+      btn.id = 'retryBtn';
+      btn.className = 'btn-glow';
+      btn.textContent = 'Retry';
+      btn.style.cssText = 'display:block;margin:16px auto';
+      btn.onclick = loadData;
+      document.querySelector('.stats-grid').after(btn);
+    }
+
+    function renderUsers(users) {
+      const tbody = document.getElementById('usersBody');
+      if (users.length === 0) { tbody.innerHTML = '<tr><td colspan="5" style="color:#475569;text-align:center;padding:24px">No users yet</td></tr>'; return; }
+      const roles = userData.role === 'super_admin' ? ['user', 'pro', 'admin', 'super_admin'] : ['user', 'pro'];
+      tbody.innerHTML = users.map(u => {
+        const isSelf = u.email === userData.email;
+        const opts = roles.map(r => `<option value="${r}"${r === u.role ? ' selected' : ''}>${r}</option>`).join('');
+        const canManage = userData.role === 'super_admin' || (userData.role === 'admin' && (u.role === 'user' || u.role === 'pro'));
+        return `<tr>
+          <td><strong style="color:#E2E8F0">${esc(u.name)}</strong></td>
+          <td style="color:#94A3B8">${esc(u.email)}</td>
+          <td>${isSelf || !canManage ? `<span class="badge ${u.role}">${esc(u.role)}</span>` : `<select class="role-select" data-uid="${u.id}" data-orig="${u.role}" onchange="changeRole(${u.id},this)">${opts}</select>`}</td>
+          <td style="color:#64748B;font-size:12px">${u.created_at ? u.created_at.split('T')[0] : '—'}</td>
+          <td>${isSelf || !canManage ? '' : `<button class="btn-sm" onclick="deleteUser(${u.id})">Remove</button>`}</td>
+        </tr>`;
+      }).join('');
+    }
+
+    async function changeRole(userId, sel) {
+      const newRole = sel.value;
+      const orig = sel.dataset.orig;
+      if (newRole === orig) return;
+      sel.disabled = true;
+      try {
+        const resp = await fetch(API_BASE + '/api/admin/users/role', {
+          method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+          body: JSON.stringify({ user_id: userId, role: newRole }),
+        });
+        if (resp.ok) {
+          showStatus('Role updated to ' + newRole, 'success');
+          sel.dataset.orig = newRole;
+        } else {
+          const r = await resp.json().catch(() => ({}));
+          showStatus(r.error || 'Failed (HTTP ' + resp.status + ')', 'error');
+          sel.value = orig;
+        }
+      } catch (e) { showStatus('Connection error', 'error'); sel.value = orig; }
+      sel.disabled = false;
+    }
+
+    async function deleteUser(userId) {
+      if (!(await scravenConfirm('Remove this user?'))) return;
+      const btn = document.querySelector(`button[onclick="deleteUser(${userId})"]`);
+      if (btn) { btn.disabled = true; btn.textContent = '...'; }
+      try {
+        const resp = await fetch(API_BASE + '/api/admin/users/delete', {
+          method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+          body: JSON.stringify({ user_id: userId }),
+        });
+        if (resp.ok) { showStatus('User removed', 'success'); loadData(); }
+        else { const r = await resp.json().catch(() => ({})); showStatus(r.error || 'Failed (HTTP ' + resp.status + ')', 'error'); if (btn) { btn.disabled = false; btn.textContent = 'Remove'; } }
+      } catch (e) { showStatus('Connection error', 'error'); if (btn) { btn.disabled = false; btn.textContent = 'Remove'; } }
+    }
+
+    function showStatus(msg, type) { const el = document.getElementById('statusMsg'); el.textContent = msg; el.className = 'status-msg show ' + type; setTimeout(() => el.classList.remove('show'), 4000); }
+    function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+  </script>
+  <script>
+    (function(){
+      var token = localStorage.getItem('skarbol_token');
+      if (token) {
+        var user;
+        try { user = JSON.parse(localStorage.getItem('skarbol_user') || 'null'); } catch(e) { user = null; }
+        if (user && user.name) {
+          document.getElementById('loginLink').style.display = 'none';
+          document.getElementById('leadBadge').style.display = 'inline-flex';
+          document.getElementById('profileLink').style.display = 'flex';
+          document.getElementById('profileLink').textContent = user.name.charAt(0).toUpperCase();
+          (function(){ var i=new Image(); i.onload=function(){ var a=document.getElementById('profileLink'); a.innerHTML=''; a.style.background='none'; a.style.padding='0'; a.appendChild(i); }; i.onerror=function(){}; i.src=window.location.origin+'/api/avatars/'+user.id+'.jpg?t='+Date.now(); })();
+          document.getElementById('adminLink').style.display = 'inline-flex';
+          document.getElementById('logoutBtn').style.display = 'inline-flex';
+          fetch(window.location.origin + '/api/auth/leads-remaining', {
+            headers: {'Authorization': 'Bearer ' + token}
+          }).then(function(r){return r.json()}).then(function(data){
+            var badge = document.getElementById('leadBadge');
+            badge.textContent = data.leads_used + '/' + (data.leads_limit >= 999999 ? '∞' : data.leads_limit);
+            if (data.leads_limit >= 999999) badge.className = 'lead-badge unlimited';
+            else if (data.leads_remaining <= 3) badge.className = 'lead-badge danger';
+            else if (data.leads_remaining <= 8) badge.className = 'lead-badge warning';
+            else badge.className = 'lead-badge';
+          }).catch(function(){});
+          document.getElementById('logoutBtn').addEventListener('click', function(){
+            fetch(window.location.origin + '/api/auth/logout', {method:'POST',headers:{'Authorization':'Bearer '+token}}).catch(function(){});
+            localStorage.removeItem('skarbol_token');
+            localStorage.removeItem('skarbol_user');
+            location.reload();
+          });
+        }
+      }
+    })();
+  </script>
+  <script>document.querySelectorAll('.nav-links > a').forEach(function(a){var h=a.getAttribute('href');if(h===location.pathname||(h!=='/'&&location.pathname.startsWith(h))){a.style.color='#F8FAFC';a.style.background='rgba(148,163,184,0.08)';a.style.fontWeight='600'}})</script>
+<script src="/assets/scraven-modal.js"></script>
+</body>
+</html>
