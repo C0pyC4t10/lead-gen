@@ -1022,38 +1022,6 @@ def outreach():
     }), 202
 
 # ═════════════════════════════════════════════════════════════
-# SERVING HTML (catch-all route handler)
+# HTML routes are served directly by Vercel from /public/
+# Flask only handles /api/* routes
 # ═════════════════════════════════════════════════════════════
-def serve_html(filename):
-    """Serve HTML from the static/ directory embedded in this repo."""
-    import os as _os
-    # Try several locations
-    candidates = [
-        _os.path.join(_os.path.dirname(__file__), '..', '..', 'static', filename),
-        _os.path.join(_os.path.dirname(__file__), '..', '..', filename),
-        _os.path.join(_os.path.dirname(__file__), '..', '..', 'frontend', 'public', filename),
-    ]
-    for path in candidates:
-        if _os.path.exists(path):
-            with open(path) as f:
-                content = f.read()
-            return content, 200, {'Content-Type': 'text/html; charset=utf-8'}
-    return '<h1>Not Found</h1>', 404, {'Content-Type': 'text/html; charset=utf-8'}
-
-@app.route('/')
-@app.route('/login.html')
-@app.route('/register.html')
-@app.route('/leads.html')
-@app.route('/trash.html')
-@app.route('/extract.html')
-@app.route('/profile.html')
-@app.route('/admin.html')
-@app.route('/pricing.html')
-@app.route('/forgot-password.html')
-@app.route('/reset-password.html')
-def html_root():
-    # Serve leads.html at root
-    if request.path == '/' or request.path == '':
-        return serve_html('leads.html')
-    filename = request.path.lstrip('/')
-    return serve_html(filename)
