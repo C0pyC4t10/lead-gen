@@ -1554,14 +1554,8 @@ def _extract_facebook_page(fb_url):
           function looksReal(s) {
             if (/^0{2,}/.test(s)) return false;
             if (/^(\\d)\\1+$/.test(s)) return false;
-            if (s.length >= 8 && s.length % 3 === 0) {
-              var part = s.slice(0, 3);
-              if (part.repeat(s.length / 3) === s) return false;
-            }
-            if (s.length >= 8 && s.length % 2 === 0) {
-              var part = s.slice(0, 2);
-              if (part.repeat(s.length / 2) === s) return false;
-            }
+            // Reject obvious fake patterns: sequential asc/desc
+            if (/^01234567|^12345678|^98765432|^87654321/.test(s)) return false;
             return true;
           }
           var phoneResults = [];
@@ -1940,24 +1934,53 @@ def _extract_facebook_page(fb_url):
                 return result
 
         # Fallback: try mbasic.facebook.com (text-only, harder to block)
-        if not result.get('phone') or not result.get('website'):
+        if not result.get('phone') or not result.get('email') or not result.get('website'):
             try:
                 mbasic_url = fb_url.replace('www.facebook.com', 'mbasic.facebook.com').replace('facebook.com', 'mbasic.facebook.com')
                 page.goto(mbasic_url, timeout=10000, wait_until='domcontentloaded')
-                page.wait_for_timeout(1000)
+                page.wait_for_timeout(1500)
                 mbasic_text = page.evaluate('() => document.body ? document.body.innerText : ""')
-                phone_match = re.search(r'(?:01[3-9]\d{8}|\+?8801[3-9]\d{8})', re.sub(r'\s', '', mbasic_text))
-                if phone_match and not result.get('phone'):
-                    p = phone_match.group(0)
-                    if p.startswith('01') and len(p) == 11: p = '+880' + p[1:]
-                    elif p.startswith('880') and not p.startswith('+'): p = '+' + p
-                    if re.match(r'^\+?8801[3-9]\d{8}$', p): result['phone'] = p
-                site_match = re.search(r'(?:https?://)(?!(?:www\.)?(?:facebook|fb|instagram|twitter|youtube|whatsapp|messenger|google|gmail|maps)\.)[a-zA-Z0-9\-]+(?:\.[a-zA-Z0-9\-]+)+(?:/[^\s<>"]*)?', mbasic_text)
-                if site_match and not result.get('website'):
-                    u = site_match.group(0)
-                    if not any(x in u for x in ['facebook', 'fb.com', 'instagram', 'twitter', 'youtube']):
-                        result['website'] = u.rstrip('/')
-                        result['has_website'] = True
+                mbasic_clean = re.sub(r'\s', '', mbasic_text)
+                # Try all BD phone patterns: with/without +88, with spaces/dashes preserved
+                if not result.get('phone'):
+                    # Strip formatting then match
+                    candidates = re.findall(r'(?:\+?88)?0?1[3-9]\d{8}', mbasic_clean)
+                    seen = set()
+                    for raw in candidates:
+                        n = raw.lstrip('+')
+                        if n.startswith('880'): n = '+' + n
+                        elif n.startswith('01'): n = '+880' + n[1:]
+                        else: continue
+                        if not re.match(r'^\+8801[3-9]\d{8}$', n): continue
+                        digits = n[4:]
+                        if not digits or len(set(digits)) < 4: continue
+                        if digits == digits[0] * len(digits): continue
+                        if n not in seen:
+                            seen.add(n)
+                            result['phone'] = n
+                            break
+                if not result.get('email'):
+                    em = re.findall(r'[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}', mbasic_text)
+                    for e in em:
+                        lo = e.lower()
+                        if any(x in lo for x in ['facebook.com', 'fb.com', 'sentry.io', 'example.com', 'meta.com', 'google.com', 'gmail.com']): continue
+                        result['email'] = e.lower()
+                        break
+                if not result.get('website'):
+                    site_match = re.search(r'(?:https?://)(?!(?:www\.)?(?:facebook|fb|instagram|twitter|youtube|whatsapp|messenger|google|gmail|maps|meta)\.)[a-zA-Z0-9\-]+(?:\.[a-zA-Z0-9\-]+)+(?:/[^\s<>"]*)?', mbasic_text)
+                    if site_match:
+                        u = site_match.group(0)
+                        if not any(x in u for x in ['facebook', 'fb.com', 'instagram', 'twitter', 'youtube']):
+                            result['website'] = u.rstrip('/')
+                            result['has_website'] = True
+                if not result.get('business_name'):
+                    # mbasic page title often has the business name as h1
+                    title_match = re.search(r'<title>([^<]+)</title>', page.content(), re.I)
+                    if title_match:
+                        nm = title_match.group(1).strip()
+                        nm = re.sub(r'\s*\|\s*Facebook\s*$', '', nm, flags=re.I).strip()
+                        if nm and not re.match(r'^search', nm, re.I):
+                            result['business_name'] = nm
             except Exception:
                 pass
     except Exception as e:
@@ -3087,21 +3110,10 @@ class Handler(BaseHTTPRequestHandler):
                 self._json(400, {'error': 'Valid Facebook URL required'})
                 return
             try:
-                # Playwright first (fast, ~20-30s). If phone or email missing AND Apify key is set,
-                # automatically fall back to Apify to fill missing fields.
+                # Playwright only — fast (~20-30s). For missing fields, user clicks "Try Apify" or fills manual.
                 result = _extract_facebook_page(fb_url)
                 if result is not None:
                     result['source'] = 'playwright'
-                    missing = not result.get('phone') or not result.get('email')
-                    if missing and APIFY_API_KEY:
-                        apify_result = _extract_via_apify(fb_url, timeout=60)
-                        if apify_result:
-                            for f in ('phone', 'email', 'website', 'address', 'category', 'followers', 'business_name'):
-                                if not result.get(f) and apify_result.get(f):
-                                    result[f] = apify_result[f]
-                            if apify_result.get('website') and not result.get('website'):
-                                result['has_website'] = True
-                            result['source'] = 'playwright+apify'
                 self._json(200, {'ok': True, 'data': result})
             except Exception as e:
                 self._json(500, {'ok': False, 'error': str(e)})
