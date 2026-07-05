@@ -1,5 +1,5 @@
 import csv, html, io, json, os, sys, re, subprocess, threading, time, signal, sqlite3
-import hashlib, secrets, smtplib, string
+import hashlib, secrets, smtplib, string, hmac, base64
 from email.mime.text import MIMEText
 from datetime import datetime, timedelta
 from http.server import ThreadingHTTPServer, BaseHTTPRequestHandler
@@ -253,6 +253,7 @@ def ensure_qualified_csv():
 
 AUTH_DB_PATH = os.path.join(os.path.dirname(__file__), 'auth.db')
 AVATAR_DIR = os.path.join(os.path.dirname(__file__), 'avatars')
+AUTH_SECRET = os.environ.get('AUTH_SECRET', hashlib.sha256(AUTH_DB_PATH.encode()).hexdigest())
 
 # \u2500\u2500 Rate limiting \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 _login_attempts = {}  # ip -> [attempt_count, first_attempt_time]
@@ -261,6 +262,72 @@ LOGIN_RATE_WINDOW = 900    # window in seconds (15 min)
 
 # \u2500\u2500 Session config \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 SESSION_EXPIRY_DAYS = 30
+
+
+def _make_token(payload):
+    """Create an HMAC-signed stateless token (no DB sessions needed)."""
+    payload['iat'] = time.time()
+    payload['exp'] = payload['iat'] + SESSION_EXPIRY_DAYS * 86400
+    raw = base64.urlsafe_b64encode(json.dumps(payload, separators=(',', ':')).encode()).decode().rstrip('=')
+    sig = hmac.new(AUTH_SECRET.encode(), raw.encode(), hashlib.sha256).hexdigest()
+    return raw + '.' + sig
+
+
+def _verify_token(token):
+    """Verify HMAC signature and return decoded payload, or None."""
+    if not token or '.' not in token:
+        return None
+    parts = token.split('.', 1)
+    raw, sig = parts[0], parts[1]
+    expected = hmac.new(AUTH_SECRET.encode(), raw.encode(), hashlib.sha256).hexdigest()
+    if not hmac.compare_digest(sig, expected):
+        return None
+    try:
+        payload = json.loads(base64.urlsafe_b64decode(raw + '=='))
+    except Exception:
+        return None
+    if payload.get('exp', 0) < time.time():
+        return None
+    return payload
+
+
+def create_session(user_id, conn=None):
+    """Create a stateless JWT token containing user info (no DB sessions table)."""
+    try:
+        if conn is None:
+            own = True
+            conn = sqlite3.connect(AUTH_DB_PATH, timeout=30)
+        else:
+            own = False
+        c = conn.cursor()
+        c.execute('SELECT name, email, role, COALESCE(email_verified, 0), COALESCE(leads_used, 0), COALESCE(subscription_tier, "free") FROM users WHERE id = ?', (user_id,))
+        row = c.fetchone()
+        if not row:
+            if own: conn.close()
+            return None
+        payload = {
+            'uid': user_id, 'name': row[0], 'email': row[1], 'role': row[2],
+            'ev': bool(row[3]), 'lu': row[4], 'st': row[5],
+        }
+        if own: conn.close()
+        token = _make_token(payload)
+        return token
+    except Exception as e:
+        print(f"[auth] Session create failed: {e}", flush=True)
+        return None
+
+
+def get_user_from_token(token):
+    """Verify stateless token and return user dict (no DB queries)."""
+    payload = _verify_token(token)
+    if not payload:
+        return None
+    return {
+        'id': payload['uid'], 'name': payload['name'], 'email': payload['email'],
+        'role': payload['role'], 'email_verified': payload['ev'],
+        'leads_used': payload['lu'], 'subscription_tier': payload['st'],
+    }
+
 
 def init_auth_db():
     from db import init_auth_db as _init
@@ -280,62 +347,6 @@ def hash_password(password, salt=None):
 
 def verify_password(password, hash_val, salt):
     return hash_password(password, salt)[0] == hash_val
-
-def create_session(user_id, conn=None):
-    token = secrets.token_hex(32)
-    try:
-        if conn is None:
-            conn = sqlite3.connect(AUTH_DB_PATH, timeout=30)
-            own_conn = True
-        else:
-            own_conn = False
-        c = conn.cursor()
-        c.execute('INSERT INTO sessions (user_id, token, created_at) VALUES (?, ?, ?)',
-                  (user_id, token, datetime.now().isoformat()))
-        if own_conn:
-            conn.commit()
-            conn.close()
-        print(f"[auth] Session created: user={user_id} token={token[:16]}... path={AUTH_DB_PATH}", flush=True)
-    except Exception as e:
-        print(f"[auth] Session CREATE failed: {e}", flush=True)
-        return None
-    return token
-
-def get_user_from_token(token):
-    if not token:
-        return None
-    try:
-        conn = sqlite3.connect(AUTH_DB_PATH, timeout=30)
-        conn.execute('PRAGMA journal_mode=WAL')
-        conn.row_factory = sqlite3.Row
-        c = conn.cursor()
-        print(f"[auth] get_user_from_token: path={AUTH_DB_PATH} exists={os.path.exists(AUTH_DB_PATH)}", flush=True)
-        c.execute("SELECT user_id, created_at FROM sessions WHERE token = ?", (token,))
-        srow = c.fetchone()
-        if srow is None:
-            conn.close()
-            print(f"[auth] Session NOT FOUND for token={token[:16]}...", flush=True)
-            return None
-        print(f"[auth] Session FOUND: user_id={srow['user_id']} created_at={srow['created_at']}", flush=True)
-        c.execute('''SELECT id, name, email, role, created_at,
-                     COALESCE(email_verified, 0) AS email_verified,
-                     COALESCE(leads_used, 0) AS leads_used,
-                     COALESCE(subscription_tier, 'free') AS subscription_tier
-                     FROM users WHERE id = ?''', (srow['user_id'],))
-        row = c.fetchone()
-        conn.close()
-        if row is None:
-            print(f"[auth] User NOT FOUND for id={srow['user_id']}", flush=True)
-            return None
-        r = dict(row)
-        print(f"[auth] User FOUND: {r['name']} role={r['role']}", flush=True)
-        return {'id': r['id'], 'name': r['name'], 'email': r['email'], 'role': r['role'], 'created_at': r['created_at'],
-                'email_verified': bool(r['email_verified']), 'leads_used': r['leads_used'], 'subscription_tier': r['subscription_tier']}
-    except Exception as e:
-        print(f"[auth] EXCEPTION in session query: {e}", flush=True)
-        import traceback
-        traceback.print_exc()
-        return None
 
 def get_lead_limit(user):
     if not user:
@@ -3244,18 +3255,10 @@ class Handler(BaseHTTPRequestHandler):
         elif parsed.path == '/api/auth/refresh':
             user = require_auth(self)
             if not user: return
-            conn = sqlite3.connect(AUTH_DB_PATH, timeout=30)
-            c = conn.cursor()
-            new_token = secrets.token_hex(32)
-            auth = self.headers.get('Authorization', '')
-            old = auth[7:] if auth.startswith('Bearer ') else ''
-            if old:
-                c.execute('UPDATE sessions SET token = ?, created_at = ? WHERE token = ?',
-                          (new_token, datetime.now().isoformat(), old))
-            else:
-                new_token = create_session(user['id'])
-            conn.commit()
-            conn.close()
+            new_token = create_session(user['id'])
+            if not new_token:
+                self._json(500, {'error': 'Failed to create token'})
+                return
             user['email_verified'] = bool(user.get('email_verified'))
             self._json(200, {'token': new_token, 'user': user})
         elif parsed.path == '/api/auth/extension-token':
