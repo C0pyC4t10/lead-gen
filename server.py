@@ -1498,37 +1498,7 @@ def _extract_facebook_page(fb_url):
           if (!fm) { var ftm = fullText.match(/([\\d,.]+[KkMmBb]?)\\s*(?:\\w+\\s+)?(?:followers?|likes?)/i); if (ftm) fm = ftm; }
           if (fm) d.followers = fm[1];
 
-          var ogDesc = (document.querySelector('meta[property="og:description"]') || {}).content || '';
-          var ogTitle = (document.querySelector('meta[property="og:title"]') || {}).content || '';
-
-          // Extract phone from og:description (FB sometimes includes it here for SEO)
-          if (!d.phone && ogDesc) {
-            var ogClean = ogDesc.replace(/[\s\-\(\)\.]/g, '');
-            var ogPhoneMatch = ogClean.match(/(?:\+?88)?0?1[3-9]\d{8}/);
-            if (ogPhoneMatch) {
-              var pn = ogPhoneMatch[0].replace(/^\+/, '');
-              if (pn.startsWith('880')) pn = '+' + pn;
-              else if (pn.startsWith('01')) pn = '+880' + pn.slice(1);
-              else if (pn.startsWith('1')) pn = '+880' + pn;
-              d.phone = pn;
-            }
-          }
-
-          // Extract email from og:description
-          if (!d.email && ogDesc) {
-            var ogEm = ogDesc.match(/[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}/);
-            if (ogEm && !/(facebook|fb\.com|sentry|example|meta)/i.test(ogEm[0])) {
-              d.email = ogEm[0].toLowerCase();
-            }
-          }
-
-          // Better business_name from og:title (strip " | Facebook", "- Home | Facebook", etc.)
-          if (!d.business_name && ogTitle) {
-            var t = ogTitle.replace(/\s*[|\-–]\s*(Facebook\s*$|Home\s*\|\s*Facebook)/i, '').trim();
-            if (t && !/^facebook$/i.test(t) && t.length > 1) d.business_name = t;
-          }
-
-          var emailExcl = ['facebook.com', 'fb.com', 'sentry.io', 'example.com', '.png', '.jpg', '.svg', '.gif', 'w3.org', 'schema.org', 'google.com', 'googleapis.com', 'play.google', 'support.google', 'policies.google', 'developers.facebook', 'about.meta', 'meta.com'];
+          var emailExcl = ['facebook.com', 'fb.com', 'sentry.io', 'example.com', '.png', '.jpg', '.svg', '.gif', 'w3.org', 'schema.org', 'google.com', 'googleapis.com', 'play.google', 'support.google', 'policies.google', 'developers.facebook', 'about.meta'];
           var emailRe = /[a-zA-Z0-9._%+\\-]+@[a-zA-Z0-9.\\-]+\\.[a-zA-Z]{2,}/g;
           var emailResults = [];
           var emailSeen = {};
