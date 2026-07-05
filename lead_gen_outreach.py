@@ -2074,6 +2074,23 @@ def _build_order_page(name: str, phone: str, canonical: str,
 
     header = _build_header(name, phone, canonical, 'order')
 
+    _cart_items_html = ''.join(
+        f'''<div class="cart-item" data-product="{p}" data-price="{pr}">
+                    <div class="cart-item-img">{p[:2].upper()}</div>
+                    <div class="cart-item-body">
+                      <div class="cart-item-name">{p}</div>
+                      <div class="cart-item-price">\u09F3{pr}</div>
+                    </div>
+                    <div class="cart-item-qty">
+                      <button class="cart-qty-btn" data-action="minus">\u2212</button>
+                      <span class="cart-qty-val">1</span>
+                      <button class="cart-qty-btn" data-action="plus">+</button>
+                    </div>
+                    <div class="cart-item-total">\u09f3{pr}</div>
+                  </div>'''
+        for p, pr in zip(products, prices)
+    )
+
     html = f'''<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -2119,22 +2136,7 @@ def _build_order_page(name: str, phone: str, canonical: str,
                 <span class="lang-en">Your Cart</span>
               </h3>
               <div id="cartItems">
-                {''.join(
-                  f'''<div class="cart-item" data-product="{p}" data-price="{pr}">
-                    <div class="cart-item-img">{p[:2].upper()}</div>
-                    <div class="cart-item-body">
-                      <div class="cart-item-name">{p}</div>
-                      <div class="cart-item-price">\u09F3{pr}</div>
-                    </div>
-                    <div class="cart-item-qty">
-                      <button class="cart-qty-btn" data-action="minus">\u2212</button>
-                      <span class="cart-qty-val">1</span>
-                      <button class="cart-qty-btn" data-action="plus">+</button>
-                    </div>
-                    <div class="cart-item-total">\u09f3{pr}</div>
-                  </div>'''
-                  for p, pr in zip(products, prices)
-                )}
+                {_cart_items_html}
               </div>
               <div class="cart-note">
                 <label><span class="lang-bn">\u09ac\u09bf\u09b6\u09c7\u09b7 \u09a8\u09bf\u09b0\u09cd\u09a6\u09c7\u09b6\u09a8\u09be</span><span class="lang-en">Special Note</span></label>

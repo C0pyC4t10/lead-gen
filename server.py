@@ -487,6 +487,8 @@ def send_telegram_notification(lead, action='saved'):
     saved_by = (lead.get('saved_by_user_name') or '').strip()
     _em_dash = '\u2014'
     saved_by_line = f'\n\u1f464 Saved by: <b>{h(saved_by) or _em_dash}</b>' if saved_by else ''
+    _open_hours_prefix = '\u1f550 '
+    _last_post_prefix = '\u1f4c5 Last Post: '
 
     message = f"""{action_emoji} <b>{h(action_text)}</b>{source_line}{saved_by_line}
 \u1f3e2 <b>{h(lead.get('business_name', 'Unknown'))}</b>
@@ -497,7 +499,7 @@ def send_telegram_notification(lead, action='saved'):
 \u1f4e7 Email: {h(lead.get('email', 'Not found'))}
 \u1f310 Website: {h(has_site)}{f' ({h(website)})' if website else ''}
 \u1f4cd Address: {h(addr)}
-{'\u1f550 ' + h(open_state) + (' (' + h(hours_text) + ')' if hours_text else '') if lead.get('platform') == 'google_maps' and open_state else '\u1f4c5 Last Post: ' + h(lpd)}
+{_open_hours_prefix + h(open_state) + (' (' + h(hours_text) + ')' if hours_text else '') if lead.get('platform') == 'google_maps' and open_state else _last_post_prefix + h(lpd)}
 \u1f4dd Notes: {h(notes)}
 \u1f4cc Follow-up: {h(fud if fud else 'Not set')}
 \u1f517 {h(lead.get('page_url', ''))}{trojan_line}{file_info}{qualified_footer}"""
