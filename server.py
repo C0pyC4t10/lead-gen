@@ -3858,6 +3858,18 @@ if __name__ == '__main__':
     init_auth_db()
     leads_db.init_db()
 
+    # Pre-warm Playwright browser so first extraction is fast
+    try:
+        from playwright.sync_api import sync_playwright
+        _PLAYWRIGHT_INSTANCE = sync_playwright().start()
+        _PLAYWRIGHT_BROWSER = _PLAYWRIGHT_INSTANCE.chromium.launch(
+            headless=True,
+            args=['--disable-blink-features=AutomationControlled']
+        )
+        print('[playwright] Browser pre-warmed for fast extraction', flush=True)
+    except Exception as e:
+        print(f'[playwright] Pre-warm failed: {e}', flush=True)
+
     # Register Telegram bot commands
     if TELEGRAM_TOKEN:
         for api_base in (BOT_API, "https://api.telegram.org/bot"):
