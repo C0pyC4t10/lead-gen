@@ -1577,6 +1577,22 @@ def _extract_facebook_page(fb_url):
             var raw = telLinks[ti].getAttribute('href').replace('tel:', '').split(/[;,#]/)[0].trim();
             if (raw) addPhone(raw);
           }
+          // WhatsApp: scan wa.me/ and api.whatsapp.com/ links + whatsapp: protocol
+          var waAnchors = document.querySelectorAll('a[href*="wa.me/"], a[href*="whatsapp.com/send"], a[href*="whatsapp.com/message"], a[href*="api.whatsapp.com"], a[href^="whatsapp:"]');
+          for (var wi = 0; wi < waAnchors.length; wi++) {
+            var wa = waAnchors[wi].getAttribute('href') || '';
+            var wm = wa.match(/wa\.me\/([+\d]+)/) || wa.match(/phone=([+\d]+)/) || wa.match(/whatsapp:([+\d]+)/);
+            if (wm) { addPhone(wm[1]); }
+          }
+          // Also check innerHTML for wa.me references (FB often hides these in script tags)
+          var allHtml = document.documentElement.innerHTML || '';
+          var waRefs = allHtml.match(/(?:wa\.me\/|whatsapp\.com\/send\?phone=|whatsapp\.com\/message\/\?to=|whatsapp:)([+\d]{10,15})/g);
+          if (waRefs) {
+            for (var wj = 0; wj < waRefs.length; wj++) {
+              var wjm = waRefs[wj].match(/([+\d]{10,15})$/);
+              if (wjm) addPhone(wjm[1]);
+            }
+          }
           var contactSels2 = document.querySelectorAll('[data-pagelet="ProfileCards"],[data-pagelet="PageHeader"],[role="main"],[aria-label*="about" i]');
           for (var ci = 0; ci < contactSels2.length; ci++) {
             var ct = contactSels2[ci].textContent || '';
@@ -1941,9 +1957,19 @@ def _extract_facebook_page(fb_url):
                 page.wait_for_timeout(1500)
                 mbasic_text = page.evaluate('() => document.body ? document.body.innerText : ""')
                 mbasic_clean = re.sub(r'\s', '', mbasic_text)
+                # WhatsApp links — extract phone from wa.me/ or whatsapp.com/send?phone=
+                if not result.get('phone'):
+                    wa_matches = re.findall(r'(?:wa\.me/|whatsapp\.com/send\?phone=|whatsapp\.com/message/\?to=|whatsapp:)(\+?\d{10,15})', mbasic_text)
+                    for raw in wa_matches:
+                        n = raw.lstrip('+')
+                        if n.startswith('880'): n = '+' + n
+                        elif n.startswith('01'): n = '+880' + n[1:]
+                        else: continue
+                        if re.match(r'^\+8801[3-9]\d{8}$', n):
+                            result['phone'] = n
+                            break
                 # Try all BD phone patterns: with/without +88, with spaces/dashes preserved
                 if not result.get('phone'):
-                    # Strip formatting then match
                     candidates = re.findall(r'(?:\+?88)?0?1[3-9]\d{8}', mbasic_clean)
                     seen = set()
                     for raw in candidates:
