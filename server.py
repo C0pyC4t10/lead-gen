@@ -2372,7 +2372,7 @@ class Handler(BaseHTTPRequestHandler):
             if user['role'] not in ('admin', 'super_admin'):
                 self._json(403, {'error': 'Forbidden'})
                 return
-            conn = sqlite3.connect(AUTH_DB_PATH)
+            conn = sqlite3.connect(AUTH_DB_PATH, timeout=30)
             c = conn.cursor()
             c.execute('SELECT id, name, email, role, created_at FROM users ORDER BY id')
             users = [{'id': r[0], 'name': r[1], 'email': r[2], 'role': r[3], 'created_at': r[4]} for r in c.fetchall()]
@@ -2385,7 +2385,7 @@ class Handler(BaseHTTPRequestHandler):
                 self._json(403, {'error': 'Forbidden'})
                 return
             leads = read_all_leads(include_all_users=True)
-            conn = sqlite3.connect(AUTH_DB_PATH)
+            conn = sqlite3.connect(AUTH_DB_PATH, timeout=30)
             c = conn.cursor()
             c.execute('SELECT COUNT(*) FROM users')
             user_count = c.fetchone()[0]
@@ -2451,7 +2451,7 @@ class Handler(BaseHTTPRequestHandler):
             user = require_auth(self)
             if not user: return
             config = leads_db.get_telegram_config(user['id'])
-            conn = sqlite3.connect(AUTH_DB_PATH)
+            conn = sqlite3.connect(AUTH_DB_PATH, timeout=30)
             c = conn.cursor()
             c.execute('SELECT COALESCE(telegram_notifications, 1) FROM users WHERE id = ?', (user['id'],))
             row = c.fetchone()
@@ -2588,7 +2588,7 @@ class Handler(BaseHTTPRequestHandler):
                 if 'notify_telegram' in data:
                     user_notify = bool(data.get('notify_telegram'))
                 else:
-                    conn_pref = sqlite3.connect(AUTH_DB_PATH)
+                    conn_pref = sqlite3.connect(AUTH_DB_PATH, timeout=30)
                     c_pref = conn_pref.cursor()
                     c_pref.execute('SELECT COALESCE(telegram_notifications, 1) FROM users WHERE id = ?', (user['id'],))
                     pref_row = c_pref.fetchone()
@@ -2604,7 +2604,7 @@ class Handler(BaseHTTPRequestHandler):
             if msg == 'duplicate':
                 self._json(200, {'status': 'duplicate', 'message': 'Lead already exists, skipped'})
             elif is_new:
-                conn = sqlite3.connect(AUTH_DB_PATH)
+                conn = sqlite3.connect(AUTH_DB_PATH, timeout=30)
                 c = conn.cursor()
                 c.execute('UPDATE users SET leads_used = leads_used + 1 WHERE id = ?', (user['id'],))
                 conn.commit()
@@ -3142,7 +3142,7 @@ class Handler(BaseHTTPRequestHandler):
             if not code:
                 self._json(400, {'error': 'Verification code required'})
                 return
-            conn = sqlite3.connect(AUTH_DB_PATH)
+            conn = sqlite3.connect(AUTH_DB_PATH, timeout=30)
             c = conn.cursor()
             c.execute('SELECT verification_code, verification_expires FROM users WHERE id = ?', (user['id'],))
             row = c.fetchone()
@@ -3175,7 +3175,7 @@ class Handler(BaseHTTPRequestHandler):
                 return
             code = ''.join(secrets.choice(string.digits) for _ in range(6))
             exp = str(datetime.now().timestamp() + 600)
-            conn = sqlite3.connect(AUTH_DB_PATH)
+            conn = sqlite3.connect(AUTH_DB_PATH, timeout=30)
             c = conn.cursor()
             c.execute('UPDATE users SET verification_code = ?, verification_expires = ? WHERE id = ?',
                       (code, exp, user['id']))
@@ -3225,20 +3225,24 @@ class Handler(BaseHTTPRequestHandler):
                 return
             _login_attempts.pop(client_ip, None)
             print(f"[auth] LOGIN success: user={row[0]} email={email}", flush=True)
+            print(f"[auth] Calling create_session with conn={conn}", flush=True)
             token = create_session(row[0], conn)
+            print(f"[auth] create_session returned token={'...' if token else 'None'}", flush=True)
             if not token:
                 conn.close()
                 print(f"[auth] Login FAILED: session creation returned None", flush=True)
                 self._json(500, {'error': 'Failed to create session'})
                 return
+            print(f"[auth] About to conn.commit()", flush=True)
             conn.commit()
+            print(f"[auth] conn.commit() done", flush=True)
             conn.close()
             print(f"[auth] Login response: token={token[:20]}... user={row[1]}", flush=True)
             self._json(200, {'token': token, 'user': {'id': row[0], 'name': row[1], 'email': row[2], 'role': row[3], 'email_verified': bool(row[6]), 'leads_used': row[7], 'subscription_tier': row[8]}})
         elif parsed.path == '/api/auth/refresh':
             user = require_auth(self)
             if not user: return
-            conn = sqlite3.connect(AUTH_DB_PATH)
+            conn = sqlite3.connect(AUTH_DB_PATH, timeout=30)
             c = conn.cursor()
             new_token = secrets.token_hex(32)
             auth = self.headers.get('Authorization', '')
@@ -3268,7 +3272,7 @@ class Handler(BaseHTTPRequestHandler):
             if tg is None:
                 self._json(400, {'error': 'telegram_notifications required'})
                 return
-            conn = sqlite3.connect(AUTH_DB_PATH)
+            conn = sqlite3.connect(AUTH_DB_PATH, timeout=30)
             c = conn.cursor()
             c.execute('UPDATE users SET telegram_notifications = ? WHERE id = ?', (1 if tg else 0, user['id']))
             conn.commit()
@@ -3288,7 +3292,7 @@ class Handler(BaseHTTPRequestHandler):
             auth = self.headers.get('Authorization', '')
             if auth.startswith('Bearer '):
                 token = auth[7:]
-                conn = sqlite3.connect(AUTH_DB_PATH)
+                conn = sqlite3.connect(AUTH_DB_PATH, timeout=30)
                 c = conn.cursor()
                 c.execute('DELETE FROM sessions WHERE token = ?', (token,))
                 conn.commit()
@@ -3305,7 +3309,7 @@ class Handler(BaseHTTPRequestHandler):
             if not name:
                 self._json(400, {'error': 'Name is required'})
                 return
-            conn = sqlite3.connect(AUTH_DB_PATH)
+            conn = sqlite3.connect(AUTH_DB_PATH, timeout=30)
             c = conn.cursor()
             if email and email != user['email']:
                 c.execute('SELECT id FROM users WHERE email = ? AND id != ?', (email, user['id']))
@@ -3329,7 +3333,7 @@ class Handler(BaseHTTPRequestHandler):
             if not email:
                 self._json(400, {'error': 'Email required'})
                 return
-            conn = sqlite3.connect(AUTH_DB_PATH)
+            conn = sqlite3.connect(AUTH_DB_PATH, timeout=30)
             c = conn.cursor()
             c.execute('SELECT id FROM users WHERE email = ?', (email,))
             row = c.fetchone()
@@ -3357,7 +3361,7 @@ class Handler(BaseHTTPRequestHandler):
             if len(new_password) < 6:
                 self._json(400, {'error': 'Password must be at least 6 characters'})
                 return
-            conn = sqlite3.connect(AUTH_DB_PATH)
+            conn = sqlite3.connect(AUTH_DB_PATH, timeout=30)
             c = conn.cursor()
             c.execute('SELECT id, password_reset_expires FROM users WHERE password_reset_token = ?', (token,))
             row = c.fetchone()
@@ -3389,7 +3393,7 @@ class Handler(BaseHTTPRequestHandler):
             if len(new_password) < 6:
                 self._json(400, {'error': 'New password must be at least 6 characters'})
                 return
-            conn = sqlite3.connect(AUTH_DB_PATH)
+            conn = sqlite3.connect(AUTH_DB_PATH, timeout=30)
             c = conn.cursor()
             c.execute('SELECT password_hash, password_salt FROM users WHERE id = ?', (user['id'],))
             row = c.fetchone()
@@ -3419,7 +3423,7 @@ class Handler(BaseHTTPRequestHandler):
             if int(user_id) == user['id']:
                 self._json(400, {'error': 'Cannot delete yourself'})
                 return
-            conn = sqlite3.connect(AUTH_DB_PATH)
+            conn = sqlite3.connect(AUTH_DB_PATH, timeout=30)
             c = conn.cursor()
             c.execute('SELECT role FROM users WHERE id = ?', (user_id,))
             target_row = c.fetchone()
@@ -3455,7 +3459,7 @@ class Handler(BaseHTTPRequestHandler):
             if int(target_id) == user['id']:
                 self._json(400, {'error': 'Cannot change your own role'})
                 return
-            conn = sqlite3.connect(AUTH_DB_PATH)
+            conn = sqlite3.connect(AUTH_DB_PATH, timeout=30)
             c = conn.cursor()
             c.execute('SELECT role FROM users WHERE id = ?', (target_id,))
             target_row = c.fetchone()
