@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""lead_gen_outreach.py — Shopify 2026 e-commerce demo generator.
+"""lead_gen_outreach.py \u2014 Shopify 2026 e-commerce demo generator.
 
 Generates multi-page (index, products, order) Shopify-style websites
 with per-category design tokens, Bengali/English toggle, WhatsApp ordering.
@@ -13,7 +13,7 @@ import re
 import sys
 from typing import Dict, List, Tuple, Optional
 
-# ── Category Products ────────────────────────────────────────────────
+# \u2500\u2500 Category Products \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 CATEGORY_PRODUCTS: Dict[str, List[str]] = {
     "fashion": ["Kameez Collection", "Saree Set", "Hijab Pack", "Panjabi Set", "Salwar Suit", "Silk Dupatta", "Cotton Kurti", "Designer Lehenga", "Boys Kurta Set", "Girls Frock"],
     "jewelry": ["Necklace Set", "Earring Pair", "Bangle Set", "Ring", "Anklet", "Mangalsutra", "Nose Pin", "Pendant Set", "Toe Ring", "Cufflinks"],
@@ -103,25 +103,25 @@ CATEGORY_PRODUCT_SUBCATS: Dict[str, List[str]] = {
 }
 
 CATEGORY_BENGALI_NAMES: Dict[str, str] = {
-    "fashion": "ফ্যাশন",
-    "jewelry": "জুয়েলারি",
-    "skincare": "স্কিনকেয়ার",
-    "baby": "বেবি প্রোডাক্ট",
-    "home": "হোম এন্ড কিচেন",
-    "restaurant": "রেস্টুরেন্ট",
-    "beauty": "বিউটি",
-    "retail": "রিটেইল",
-    "education": "এডুকেশন",
-    "healthcare": "হেলথকেয়ার",
-    "pharmacy": "ফার্মেসি",
-    "fitness": "ফিটনেস",
-    "automotive": "অটোমোটিভ",
-    "manufacturing": "ম্যানুফ্যাকচারিং",
-    "agriculture": "এগ্রিকালচার",
-    "hotel": "হোটেল",
-    "realestate": "রিয়েল এস্টেট",
-    "services": "সার্ভিস",
-    "general": "জেনারেল",
+    "fashion": "\u09ab\u09cd\u09af\u09be\u09b6\u09a8",
+    "jewelry": "\u099c\u09c1\u09af\u09bc\u09c7\u09b2\u09be\u09b0\u09bf",
+    "skincare": "\u09b8\u09cd\u0995\u09bf\u09a8\u0995\u09c7\u09af\u09bc\u09be\u09b0",
+    "baby": "\u09ac\u09c7\u09ac\u09bf \u09aa\u09cd\u09b0\u09cb\u09a1\u09be\u0995\u09cd\u099f",
+    "home": "\u09b9\u09cb\u09ae \u098f\u09a8\u09cd\u09a1 \u0995\u09bf\u099a\u09c7\u09a8",
+    "restaurant": "\u09b0\u09c7\u09b8\u09cd\u099f\u09c1\u09b0\u09c7\u09a8\u09cd\u099f",
+    "beauty": "\u09ac\u09bf\u0989\u099f\u09bf",
+    "retail": "\u09b0\u09bf\u099f\u09c7\u0987\u09b2",
+    "education": "\u098f\u09a1\u09c1\u0995\u09c7\u09b6\u09a8",
+    "healthcare": "\u09b9\u09c7\u09b2\u09a5\u0995\u09c7\u09af\u09bc\u09be\u09b0",
+    "pharmacy": "\u09ab\u09be\u09b0\u09cd\u09ae\u09c7\u09b8\u09bf",
+    "fitness": "\u09ab\u09bf\u099f\u09a8\u09c7\u09b8",
+    "automotive": "\u0985\u099f\u09cb\u09ae\u09cb\u099f\u09bf\u09ad",
+    "manufacturing": "\u09ae\u09cd\u09af\u09be\u09a8\u09c1\u09ab\u09cd\u09af\u09be\u0995\u099a\u09be\u09b0\u09bf\u0982",
+    "agriculture": "\u098f\u0997\u09cd\u09b0\u09bf\u0995\u09be\u09b2\u099a\u09be\u09b0",
+    "hotel": "\u09b9\u09cb\u099f\u09c7\u09b2",
+    "realestate": "\u09b0\u09bf\u09af\u09bc\u09c7\u09b2 \u098f\u09b8\u09cd\u099f\u09c7\u099f",
+    "services": "\u09b8\u09be\u09b0\u09cd\u09ad\u09bf\u09b8",
+    "general": "\u099c\u09c7\u09a8\u09be\u09b0\u09c7\u09b2",
 }
 
 CATEGORY_STORE_NAMES: Dict[str, str] = {
@@ -147,47 +147,47 @@ CATEGORY_STORE_NAMES: Dict[str, str] = {
 }
 
 CATEGORY_STAT_ITEMS: Dict[str, List[Tuple[str, str, str]]] = {
-    "fashion": [("👗", "500+", "Styles Available"), ("⭐", "4.8", "Customer Rating"), ("🚚", "1000+", "Orders Delivered"), ("🏙️", "30+", "Cities Served")],
-    "jewelry": [("💍", "300+", "Designs"), ("⭐", "4.9", "Rating"), ("📦", "500+", "Delivered"), ("🏪", "2", "Showrooms")],
-    "skincare": [("🧴", "50+", "Products"), ("⭐", "4.7", "Rating"), ("📦", "2000+", "Sold"), ("🧪", "100%", "Original")],
-    "baby": [("👶", "200+", "Products"), ("⭐", "4.8", "Rating"), ("📦", "3000+", "Delivered"), ("✅", "Safe", "Materials")],
-    "home": [("🏠", "300+", "Products"), ("⭐", "4.7", "Rating"), ("📦", "1500+", "Delivered"), ("🏪", "1", "Showroom")],
-    "restaurant": [("🍽️", "200+", "Menu Items"), ("⭐", "4.8", "Rating"), ("👥", "5000+", "Happy Customers"), ("🏆", "5+", "Awards")],
-    "beauty": [("💇", "5000+", "Happy Clients"), ("⭐", "4.8", "Rating"), ("📦", "10000+", "Orders"), ("🏆", "3+", "Awards")],
-    "retail": [("📦", "5000+", "Products"), ("⭐", "4.7", "Rating"), ("🚚", "10000+", "Orders"), ("🏪", "3", "Stores")],
-    "education": [("📚", "50+", "Courses"), ("⭐", "4.8", "Rating"), ("👨‍🎓", "2000+", "Students"), ("🏆", "10+", "Years")],
-    "healthcare": [("🏥", "20+", "Years"), ("⭐", "4.9", "Rating"), ("👥", "10000+", "Patients"), ("🏆", "Trusted", "Provider")],
-    "pharmacy": [("💊", "1000+", "Medicines"), ("⭐", "4.8", "Rating"), ("🚚", "5000+", "Deliveries"), ("✅", "100%", "Genuine")],
-    "fitness": [("💪", "500+", "Members"), ("⭐", "4.8", "Rating"), ("🏋️", "50+", "Programs"), ("🏆", "5+", "Years")],
-    "automotive": [("🔧", "5000+", "Cars Serviced"), ("⭐", "4.7", "Rating"), ("🛠️", "20+", "Years"), ("🏆", "Certified", "Techs")],
-    "manufacturing": [("🏭", "25+", "Years"), ("⭐", "4.8", "Rating"), ("📦", "10000+", "Units"), ("✅", "ISO", "Certified")],
-    "agriculture": [("🌾", "30+", "Years"), ("⭐", "4.7", "Rating"), ("🚜", "200+", "Farmers"), ("✅", "Organic", "Certified")],
-    "hotel": [("🛏️", "50+", "Rooms"), ("⭐", "4.7", "Rating"), ("👥", "10000+", "Guests"), ("🏆", "4-Star", "Rating")],
-    "realestate": [("🏠", "500+", "Properties"), ("⭐", "4.8", "Rating"), ("👥", "2000+", "Clients"), ("🤝", "10+", "Years")],
-    "services": [("⭐", "4.8", "Rating"), ("👥", "2000+", "Clients"), ("🔧", "5000+", "Jobs Done"), ("🏆", "10+", "Years")],
-    "general": [("⭐", "4.8", "Rating"), ("👥", "1000+", "Clients"), ("📦", "5000+", "Delivered"), ("🏆", "5+", "Years")],
+    "fashion": [("\u1f457", "500+", "Styles Available"), ("\u2b50", "4.8", "Customer Rating"), ("\u1f69a", "1000+", "Orders Delivered"), ("\u1f3d9\ufe0f", "30+", "Cities Served")],
+    "jewelry": [("\u1f48d", "300+", "Designs"), ("\u2b50", "4.9", "Rating"), ("\u1f4e6", "500+", "Delivered"), ("\u1f3ea", "2", "Showrooms")],
+    "skincare": [("\u1f9f4", "50+", "Products"), ("\u2b50", "4.7", "Rating"), ("\u1f4e6", "2000+", "Sold"), ("\u1f9ea", "100%", "Original")],
+    "baby": [("\u1f476", "200+", "Products"), ("\u2b50", "4.8", "Rating"), ("\u1f4e6", "3000+", "Delivered"), ("\u2705", "Safe", "Materials")],
+    "home": [("\u1f3e0", "300+", "Products"), ("\u2b50", "4.7", "Rating"), ("\u1f4e6", "1500+", "Delivered"), ("\u1f3ea", "1", "Showroom")],
+    "restaurant": [("\u1f37d\ufe0f", "200+", "Menu Items"), ("\u2b50", "4.8", "Rating"), ("\u1f465", "5000+", "Happy Customers"), ("\u1f3c6", "5+", "Awards")],
+    "beauty": [("\u1f487", "5000+", "Happy Clients"), ("\u2b50", "4.8", "Rating"), ("\u1f4e6", "10000+", "Orders"), ("\u1f3c6", "3+", "Awards")],
+    "retail": [("\u1f4e6", "5000+", "Products"), ("\u2b50", "4.7", "Rating"), ("\u1f69a", "10000+", "Orders"), ("\u1f3ea", "3", "Stores")],
+    "education": [("\u1f4da", "50+", "Courses"), ("\u2b50", "4.8", "Rating"), ("\u1f468\u200d\u1f393", "2000+", "Students"), ("\u1f3c6", "10+", "Years")],
+    "healthcare": [("\u1f3e5", "20+", "Years"), ("\u2b50", "4.9", "Rating"), ("\u1f465", "10000+", "Patients"), ("\u1f3c6", "Trusted", "Provider")],
+    "pharmacy": [("\u1f48a", "1000+", "Medicines"), ("\u2b50", "4.8", "Rating"), ("\u1f69a", "5000+", "Deliveries"), ("\u2705", "100%", "Genuine")],
+    "fitness": [("\u1f4aa", "500+", "Members"), ("\u2b50", "4.8", "Rating"), ("\u1f3cb\ufe0f", "50+", "Programs"), ("\u1f3c6", "5+", "Years")],
+    "automotive": [("\u1f527", "5000+", "Cars Serviced"), ("\u2b50", "4.7", "Rating"), ("\u1f6e0\ufe0f", "20+", "Years"), ("\u1f3c6", "Certified", "Techs")],
+    "manufacturing": [("\u1f3ed", "25+", "Years"), ("\u2b50", "4.8", "Rating"), ("\u1f4e6", "10000+", "Units"), ("\u2705", "ISO", "Certified")],
+    "agriculture": [("\u1f33e", "30+", "Years"), ("\u2b50", "4.7", "Rating"), ("\u1f69c", "200+", "Farmers"), ("\u2705", "Organic", "Certified")],
+    "hotel": [("\u1f6cf\ufe0f", "50+", "Rooms"), ("\u2b50", "4.7", "Rating"), ("\u1f465", "10000+", "Guests"), ("\u1f3c6", "4-Star", "Rating")],
+    "realestate": [("\u1f3e0", "500+", "Properties"), ("\u2b50", "4.8", "Rating"), ("\u1f465", "2000+", "Clients"), ("\u1f91d", "10+", "Years")],
+    "services": [("\u2b50", "4.8", "Rating"), ("\u1f465", "2000+", "Clients"), ("\u1f527", "5000+", "Jobs Done"), ("\u1f3c6", "10+", "Years")],
+    "general": [("\u2b50", "4.8", "Rating"), ("\u1f465", "1000+", "Clients"), ("\u1f4e6", "5000+", "Delivered"), ("\u1f3c6", "5+", "Years")],
 }
 
 CATEGORY_TRUST_ITEMS: Dict[str, List[Tuple[str, str]]] = {
-    "fashion": [("🚚", "Fast Delivery"), ("💳", "Cash on Delivery"), ("✅", "100% Original"), ("🔄", "Easy Exchange")],
-    "jewelry": [("🚚", "Fast Delivery"), ("💳", "Cash on Delivery"), ("✅", "Certified"), ("🎁", "Gift Wrapped")],
-    "skincare": [("🚚", "Fast Delivery"), ("💳", "COD Available"), ("✅", "Dermatologist Tested"), ("🧪", "Lab Certified")],
-    "baby": [("🚚", "Fast Delivery"), ("💳", "COD Available"), ("✅", "Baby Safe"), ("🔄", "Easy Return")],
-    "home": [("🚚", "Fast Delivery"), ("💳", "COD Available"), ("✅", "Premium Quality"), ("🔄", "Easy Return")],
-    "restaurant": [("🚚", "Fast Delivery"), ("💳", "Cash on Delivery"), ("✅", "Fresh Food"), ("⭐", "Hygienic")],
-    "beauty": [("🚚", "Fast Delivery"), ("💳", "Cash on Delivery"), ("✅", "100% Original"), ("🔄", "Easy Exchange")],
-    "retail": [("🚚", "Fast Delivery"), ("💳", "Cash on Delivery"), ("✅", "Quality Assured"), ("🔄", "Easy Return")],
-    "education": [("📚", "Expert Faculty"), ("💻", "Modern Labs"), ("🏆", "Certified"), ("🤝", "Career Support")],
-    "healthcare": [("🏥", "Expert Doctors"), ("🔬", "Modern Lab"), ("💊", "Pharmacy"), ("🤝", "24/7 Care")],
-    "pharmacy": [("🚚", "Free Delivery"), ("💳", "COD Available"), ("✅", "100% Genuine"), ("🔬", "Pharmacist Advice")],
-    "fitness": [("💪", "Expert Trainers"), ("🏋️", "Modern Equipment"), ("🧘", "Group Classes"), ("🥗", "Nutrition Guide")],
-    "automotive": [("🔧", "Expert Mechanics"), ("🛡️", "Service Warranty"), ("✅", "Quality Parts"), ("🚗", "Free Pickup")],
-    "manufacturing": [("🏭", "Modern Facility"), ("✅", "QC Tested"), ("📦", "Bulk Orders"), ("🚚", "On-Time")],
-    "agriculture": [("🌾", "Farm Fresh"), ("✅", "Quality Tested"), ("🚜", "Bulk Supply"), ("🌱", "Sustainable")],
-    "hotel": [("🛏️", "Comfort Rooms"), ("🍳", "Free Breakfast"), ("📶", "Free WiFi"), ("🤝", "24/7 Service")],
-    "realestate": [("🏠", "Prime Properties"), ("✅", "Verified Listings"), ("🤝", "Expert Advice"), ("📋", "Paperwork Help")],
-    "services": [("🔧", "Expert Team"), ("✅", "Quality Work"), ("🤝", "Satisfaction"), ("🚀", "Fast Service")],
-    "general": [("⭐", "Quality Service"), ("🤝", "Trusted"), ("🚚", "Fast"), ("💳", "COD")],
+    "fashion": [("\u1f69a", "Fast Delivery"), ("\u1f4b3", "Cash on Delivery"), ("\u2705", "100% Original"), ("\u1f504", "Easy Exchange")],
+    "jewelry": [("\u1f69a", "Fast Delivery"), ("\u1f4b3", "Cash on Delivery"), ("\u2705", "Certified"), ("\u1f381", "Gift Wrapped")],
+    "skincare": [("\u1f69a", "Fast Delivery"), ("\u1f4b3", "COD Available"), ("\u2705", "Dermatologist Tested"), ("\u1f9ea", "Lab Certified")],
+    "baby": [("\u1f69a", "Fast Delivery"), ("\u1f4b3", "COD Available"), ("\u2705", "Baby Safe"), ("\u1f504", "Easy Return")],
+    "home": [("\u1f69a", "Fast Delivery"), ("\u1f4b3", "COD Available"), ("\u2705", "Premium Quality"), ("\u1f504", "Easy Return")],
+    "restaurant": [("\u1f69a", "Fast Delivery"), ("\u1f4b3", "Cash on Delivery"), ("\u2705", "Fresh Food"), ("\u2b50", "Hygienic")],
+    "beauty": [("\u1f69a", "Fast Delivery"), ("\u1f4b3", "Cash on Delivery"), ("\u2705", "100% Original"), ("\u1f504", "Easy Exchange")],
+    "retail": [("\u1f69a", "Fast Delivery"), ("\u1f4b3", "Cash on Delivery"), ("\u2705", "Quality Assured"), ("\u1f504", "Easy Return")],
+    "education": [("\u1f4da", "Expert Faculty"), ("\u1f4bb", "Modern Labs"), ("\u1f3c6", "Certified"), ("\u1f91d", "Career Support")],
+    "healthcare": [("\u1f3e5", "Expert Doctors"), ("\u1f52c", "Modern Lab"), ("\u1f48a", "Pharmacy"), ("\u1f91d", "24/7 Care")],
+    "pharmacy": [("\u1f69a", "Free Delivery"), ("\u1f4b3", "COD Available"), ("\u2705", "100% Genuine"), ("\u1f52c", "Pharmacist Advice")],
+    "fitness": [("\u1f4aa", "Expert Trainers"), ("\u1f3cb\ufe0f", "Modern Equipment"), ("\u1f9d8", "Group Classes"), ("\u1f957", "Nutrition Guide")],
+    "automotive": [("\u1f527", "Expert Mechanics"), ("\u1f6e1\ufe0f", "Service Warranty"), ("\u2705", "Quality Parts"), ("\u1f697", "Free Pickup")],
+    "manufacturing": [("\u1f3ed", "Modern Facility"), ("\u2705", "QC Tested"), ("\u1f4e6", "Bulk Orders"), ("\u1f69a", "On-Time")],
+    "agriculture": [("\u1f33e", "Farm Fresh"), ("\u2705", "Quality Tested"), ("\u1f69c", "Bulk Supply"), ("\u1f331", "Sustainable")],
+    "hotel": [("\u1f6cf\ufe0f", "Comfort Rooms"), ("\u1f373", "Free Breakfast"), ("\u1f4f6", "Free WiFi"), ("\u1f91d", "24/7 Service")],
+    "realestate": [("\u1f3e0", "Prime Properties"), ("\u2705", "Verified Listings"), ("\u1f91d", "Expert Advice"), ("\u1f4cb", "Paperwork Help")],
+    "services": [("\u1f527", "Expert Team"), ("\u2705", "Quality Work"), ("\u1f91d", "Satisfaction"), ("\u1f680", "Fast Service")],
+    "general": [("\u2b50", "Quality Service"), ("\u1f91d", "Trusted"), ("\u1f69a", "Fast"), ("\u1f4b3", "COD")],
 }
 
 CATEGORY_STORY_TITLE: Dict[str, str] = {
@@ -220,7 +220,7 @@ CATEGORY_STORY_TEXT: Dict[str, str] = {
     "home": "Transform your living space with our curated home collection. From kitchen essentials to decor accents, we bring quality and style to every corner of your home.",
     "restaurant": "Every dish we serve tells a story of tradition and passion. Using the freshest ingredients and time-honored recipes, we create dining experiences that bring people together.",
     "beauty": "We believe every person deserves to look and feel their best. Our premium beauty products are carefully selected to help you express your unique beauty with confidence.",
-    "retail": "Quality products at fair prices — that's our promise. We carefully curate every item to ensure you get the best value without compromising on quality.",
+    "retail": "Quality products at fair prices \u2014 that's our promise. We carefully curate every item to ensure you get the best value without compromising on quality.",
     "education": "Learning transforms lives. We provide quality education with modern facilities and expert faculty to prepare students for real-world success.",
     "healthcare": "Your health is our priority. We combine modern medical technology with compassionate care to provide the best healthcare experience for every patient.",
     "pharmacy": "Your health partner, always available. We stock genuine medicines and provide expert guidance to help you and your family stay healthy.",
@@ -235,28 +235,28 @@ CATEGORY_STORY_TEXT: Dict[str, str] = {
 }
 
 CATEGORY_ABOUT_TITLE_BN: Dict[str, str] = {
-    "fashion": "আমাদের ফ্যাশন স্টোরি",
-    "jewelry": "আমাদের ক্রাফটসম্যানশিপ",
-    "skincare": "আমাদের বিউটি ফিলোসফি",
-    "baby": "আমাদের কেয়ার পledge",
-    "home": "আমাদের হোম ভিশন",
-    "restaurant": "আমাদের রান্নার যাত্রা",
-    "beauty": "আমাদের সৌন্দর্য দর্শন",
-    "retail": "আমাদের খুচরা গল্প",
-    "education": "আমাদের শিক্ষা লক্ষ্য",
-    "healthcare": "আমাদের স্বাস্থ্য সেবা অঙ্গীকার",
-    "pharmacy": "আমাদের সেবা অঙ্গীকার",
-    "fitness": "আমাদের ফিটনেস লক্ষ্য",
-    "automotive": "আমাদের সেবার গল্প",
-    "manufacturing": "আমাদের উৎপাদন ঐতিহ্য",
-    "agriculture": "আমাদের কৃষি ঐতিহ্য",
-    "hotel": "আমাদের আতিথেয়তা অঙ্গীকার",
-    "realestate": "আমাদের রিয়েল এস্টেট গল্প",
-    "services": "আমাদের সেবা অঙ্গীকার",
-    "general": "আমাদের গল্প",
+    "fashion": "\u0986\u09ae\u09be\u09a6\u09c7\u09b0 \u09ab\u09cd\u09af\u09be\u09b6\u09a8 \u09b8\u09cd\u099f\u09cb\u09b0\u09bf",
+    "jewelry": "\u0986\u09ae\u09be\u09a6\u09c7\u09b0 \u0995\u09cd\u09b0\u09be\u09ab\u099f\u09b8\u09ae\u09cd\u09af\u09be\u09a8\u09b6\u09bf\u09aa",
+    "skincare": "\u0986\u09ae\u09be\u09a6\u09c7\u09b0 \u09ac\u09bf\u0989\u099f\u09bf \u09ab\u09bf\u09b2\u09cb\u09b8\u09ab\u09bf",
+    "baby": "\u0986\u09ae\u09be\u09a6\u09c7\u09b0 \u0995\u09c7\u09af\u09bc\u09be\u09b0 \u09aaledge",
+    "home": "\u0986\u09ae\u09be\u09a6\u09c7\u09b0 \u09b9\u09cb\u09ae \u09ad\u09bf\u09b6\u09a8",
+    "restaurant": "\u0986\u09ae\u09be\u09a6\u09c7\u09b0 \u09b0\u09be\u09a8\u09cd\u09a8\u09be\u09b0 \u09af\u09be\u09a4\u09cd\u09b0\u09be",
+    "beauty": "\u0986\u09ae\u09be\u09a6\u09c7\u09b0 \u09b8\u09cc\u09a8\u09cd\u09a6\u09b0\u09cd\u09af \u09a6\u09b0\u09cd\u09b6\u09a8",
+    "retail": "\u0986\u09ae\u09be\u09a6\u09c7\u09b0 \u0996\u09c1\u099a\u09b0\u09be \u0997\u09b2\u09cd\u09aa",
+    "education": "\u0986\u09ae\u09be\u09a6\u09c7\u09b0 \u09b6\u09bf\u0995\u09cd\u09b7\u09be \u09b2\u0995\u09cd\u09b7\u09cd\u09af",
+    "healthcare": "\u0986\u09ae\u09be\u09a6\u09c7\u09b0 \u09b8\u09cd\u09ac\u09be\u09b8\u09cd\u09a5\u09cd\u09af \u09b8\u09c7\u09ac\u09be \u0985\u0999\u09cd\u0997\u09c0\u0995\u09be\u09b0",
+    "pharmacy": "\u0986\u09ae\u09be\u09a6\u09c7\u09b0 \u09b8\u09c7\u09ac\u09be \u0985\u0999\u09cd\u0997\u09c0\u0995\u09be\u09b0",
+    "fitness": "\u0986\u09ae\u09be\u09a6\u09c7\u09b0 \u09ab\u09bf\u099f\u09a8\u09c7\u09b8 \u09b2\u0995\u09cd\u09b7\u09cd\u09af",
+    "automotive": "\u0986\u09ae\u09be\u09a6\u09c7\u09b0 \u09b8\u09c7\u09ac\u09be\u09b0 \u0997\u09b2\u09cd\u09aa",
+    "manufacturing": "\u0986\u09ae\u09be\u09a6\u09c7\u09b0 \u0989\u09ce\u09aa\u09be\u09a6\u09a8 \u0990\u09a4\u09bf\u09b9\u09cd\u09af",
+    "agriculture": "\u0986\u09ae\u09be\u09a6\u09c7\u09b0 \u0995\u09c3\u09b7\u09bf \u0990\u09a4\u09bf\u09b9\u09cd\u09af",
+    "hotel": "\u0986\u09ae\u09be\u09a6\u09c7\u09b0 \u0986\u09a4\u09bf\u09a5\u09c7\u09af\u09bc\u09a4\u09be \u0985\u0999\u09cd\u0997\u09c0\u0995\u09be\u09b0",
+    "realestate": "\u0986\u09ae\u09be\u09a6\u09c7\u09b0 \u09b0\u09bf\u09af\u09bc\u09c7\u09b2 \u098f\u09b8\u09cd\u099f\u09c7\u099f \u0997\u09b2\u09cd\u09aa",
+    "services": "\u0986\u09ae\u09be\u09a6\u09c7\u09b0 \u09b8\u09c7\u09ac\u09be \u0985\u0999\u09cd\u0997\u09c0\u0995\u09be\u09b0",
+    "general": "\u0986\u09ae\u09be\u09a6\u09c7\u09b0 \u0997\u09b2\u09cd\u09aa",
 }
 
-# ── Design Tokens — Shopify 2026 ──────────────────────────────────────
+# \u2500\u2500 Design Tokens \u2014 Shopify 2026 \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 CATEGORY_DESIGN: Dict[str, Dict[str, str]] = {
     "beauty": {
         "bg": "#ffffff", "primary": "#1a1a1a", "accent": "#c9a96e",
@@ -468,7 +468,7 @@ INSTAGRAM_SVG = (
 )
 
 
-# ── Helpers ──────────────────────────────────────────────────────────
+# \u2500\u2500 Helpers \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 def clean_phone_for_whatsapp(phone: str) -> str:
     digits = re.sub(r'\D', '', phone)
@@ -514,7 +514,7 @@ def hero_img_url(canonical: str) -> str:
     return f"https://picsum.photos/seed/{canonical}-hero/600/500"
 
 
-# ── Hero Image SVG ──────────────────────────────────────────────────
+# \u2500\u2500 Hero Image SVG \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 def _build_hero_svg(canonical: str) -> str:
     t = get_design(canonical)
@@ -572,7 +572,7 @@ def _build_hero_svg(canonical: str) -> str:
 </svg>'''
 
 
-# ── Brand Logo SVG ──────────────────────────────────────────────────
+# \u2500\u2500 Brand Logo SVG \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 def _build_logo_svg(canonical: str) -> str:
     t = get_design(canonical)
@@ -587,14 +587,14 @@ def _build_logo_svg(canonical: str) -> str:
 </svg>'''
 
 
-# ── Shared Header / Footer ──────────────────────────────────────────
+# \u2500\u2500 Shared Header / Footer \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 NAV_ITEMS = [
-    ("/", "home", "হোম", "Home"),
-    ("products.html", "products", "প্রোডাক্ট", "Products"),
-    ("about.html", "about", "আমাদের সম্পর্কে", "About Us"),
-    ("contact.html", "contact", "যোগাযোগ", "Contact"),
-    ("order.html", "order", "অর্ডার করুন", "Order Now"),
+    ("/", "home", "\u09b9\u09cb\u09ae", "Home"),
+    ("products.html", "products", "\u09aa\u09cd\u09b0\u09cb\u09a1\u09be\u0995\u09cd\u099f", "Products"),
+    ("about.html", "about", "\u0986\u09ae\u09be\u09a6\u09c7\u09b0 \u09b8\u09ae\u09cd\u09aa\u09b0\u09cd\u0995\u09c7", "About Us"),
+    ("contact.html", "contact", "\u09af\u09cb\u0997\u09be\u09af\u09cb\u0997", "Contact"),
+    ("order.html", "order", "\u0985\u09b0\u09cd\u09a1\u09be\u09b0 \u0995\u09b0\u09c1\u09a8", "Order Now"),
 ]
 
 
@@ -616,10 +616,10 @@ def _build_header(name: str, phone: str, canonical: str, active: str) -> str:
 {nav_links}
     </nav>
     <div class="header-actions">
-      <button class="lang-toggle" id="langToggle" aria-label="Language">EN | বাংলা</button>
-      <a href="order.html" class="cart-icon" aria-label="Cart">🛒</a>
-      <a href="login.html" class="account-icon" aria-label="Account">👤</a>
-      <button class="menu-toggle" id="menuToggle" aria-label="Menu">☰</button>
+      <button class="lang-toggle" id="langToggle" aria-label="Language">EN | \u09ac\u09be\u0982\u09b2\u09be</button>
+      <a href="order.html" class="cart-icon" aria-label="Cart">\u1f6d2</a>
+      <a href="login.html" class="account-icon" aria-label="Account">\u1f464</a>
+      <button class="menu-toggle" id="menuToggle" aria-label="Menu">\u2630</button>
     </div>
   </div>
 </header>'''
@@ -649,49 +649,49 @@ def _build_footer(name: str, phone: str, canonical: str, address: str,
           <span>{name}</span>
         </div>
         <p>
-          <span class="lang-bn">{bengali_name} — আপনার বিশ্বস্ত অনলাইন শপিং গন্তব্য</span>
-          <span class="lang-en">{name} — Your trusted {store_type} destination</span>
+          <span class="lang-bn">{bengali_name} \u2014 \u0986\u09aa\u09a8\u09be\u09b0 \u09ac\u09bf\u09b6\u09cd\u09ac\u09b8\u09cd\u09a4 \u0985\u09a8\u09b2\u09be\u0987\u09a8 \u09b6\u09aa\u09bf\u0982 \u0997\u09a8\u09cd\u09a4\u09ac\u09cd\u09af</span>
+          <span class="lang-en">{name} \u2014 Your trusted {store_type} destination</span>
         </p>
         <div class="footer-social">
           {fb_link}{ig_link}{wa_link}
         </div>
       </div>
       <div class="footer-col">
-        <h4><span class="lang-bn">দ্রুত লিংক</span><span class="lang-en">Quick Links</span></h4>
+        <h4><span class="lang-bn">\u09a6\u09cd\u09b0\u09c1\u09a4 \u09b2\u09bf\u0982\u0995</span><span class="lang-en">Quick Links</span></h4>
 {nav_footer}
       </div>
       <div class="footer-col">
-        <h4><span class="lang-bn">যোগাযোগ</span><span class="lang-en">Contact</span></h4>
-        <p>📞 <a href="tel:{phone_disp}" style="color:rgba(255,255,255,0.6)">{phone_disp}</a></p>
-        <p>📍 {address}</p>
+        <h4><span class="lang-bn">\u09af\u09cb\u0997\u09be\u09af\u09cb\u0997</span><span class="lang-en">Contact</span></h4>
+        <p>\u1f4de <a href="tel:{phone_disp}" style="color:rgba(255,255,255,0.6)">{phone_disp}</a></p>
+        <p>\u1f4cd {address}</p>
       </div>
       <div class="footer-col">
-        <h4><span class="lang-bn">ব্যবসায়িক সময়</span><span class="lang-en">Business Hours</span></h4>
-        <p><span class="lang-bn">শনি-বৃহস্পতি: ৯AM-৯PM</span><span class="lang-en">Sat-Thu: 9AM-9PM</span></p>
-        <p><span class="lang-bn">শুক্রবার: বন্ধ</span><span class="lang-en">Friday: Closed</span></p>
+        <h4><span class="lang-bn">\u09ac\u09cd\u09af\u09ac\u09b8\u09be\u09af\u09bc\u09bf\u0995 \u09b8\u09ae\u09af\u09bc</span><span class="lang-en">Business Hours</span></h4>
+        <p><span class="lang-bn">\u09b6\u09a8\u09bf-\u09ac\u09c3\u09b9\u09b8\u09cd\u09aa\u09a4\u09bf: \u09efAM-\u09efPM</span><span class="lang-en">Sat-Thu: 9AM-9PM</span></p>
+        <p><span class="lang-bn">\u09b6\u09c1\u0995\u09cd\u09b0\u09ac\u09be\u09b0: \u09ac\u09a8\u09cd\u09a7</span><span class="lang-en">Friday: Closed</span></p>
         <div style="margin-top:12px">
-          <span class="trust-icon">🚚</span> <span class="lang-bn">ফ্রি ডেলিভারি</span><span class="lang-en">Free Delivery</span><br>
-          <span class="trust-icon">💳</span> <span class="lang-bn">ক্যাশ অন ডেলিভারি</span><span class="lang-en">Cash on Delivery</span>
+          <span class="trust-icon">\u1f69a</span> <span class="lang-bn">\u09ab\u09cd\u09b0\u09bf \u09a1\u09c7\u09b2\u09bf\u09ad\u09be\u09b0\u09bf</span><span class="lang-en">Free Delivery</span><br>
+          <span class="trust-icon">\u1f4b3</span> <span class="lang-bn">\u0995\u09cd\u09af\u09be\u09b6 \u0985\u09a8 \u09a1\u09c7\u09b2\u09bf\u09ad\u09be\u09b0\u09bf</span><span class="lang-en">Cash on Delivery</span>
         </div>
       </div>
     </div>
     <div class="footer-newsletter">
       <form class="footer-newsletter-form" id="footerNewsletterForm">
         <label>
-          <span class="lang-bn">সাবস্ক্রাইব করুন</span>
+          <span class="lang-bn">\u09b8\u09be\u09ac\u09b8\u09cd\u0995\u09cd\u09b0\u09be\u0987\u09ac \u0995\u09b0\u09c1\u09a8</span>
           <span class="lang-en">Subscribe</span>
         </label>
         <div class="footer-newsletter-input-row">
           <input type="email" id="footerNewsletterEmail" required
             placeholder="your@email.com"
             aria-label="Email address">
-          <button type="submit">→</button>
+          <button type="submit">\u2192</button>
         </div>
       </form>
     </div>
     <div class="footer-bottom">
-      <span class="lang-bn">© 2026 {name} — সর্বস্বত্ব সংরক্ষিত</span>
-      <span class="lang-en">© 2026 {name} — All rights reserved</span>
+      <span class="lang-bn">\u00a9 2026 {name} \u2014 \u09b8\u09b0\u09cd\u09ac\u09b8\u09cd\u09ac\u09a4\u09cd\u09ac \u09b8\u0982\u09b0\u0995\u09cd\u09b7\u09bf\u09a4</span>
+      <span class="lang-en">\u00a9 2026 {name} \u2014 All rights reserved</span>
     </div>
   </div>
 </footer>'''
@@ -704,7 +704,7 @@ def _build_wa_float(phone: str) -> str:
 </a>'''
 
 
-# ── CSS Builder (FIX 2 + FIX 6) ──────────────────────────────────────
+# \u2500\u2500 CSS Builder (FIX 2 + FIX 6) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 def _build_css(canonical: str, primary_color: Optional[str] = None, accent_color: Optional[str] = None) -> str:
     t = dict(get_design(canonical))
@@ -762,7 +762,7 @@ body, p, input, button, select {{ font-family:var(--font-body); }}
 html[lang="bn"] .lang-bn {{ display:inline; }}
 html[lang="bn"] .lang-en {{ display:none; }}
 
-/* ── Announcement Bar ── */
+/* \u2500\u2500 Announcement Bar \u2500\u2500 */
 .announcement-bar {{
   background:var(--primary); color:#fff; text-align:center;
   padding:10px 16px; font-size:13px; font-weight:500;
@@ -786,7 +786,7 @@ html[lang="bn"] .lang-en {{ display:none; }}
 }}
 .announcement-close:hover {{ opacity:1; }}
 
-/* ── Header ── */
+/* \u2500\u2500 Header \u2500\u2500 */
 .header {{
   position:sticky; top:0; left:0; right:0; z-index:100;
   height:64px;
@@ -843,7 +843,7 @@ html[lang="bn"] .lang-en {{ display:none; }}
   width:40px; height:40px; align-items:center; justify-content:center;
 }}
 
-/* ── Hero ── */
+/* \u2500\u2500 Hero \u2500\u2500 */
 .hero {{
   position:relative; min-height:80vh;
   display:grid; grid-template-columns:1fr 1fr; gap:60px; align-items:center;
@@ -884,7 +884,7 @@ html[lang="bn"] .lang-en {{ display:none; }}
 .hero-address {{ font-size:14px; color:var(--text-muted); margin-bottom:32px; }}
 .hero-actions {{ display:flex; gap:12px; flex-wrap:wrap; }}
 
-/* ── Buttons ── */
+/* \u2500\u2500 Buttons \u2500\u2500 */
 .btn {{
   display:inline-flex; align-items:center; gap:8px; justify-content:center;
   padding:14px 28px; border-radius:var(--radius-sm);
@@ -908,7 +908,7 @@ html[lang="bn"] .lang-en {{ display:none; }}
 .btn-sm {{ padding:10px 18px; font-size:13px; }}
 .btn-lg {{ padding:16px 36px; font-size:16px; }}
 
-/* ── Trust Bar ── */
+/* \u2500\u2500 Trust Bar \u2500\u2500 */
 .trust-bar {{ padding:20px 0; background:var(--surface); }}
 .trust-grid {{ display:grid; grid-template-columns:repeat(4,1fr); gap:16px; }}
 .trust-item {{
@@ -918,7 +918,7 @@ html[lang="bn"] .lang-en {{ display:none; }}
 }}
 .trust-icon {{ font-size:20px; }}
 
-/* ── Section ── */
+/* \u2500\u2500 Section \u2500\u2500 */
 .section {{ padding:60px 0; }}
 .section-shaded {{ background:var(--surface); }}
 .section-head {{ text-align:center; margin-bottom:40px; }}
@@ -933,7 +933,7 @@ html[lang="bn"] .lang-en {{ display:none; }}
   letter-spacing:-0.01em; margin-bottom:8px;
 }}
 
-/* ── Products Grid (Home) ── */
+/* \u2500\u2500 Products Grid (Home) \u2500\u2500 */
 .products-grid {{
   display:grid; grid-template-columns:repeat(4,1fr); gap:20px;
 }}
@@ -974,7 +974,7 @@ html[lang="bn"] .lang-en {{ display:none; }}
 }}
 .product-wa-btn:hover {{ transform:scale(1.05); }}
 
-/* ── Category Pills ── */
+/* \u2500\u2500 Category Pills \u2500\u2500 */
 .category-pills {{ display:flex; gap:10px; flex-wrap:wrap; justify-content:center; margin-bottom:40px; }}
 .category-pill {{
   padding:8px 20px; border-radius:var(--radius-full);
@@ -984,7 +984,7 @@ html[lang="bn"] .lang-en {{ display:none; }}
 }}
 .category-pill:hover, .category-pill.active {{ background:var(--primary); color:var(--btn-text); border-color:var(--primary); }}
 
-/* ── About Teaser ── */
+/* \u2500\u2500 About Teaser \u2500\u2500 */
 .about-teaser {{ display:grid; grid-template-columns:1fr 1fr; gap:48px; align-items:center; }}
 .about-teaser-img {{
   aspect-ratio:4/3; border-radius:var(--radius);
@@ -997,7 +997,7 @@ html[lang="bn"] .lang-en {{ display:none; }}
 }}
 .about-teaser-text p {{ font-size:15px; color:var(--text-muted); line-height:1.7; margin-bottom:16px; }}
 
-/* ── Why Choose ── */
+/* \u2500\u2500 Why Choose \u2500\u2500 */
 .why-grid {{ display:grid; grid-template-columns:repeat(3,1fr); gap:20px; }}
 .why-card {{
   background:var(--card-bg); border-radius:var(--radius);
@@ -1010,7 +1010,7 @@ html[lang="bn"] .lang-en {{ display:none; }}
 .why-card h4 {{ font-size:15px; font-weight:700; margin-bottom:6px; }}
 .why-card p {{ font-size:13px; color:var(--text-muted); line-height:1.5; }}
 
-/* ── Reviews ── */
+/* \u2500\u2500 Reviews \u2500\u2500 */
 .reviews-grid {{ display:grid; grid-template-columns:repeat(3,1fr); gap:20px; }}
 .review-card {{
   background:var(--card-bg); border-radius:var(--radius);
@@ -1024,7 +1024,7 @@ html[lang="bn"] .lang-en {{ display:none; }}
 .review-author {{ font-size:13px; font-weight:600; }}
 .review-location {{ font-size:12px; color:var(--text-muted); }}
 
-/* ── Social CTA ── */
+/* \u2500\u2500 Social CTA \u2500\u2500 */
 .social-cta {{
   padding:48px 0; text-align:center;
   background:var(--primary); color:#fff;
@@ -1037,7 +1037,7 @@ html[lang="bn"] .lang-en {{ display:none; }}
 .social-cta .btn {{ background:#fff; color:var(--primary); }}
 .social-cta .btn:hover {{ background:color-mix(in srgb, #fff 90%, transparent); }}
 
-/* ── Footer ── */
+/* \u2500\u2500 Footer \u2500\u2500 */
 .footer {{
   background:#1a1a1a; color:rgba(255,255,255,0.7); padding:48px 0 0;
 }}
@@ -1095,7 +1095,7 @@ html[lang="bn"] .lang-en {{ display:none; }}
 }}
 .footer-newsletter-input-row button:hover {{ opacity:0.9; transform:translateX(2px); }}
 
-/* ── WhatsApp Float ── */
+/* \u2500\u2500 WhatsApp Float \u2500\u2500 */
 .toast {{
   position:fixed; bottom:90px; left:50%; transform:translateX(-50%) translateY(20px);
   background:#1a1a1a; color:#fff; padding:14px 28px; border-radius:var(--radius);
@@ -1121,7 +1121,7 @@ html[lang="bn"] .lang-en {{ display:none; }}
 .wa-float:hover {{ transform:scale(1.1); }}
 .wa-float svg {{ width:28px; height:28px; fill:#fff; }}
 
-/* ── Page Hero ── */
+/* \u2500\u2500 Page Hero \u2500\u2500 */
 .page-hero {{
   padding:48px 0 32px; background:var(--hero-bg); text-align:center;
 }}
@@ -1132,7 +1132,7 @@ html[lang="bn"] .lang-en {{ display:none; }}
 }}
 .page-hero p {{ font-size:15px; color:var(--text-muted); }}
 
-/* ── Products Page ── */
+/* \u2500\u2500 Products Page \u2500\u2500 */
 .filter-bar {{
   display:flex; gap:8px; flex-wrap:wrap; justify-content:center;
   margin-bottom:32px; align-items:center;
@@ -1145,7 +1145,7 @@ html[lang="bn"] .lang-en {{ display:none; }}
 }}
 .filter-btn:hover, .filter-btn.active {{ background:var(--primary); color:var(--btn-text); border-color:var(--primary); }}
 
-/* ── Order Page ── */
+/* \u2500\u2500 Order Page \u2500\u2500 */
 .order-grid {{ display:grid; grid-template-columns:3fr 2fr; gap:32px; align-items:start; }}
 .order-form-card {{
   background:var(--card-bg); border-radius:var(--radius);
@@ -1224,7 +1224,7 @@ html[lang="bn"] .lang-en {{ display:none; }}
   content:''; width:3px; height:16px; background:var(--primary); border-radius:2px;
 }}
 
-/* ── Cart Items ── */
+/* \u2500\u2500 Cart Items \u2500\u2500 */
 .cart-item {{
   display:flex; align-items:center; gap:12px;
   padding:14px 0; border-bottom:1px solid var(--border);
@@ -1255,7 +1255,7 @@ html[lang="bn"] .lang-en {{ display:none; }}
 .cart-note textarea {{ width:100%; padding:12px 16px; border:1px solid var(--border); border-radius:var(--radius-sm); font-size:14px; background:var(--bg); outline:none; resize:vertical; min-height:60px; }}
 .cart-note textarea:focus {{ border-color:var(--primary); box-shadow:0 0 0 3px color-mix(in srgb, var(--primary) 15%, transparent); }}
 
-/* ── Order Confirmation ── */
+/* \u2500\u2500 Order Confirmation \u2500\u2500 */
 .order-confirm-card {{
   max-width:580px; margin:0 auto; text-align:center;
   background:var(--surface); border-radius:var(--radius-xl);
@@ -1311,7 +1311,7 @@ html[lang="bn"] .lang-en {{ display:none; }}
   background:rgba(255,255,255,0.25);
 }}
 
-/* ── Payment Options ── */
+/* \u2500\u2500 Payment Options \u2500\u2500 */
 .payment-options {{ display:flex; flex-direction:column; gap:10px; }}
 .payment-option {{
   display:flex; align-items:center; gap:14px; padding:14px 16px;
@@ -1333,7 +1333,7 @@ html[lang="bn"] .lang-en {{ display:none; }}
 .payment-name {{ font-size:15px; font-weight:600; display:block; }}
 .payment-desc {{ font-size:12px; color:var(--text-muted); margin-top:2px; }}
 
-/* ── About Page ── */
+/* \u2500\u2500 About Page \u2500\u2500 */
 .about-grid {{
   display:grid; grid-template-columns:1fr 1fr; gap:48px; align-items:center;
 }}
@@ -1369,7 +1369,7 @@ html[lang="bn"] .lang-en {{ display:none; }}
 .value-card h3 {{ font-size:16px; margin-bottom:8px; }}
 .value-card p {{ font-size:13px; color:var(--text-muted); line-height:1.6; }}
 
-/* ── Contact Page ── */
+/* \u2500\u2500 Contact Page \u2500\u2500 */
 .contact-grid {{
   display:grid; grid-template-columns:1fr 1fr; gap:48px;
 }}
@@ -1412,7 +1412,7 @@ html[lang="bn"] .lang-en {{ display:none; }}
   color:var(--text-muted); font-size:14px;
 }}
 
-/* ── Newsletter Section ── */
+/* \u2500\u2500 Newsletter Section \u2500\u2500 */
 .newsletter-section {{
   padding:60px 0;
 }}
@@ -1447,7 +1447,7 @@ html[lang="bn"] .lang-en {{ display:none; }}
 }}
 .newsletter-form button:hover {{ transform:translateY(-2px); opacity:0.92; }}
 
-/* ── Auth Pages (Login / Register) ── */
+/* \u2500\u2500 Auth Pages (Login / Register) \u2500\u2500 */
 .auth-wrapper {{
   max-width:440px; margin:0 auto; padding:40px 24px;
 }}
@@ -1516,7 +1516,7 @@ html[lang="bn"] .lang-en {{ display:none; }}
   .auth-card {{ padding:24px; }}
 }}
 
-/* ── Responsive ── */
+/* \u2500\u2500 Responsive \u2500\u2500 */
 @media (max-width: 768px) {{
   .nav {{ display:none; }}
   .nav.open {{
@@ -1560,7 +1560,7 @@ html[lang="bn"] .lang-en {{ display:none; }}
 }}'''
 
 
-# ── JS Builder (FIX 4) ───────────────────────────────────────────────
+# \u2500\u2500 JS Builder (FIX 4) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 def _build_js(phone: str) -> str:
     wa = clean_phone_for_whatsapp(phone)
@@ -1570,7 +1570,7 @@ def _build_js(phone: str) -> str:
   let currentLang = 'en';
   function setLang(lang) {{
     currentLang = lang;
-    toggle.textContent = lang === 'bn' ? 'বাংলা | EN' : 'EN | বাংলা';
+    toggle.textContent = lang === 'bn' ? '\u09ac\u09be\u0982\u09b2\u09be | EN' : 'EN | \u09ac\u09be\u0982\u09b2\u09be';
     document.documentElement.lang = lang;
     localStorage.setItem('pref_lang', lang);
   }}
@@ -1588,17 +1588,17 @@ def _build_js(phone: str) -> str:
   if (!menuBtn || !nav) return;
   menuBtn.addEventListener('click', function() {{
     nav.classList.toggle('open');
-    menuBtn.textContent = nav.classList.contains('open') ? '✕' : '☰';
+    menuBtn.textContent = nav.classList.contains('open') ? '\u2715' : '\u2630';
   }});
   document.addEventListener('click', function(e) {{
     if (!nav.contains(e.target) && !menuBtn.contains(e.target)) {{
       nav.classList.remove('open');
-      menuBtn.textContent = '☰';
+      menuBtn.textContent = '\u2630';
     }}
   }});
   nav.querySelectorAll('a').forEach(l => l.addEventListener('click', function() {{
     nav.classList.remove('open');
-    menuBtn.textContent = '☰';
+    menuBtn.textContent = '\u2630';
   }}));
 }})();
 
@@ -1692,12 +1692,12 @@ def _build_js(phone: str) -> str:
       const email = input?.value?.trim();
       if (!email) return;
       input.value = '';
-      window._showToast('🎉 Thank you for subscribing!');
+      window._showToast('\u1f389 Thank you for subscribing!');
     }});
   }});
 }})();'''
 
-# ── Index Page (FIX 3) ──────────────────────────────────────────────
+# \u2500\u2500 Index Page (FIX 3) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 def _build_index(name: str, phone: str, canonical: str, address: str,
                   products: List[str], descs: List[str], prices: List[str],
@@ -1716,8 +1716,8 @@ def _build_index(name: str, phone: str, canonical: str, address: str,
 
     # 1. Announcement Bar
     announcement = f'''<div class="announcement-bar" id="announcementBar">
-  <span class="marquee-wrap">🚚 Free Delivery on Orders Over ৳999 &nbsp;·&nbsp; COD Available Nationwide &nbsp;·&nbsp; Free Returns Within 7 Days &nbsp;·&nbsp; 🚚 Free Delivery on Orders Over ৳999 &nbsp;·&nbsp; COD Available Nationwide &nbsp;·&nbsp; Free Returns Within 7 Days</span>
-  <button class="announcement-close" id="announcementClose">✕</button>
+  <span class="marquee-wrap">\u1f69a Free Delivery on Orders Over \u09f3999 &nbsp;\u00b7&nbsp; COD Available Nationwide &nbsp;\u00b7&nbsp; Free Returns Within 7 Days &nbsp;\u00b7&nbsp; \u1f69a Free Delivery on Orders Over \u09f3999 &nbsp;\u00b7&nbsp; COD Available Nationwide &nbsp;\u00b7&nbsp; Free Returns Within 7 Days</span>
+  <button class="announcement-close" id="announcementClose">\u2715</button>
 </div>'''
 
     # 2. Hero
@@ -1730,16 +1730,16 @@ def _build_index(name: str, phone: str, canonical: str, address: str,
     </p>
     <h1 class="hero-title" style="color:{text_color}">{name}</h1>
     <p class="hero-sub">
-      <span class="lang-bn">{address} — সেরা পণ্য, সাশ্রয়ী মূল্যে</span>
-      <span class="lang-en">{address} — Best products, affordable prices</span>
+      <span class="lang-bn">{address} \u2014 \u09b8\u09c7\u09b0\u09be \u09aa\u09a3\u09cd\u09af, \u09b8\u09be\u09b6\u09cd\u09b0\u09af\u09bc\u09c0 \u09ae\u09c2\u09b2\u09cd\u09af\u09c7</span>
+      <span class="lang-en">{address} \u2014 Best products, affordable prices</span>
     </p>
     <div class="hero-actions">
       <a href="products.html" class="btn btn-primary btn-lg">
-        <span class="lang-bn">সব প্রোডাক্ট দেখুন</span>
+        <span class="lang-bn">\u09b8\u09ac \u09aa\u09cd\u09b0\u09cb\u09a1\u09be\u0995\u09cd\u099f \u09a6\u09c7\u0996\u09c1\u09a8</span>
         <span class="lang-en">Shop Now</span>
       </a>
       <a href="https://wa.me/{wa}" target="_blank" class="btn btn-ghost btn-lg">
-        <span class="lang-bn">WhatsApp এ অর্ডার করুন</span>
+        <span class="lang-bn">WhatsApp \u098f \u0985\u09b0\u09cd\u09a1\u09be\u09b0 \u0995\u09b0\u09c1\u09a8</span>
         <span class="lang-en">Order via WhatsApp</span>
       </a>
     </div>
@@ -1774,10 +1774,10 @@ def _build_index(name: str, phone: str, canonical: str, address: str,
   <div class="product-body">
     <h3 class="product-name">{pname}</h3>
     <p class="product-desc">{pdesc}</p>
-    <div class="product-price">৳{pprice}</div>
+    <div class="product-price">\u09f3{pprice}</div>
     <div class="product-actions">
       <a href="order.html?product={encoded}" class="btn btn-primary btn-sm">
-        <span class="lang-bn">অর্ডার করুন</span>
+        <span class="lang-bn">\u0985\u09b0\u09cd\u09a1\u09be\u09b0 \u0995\u09b0\u09c1\u09a8</span>
         <span class="lang-en">Order Now</span>
       </a>
       <a href="https://wa.me/{wa}?text=I%27m%20interested%20in%20{pname}" target="_blank" class="product-wa-btn" aria-label="WhatsApp">{WHATSAPP_SVG}</a>
@@ -1791,7 +1791,7 @@ def _build_index(name: str, phone: str, canonical: str, address: str,
     <div class="section-head">
       <span class="eyebrow">FEATURED</span>
       <h2>
-        <span class="lang-bn">বেস্ট সেলার</span>
+        <span class="lang-bn">\u09ac\u09c7\u09b8\u09cd\u099f \u09b8\u09c7\u09b2\u09be\u09b0</span>
         <span class="lang-en">Best Sellers</span>
       </h2>
     </div>
@@ -1800,7 +1800,7 @@ def _build_index(name: str, phone: str, canonical: str, address: str,
     </div>
     <div style="text-align:center;margin-top:32px">
       <a href="products.html" class="btn btn-ghost">
-        <span class="lang-bn">সব প্রোডাক্ট দেখুন</span>
+        <span class="lang-bn">\u09b8\u09ac \u09aa\u09cd\u09b0\u09cb\u09a1\u09be\u0995\u09cd\u099f \u09a6\u09c7\u0996\u09c1\u09a8</span>
         <span class="lang-en">View All Products</span>
       </a>
     </div>
@@ -1824,8 +1824,8 @@ def _build_index(name: str, phone: str, canonical: str, address: str,
           <span class="lang-en">{story_text}</span>
         </p>
         <a href="#" class="btn btn-ghost">
-          <span class="lang-bn">আরও জানুন →</span>
-          <span class="lang-en">Learn More →</span>
+          <span class="lang-bn">\u0986\u09b0\u0993 \u099c\u09be\u09a8\u09c1\u09a8 \u2192</span>
+          <span class="lang-en">Learn More \u2192</span>
         </a>
       </div>
     </div>
@@ -1841,7 +1841,7 @@ def _build_index(name: str, phone: str, canonical: str, address: str,
   <div class="container">
     <div class="section-head">
       <h2>
-        <span class="lang-bn">কেন আমাদের বেছে নেবেন</span>
+        <span class="lang-bn">\u0995\u09c7\u09a8 \u0986\u09ae\u09be\u09a6\u09c7\u09b0 \u09ac\u09c7\u099b\u09c7 \u09a8\u09c7\u09ac\u09c7\u09a8</span>
         <span class="lang-en">Why Choose Us</span>
       </h2>
     </div>
@@ -1851,12 +1851,12 @@ def _build_index(name: str, phone: str, canonical: str, address: str,
   </div>
 </section>'''
 
-    # 7. Social Proof — Reviews
+    # 7. Social Proof \u2014 Reviews
     review_cards = '\n'.join(
         f'''<div class="review-card">
-  <div class="review-stars">★★★★★</div>
+  <div class="review-stars">\u2605\u2605\u2605\u2605\u2605</div>
   <p class="review-text">"{r[2]}"</p>
-  <div class="review-author">— {r[0]}</div>
+  <div class="review-author">\u2014 {r[0]}</div>
   <div class="review-location">{r[1]}</div>
 </div>'''
         for r in reviews[:3]
@@ -1865,7 +1865,7 @@ def _build_index(name: str, phone: str, canonical: str, address: str,
   <div class="container">
     <div class="section-head">
       <h2>
-        <span class="lang-bn">আমাদের গ্রাহকরা কী বলছেন</span>
+        <span class="lang-bn">\u0986\u09ae\u09be\u09a6\u09c7\u09b0 \u0997\u09cd\u09b0\u09be\u09b9\u0995\u09b0\u09be \u0995\u09c0 \u09ac\u09b2\u099b\u09c7\u09a8</span>
         <span class="lang-en">What Our Customers Say</span>
       </h2>
     </div>
@@ -1880,15 +1880,15 @@ def _build_index(name: str, phone: str, canonical: str, address: str,
     social_cta = f'''<section class="social-cta">
   <div class="container">
     <h2>
-      <span class="lang-bn">ফেসবুকে ফলো করুন</span>
+      <span class="lang-bn">\u09ab\u09c7\u09b8\u09ac\u09c1\u0995\u09c7 \u09ab\u09b2\u09cb \u0995\u09b0\u09c1\u09a8</span>
       <span class="lang-en">Follow us on Facebook</span>
     </h2>
     <p>
-      <span class="lang-bn">সর্বশেষ আপডেট ও অফার পেতে আমাদের পেজটি লাইক করুন</span>
+      <span class="lang-bn">\u09b8\u09b0\u09cd\u09ac\u09b6\u09c7\u09b7 \u0986\u09aa\u09a1\u09c7\u099f \u0993 \u0985\u09ab\u09be\u09b0 \u09aa\u09c7\u09a4\u09c7 \u0986\u09ae\u09be\u09a6\u09c7\u09b0 \u09aa\u09c7\u099c\u099f\u09bf \u09b2\u09be\u0987\u0995 \u0995\u09b0\u09c1\u09a8</span>
       <span class="lang-en">Like our page for the latest updates and offers</span>
     </p>
     <a href="{fb}" target="_blank" class="btn btn-lg">
-      <span class="lang-bn">ফেসবুকে ফলো করুন</span>
+      <span class="lang-bn">\u09ab\u09c7\u09b8\u09ac\u09c1\u0995\u09c7 \u09ab\u09b2\u09cb \u0995\u09b0\u09c1\u09a8</span>
       <span class="lang-en">Follow on Facebook</span>
     </a>
   </div>
@@ -1911,11 +1911,11 @@ def _build_index(name: str, phone: str, canonical: str, address: str,
     <div class="newsletter-card">
       <div class="newsletter-text">
         <h2>
-          <span class="lang-bn">আপডেট পেতে সাবস্ক্রাইব করুন</span>
+          <span class="lang-bn">\u0986\u09aa\u09a1\u09c7\u099f \u09aa\u09c7\u09a4\u09c7 \u09b8\u09be\u09ac\u09b8\u09cd\u0995\u09cd\u09b0\u09be\u0987\u09ac \u0995\u09b0\u09c1\u09a8</span>
           <span class="lang-en">Subscribe for Updates</span>
         </h2>
         <p>
-          <span class="lang-bn">সর্বশেষ প্রোডাক্ট ও এক্সক্লুসিভ অফার জানতে সাবস্ক্রাইব করুন</span>
+          <span class="lang-bn">\u09b8\u09b0\u09cd\u09ac\u09b6\u09c7\u09b7 \u09aa\u09cd\u09b0\u09cb\u09a1\u09be\u0995\u09cd\u099f \u0993 \u098f\u0995\u09cd\u09b8\u0995\u09cd\u09b2\u09c1\u09b8\u09bf\u09ad \u0985\u09ab\u09be\u09b0 \u099c\u09be\u09a8\u09a4\u09c7 \u09b8\u09be\u09ac\u09b8\u09cd\u0995\u09cd\u09b0\u09be\u0987\u09ac \u0995\u09b0\u09c1\u09a8</span>
           <span class="lang-en">Get the latest products and exclusive offers delivered to your inbox</span>
         </p>
       </div>
@@ -1924,7 +1924,7 @@ def _build_index(name: str, phone: str, canonical: str, address: str,
           placeholder="your@email.com"
           aria-label="Email address">
         <button type="submit">
-          <span class="lang-bn">সাবস্ক্রাইব</span>
+          <span class="lang-bn">\u09b8\u09be\u09ac\u09b8\u09cd\u0995\u09cd\u09b0\u09be\u0987\u09ac</span>
           <span class="lang-en">Subscribe</span>
         </button>
       </form>
@@ -1941,8 +1941,8 @@ def _build_index(name: str, phone: str, canonical: str, address: str,
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{name} — Official Website</title>
-  <meta name="description" content="{name} — Premium {store_type} in Bangladesh">
+  <title>{name} \u2014 Official Website</title>
+  <meta name="description" content="{name} \u2014 Premium {store_type} in Bangladesh">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -1966,7 +1966,7 @@ def _build_index(name: str, phone: str, canonical: str, address: str,
     return html
 
 
-# ── Products Page (FIX 7) ───────────────────────────────────────────
+# \u2500\u2500 Products Page (FIX 7) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 def _build_products(name: str, phone: str, canonical: str,
                     products: List[str], descs: List[str],
@@ -2000,10 +2000,10 @@ def _build_products(name: str, phone: str, canonical: str,
   <div class="product-body">
     <h3 class="product-name">{pname}</h3>
     <p class="product-desc">{pdesc}</p>
-    <div class="product-price">৳{pprice}</div>
+    <div class="product-price">\u09f3{pprice}</div>
     <div class="product-actions">
       <a href="order.html?product={encoded}" class="btn btn-primary btn-sm">
-        <span class="lang-bn">অর্ডার করুন</span>
+        <span class="lang-bn">\u0985\u09b0\u09cd\u09a1\u09be\u09b0 \u0995\u09b0\u09c1\u09a8</span>
         <span class="lang-en">Add to Order</span>
       </a>
       <a href="https://wa.me/{wa}?text=I%27m%20interested%20in%20{pname}" target="_blank" class="product-wa-btn">{WHATSAPP_SVG}</a>
@@ -2019,8 +2019,8 @@ def _build_products(name: str, phone: str, canonical: str,
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Products — {name}</title>
-  <meta name="description" content="Browse our products — {name}">
+  <title>Products \u2014 {name}</title>
+  <meta name="description" content="Browse our products \u2014 {name}">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -2029,11 +2029,11 @@ def _build_products(name: str, phone: str, canonical: str,
   <section class="page-hero">
     <div class="container">
       <h1>
-        <span class="lang-bn">আমাদের প্রোডাক্ট</span>
+        <span class="lang-bn">\u0986\u09ae\u09be\u09a6\u09c7\u09b0 \u09aa\u09cd\u09b0\u09cb\u09a1\u09be\u0995\u09cd\u099f</span>
         <span class="lang-en">Our Products</span>
       </h1>
       <p>
-        <span class="lang-bn">গুণগত মানের প্রোডাক্ট — সাশ্রয়ী মূল্যে</span>
+        <span class="lang-bn">\u0997\u09c1\u09a3\u0997\u09a4 \u09ae\u09be\u09a8\u09c7\u09b0 \u09aa\u09cd\u09b0\u09cb\u09a1\u09be\u0995\u09cd\u099f \u2014 \u09b8\u09be\u09b6\u09cd\u09b0\u09af\u09bc\u09c0 \u09ae\u09c2\u09b2\u09cd\u09af\u09c7</span>
         <span class="lang-en">Quality products at affordable prices</span>
       </p>
     </div>
@@ -2057,7 +2057,7 @@ def _build_products(name: str, phone: str, canonical: str,
     return html
 
 
-# ── Order Page (FIX 8) ──────────────────────────────────────────────
+# \u2500\u2500 Order Page (FIX 8) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 def _build_order_page(name: str, phone: str, canonical: str,
                       products: List[str], prices: List[str],
@@ -2067,7 +2067,7 @@ def _build_order_page(name: str, phone: str, canonical: str,
     t = get_design(canonical)
 
     product_options = '\n'.join(
-        f'<option value="{p}">{p} — ৳{pr}</option>'
+        f'<option value="{p}">{p} \u2014 \u09f3{pr}</option>'
         for p, pr in zip(products, prices)
     )
 
@@ -2078,8 +2078,8 @@ def _build_order_page(name: str, phone: str, canonical: str,
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Checkout — {name}</title>
-  <meta name="description" content="Complete your order — {name}">
+  <title>Checkout \u2014 {name}</title>
+  <meta name="description" content="Complete your order \u2014 {name}">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -2089,11 +2089,11 @@ def _build_order_page(name: str, phone: str, canonical: str,
   <section class="page-hero page-hero-sm">
     <div class="container">
       <h1>
-        <span class="lang-bn">চেকআউট</span>
+        <span class="lang-bn">\u099a\u09c7\u0995\u0986\u0989\u099f</span>
         <span class="lang-en">Checkout</span>
       </h1>
       <p>
-        <span class="lang-bn">আপনার অর্ডার কনফার্ম করুন</span>
+        <span class="lang-bn">\u0986\u09aa\u09a8\u09be\u09b0 \u0985\u09b0\u09cd\u09a1\u09be\u09b0 \u0995\u09a8\u09ab\u09be\u09b0\u09cd\u09ae \u0995\u09b0\u09c1\u09a8</span>
         <span class="lang-en">Complete your order securely</span>
       </p>
     </div>
@@ -2103,10 +2103,10 @@ def _build_order_page(name: str, phone: str, canonical: str,
     <div class="container">
       <div id="checkoutApp">
         <div class="checkout-steps">
-          <div class="step active" id="step1Indicator"><span class="step-num">1</span> <span class="lang-bn">কার্ট</span><span class="lang-en">Cart</span></div>
-          <div class="step" id="step2Indicator"><span class="step-num">2</span> <span class="lang-bn">তথ্য</span><span class="lang-en">Info</span></div>
-          <div class="step" id="step3Indicator"><span class="step-num">3</span> <span class="lang-bn">পেমেন্ট</span><span class="lang-en">Payment</span></div>
-          <div class="step" id="step4Indicator"><span class="step-num">4</span> <span class="lang-bn">নিশ্চিতকরণ</span><span class="lang-en">Confirm</span></div>
+          <div class="step active" id="step1Indicator"><span class="step-num">1</span> <span class="lang-bn">\u0995\u09be\u09b0\u09cd\u099f</span><span class="lang-en">Cart</span></div>
+          <div class="step" id="step2Indicator"><span class="step-num">2</span> <span class="lang-bn">\u09a4\u09a5\u09cd\u09af</span><span class="lang-en">Info</span></div>
+          <div class="step" id="step3Indicator"><span class="step-num">3</span> <span class="lang-bn">\u09aa\u09c7\u09ae\u09c7\u09a8\u09cd\u099f</span><span class="lang-en">Payment</span></div>
+          <div class="step" id="step4Indicator"><span class="step-num">4</span> <span class="lang-bn">\u09a8\u09bf\u09b6\u09cd\u099a\u09bf\u09a4\u0995\u09b0\u09a3</span><span class="lang-en">Confirm</span></div>
         </div>
 
         <!-- Step 1: Cart -->
@@ -2114,7 +2114,7 @@ def _build_order_page(name: str, phone: str, canonical: str,
           <div class="order-grid">
             <div class="order-form-card">
               <h3>
-                <span class="lang-bn">আপনার কার্ট</span>
+                <span class="lang-bn">\u0986\u09aa\u09a8\u09be\u09b0 \u0995\u09be\u09b0\u09cd\u099f</span>
                 <span class="lang-en">Your Cart</span>
               </h3>
               <div id="cartItems">
@@ -2126,43 +2126,43 @@ def _build_order_page(name: str, phone: str, canonical: str,
                       <div class="cart-item-price">\u09F3{pr}</div>
                     </div>
                     <div class="cart-item-qty">
-                      <button class="cart-qty-btn" data-action="minus">−</button>
+                      <button class="cart-qty-btn" data-action="minus">\u2212</button>
                       <span class="cart-qty-val">1</span>
                       <button class="cart-qty-btn" data-action="plus">+</button>
                     </div>
-                    <div class="cart-item-total">৳{pr}</div>
+                    <div class="cart-item-total">\u09f3{pr}</div>
                   </div>'''
                   for p, pr in zip(products, prices)
                 )}
               </div>
               <div class="cart-note">
-                <label><span class="lang-bn">বিশেষ নির্দেশনা</span><span class="lang-en">Special Note</span></label>
-                <textarea id="orderNote" rows="2" placeholder="কোনো বিশেষ নির্দেশনা থাকলে লিখুন..."></textarea>
+                <label><span class="lang-bn">\u09ac\u09bf\u09b6\u09c7\u09b7 \u09a8\u09bf\u09b0\u09cd\u09a6\u09c7\u09b6\u09a8\u09be</span><span class="lang-en">Special Note</span></label>
+                <textarea id="orderNote" rows="2" placeholder="\u0995\u09cb\u09a8\u09cb \u09ac\u09bf\u09b6\u09c7\u09b7 \u09a8\u09bf\u09b0\u09cd\u09a6\u09c7\u09b6\u09a8\u09be \u09a5\u09be\u0995\u09b2\u09c7 \u09b2\u09bf\u0996\u09c1\u09a8..."></textarea>
               </div>
               <button class="submit-btn" id="cartToInfo">
-                <span class="lang-bn">চেকআউটে যান</span>
+                <span class="lang-bn">\u099a\u09c7\u0995\u0986\u0989\u099f\u09c7 \u09af\u09be\u09a8</span>
                 <span class="lang-en">Proceed to Checkout</span>
               </button>
             </div>
 
             <div class="order-summary-card">
               <h3>
-                <span class="lang-bn">অর্ডার সারাংশ</span>
+                <span class="lang-bn">\u0985\u09b0\u09cd\u09a1\u09be\u09b0 \u09b8\u09be\u09b0\u09be\u0982\u09b6</span>
                 <span class="lang-en">Order Summary</span>
               </h3>
               <div id="summaryItems"></div>
               <div class="order-summary-row">
-                <span><span class="lang-bn">ডেলিভারি</span><span class="lang-en">Delivery</span></span>
-                <span class="summary-value" style="color:#10B981">ফ্রি / Free</span>
+                <span><span class="lang-bn">\u09a1\u09c7\u09b2\u09bf\u09ad\u09be\u09b0\u09bf</span><span class="lang-en">Delivery</span></span>
+                <span class="summary-value" style="color:#10B981">\u09ab\u09cd\u09b0\u09bf / Free</span>
               </div>
               <div class="order-summary-total">
-                <span><span class="lang-bn">মোট</span><span class="lang-en">Total</span></span>
-                <span id="checkoutTotal">৳0</span>
+                <span><span class="lang-bn">\u09ae\u09cb\u099f</span><span class="lang-en">Total</span></span>
+                <span id="checkoutTotal">\u09f30</span>
               </div>
               <div class="summary-trust">
-                <div class="summary-trust-item">✅ <span class="lang-bn">ক্যাশ অন ডেলিভারি</span><span class="lang-en">Cash on Delivery</span></div>
-                <div class="summary-trust-item">🚚 <span class="lang-bn">ফ্রি ডেলিভারি</span><span class="lang-en">Free Delivery</span></div>
-                <div class="summary-trust-item">🔒 <span class="lang-bn">নিরাপদ অর্ডার</span><span class="lang-en">Secure Order</span></div>
+                <div class="summary-trust-item">\u2705 <span class="lang-bn">\u0995\u09cd\u09af\u09be\u09b6 \u0985\u09a8 \u09a1\u09c7\u09b2\u09bf\u09ad\u09be\u09b0\u09bf</span><span class="lang-en">Cash on Delivery</span></div>
+                <div class="summary-trust-item">\u1f69a <span class="lang-bn">\u09ab\u09cd\u09b0\u09bf \u09a1\u09c7\u09b2\u09bf\u09ad\u09be\u09b0\u09bf</span><span class="lang-en">Free Delivery</span></div>
+                <div class="summary-trust-item">\u1f512 <span class="lang-bn">\u09a8\u09bf\u09b0\u09be\u09aa\u09a6 \u0985\u09b0\u09cd\u09a1\u09be\u09b0</span><span class="lang-en">Secure Order</span></div>
               </div>
             </div>
           </div>
@@ -2173,30 +2173,30 @@ def _build_order_page(name: str, phone: str, canonical: str,
           <div class="order-grid">
             <div class="order-form-card">
               <h3>
-                <span class="lang-bn">গ্রাহকের তথ্য</span>
+                <span class="lang-bn">\u0997\u09cd\u09b0\u09be\u09b9\u0995\u09c7\u09b0 \u09a4\u09a5\u09cd\u09af</span>
                 <span class="lang-en">Customer Information</span>
               </h3>
               <div class="form-group">
-                <label><span class="lang-bn">পূর্ণ নাম <span class="required">*</span></span><span class="lang-en">Full Name <span class="required">*</span></span></label>
-                <input type="text" id="orderName" required placeholder="আপনার নাম লিখুন">
+                <label><span class="lang-bn">\u09aa\u09c2\u09b0\u09cd\u09a3 \u09a8\u09be\u09ae <span class="required">*</span></span><span class="lang-en">Full Name <span class="required">*</span></span></label>
+                <input type="text" id="orderName" required placeholder="\u0986\u09aa\u09a8\u09be\u09b0 \u09a8\u09be\u09ae \u09b2\u09bf\u0996\u09c1\u09a8">
               </div>
               <div class="form-group">
-                <label><span class="lang-bn">ফোন নম্বর <span class="required">*</span></span><span class="lang-en">Phone Number <span class="required">*</span></span></label>
-                <input type="tel" id="orderPhone" required placeholder="০১XXX-XXXXXX">
+                <label><span class="lang-bn">\u09ab\u09cb\u09a8 \u09a8\u09ae\u09cd\u09ac\u09b0 <span class="required">*</span></span><span class="lang-en">Phone Number <span class="required">*</span></span></label>
+                <input type="tel" id="orderPhone" required placeholder="\u09e6\u09e7XXX-XXXXXX">
               </div>
               <div class="form-group">
-                <label><span class="lang-bn">ডেলিভারি ঠিকানা <span class="required">*</span></span><span class="lang-en">Delivery Address <span class="required">*</span></span></label>
-                <textarea id="orderAddress" required rows="3" placeholder="আপনার সম্পূর্ণ ঠিকানা লিখুন"></textarea>
+                <label><span class="lang-bn">\u09a1\u09c7\u09b2\u09bf\u09ad\u09be\u09b0\u09bf \u09a0\u09bf\u0995\u09be\u09a8\u09be <span class="required">*</span></span><span class="lang-en">Delivery Address <span class="required">*</span></span></label>
+                <textarea id="orderAddress" required rows="3" placeholder="\u0986\u09aa\u09a8\u09be\u09b0 \u09b8\u09ae\u09cd\u09aa\u09c2\u09b0\u09cd\u09a3 \u09a0\u09bf\u0995\u09be\u09a8\u09be \u09b2\u09bf\u0996\u09c1\u09a8"></textarea>
               </div>
               <div class="form-group">
-                <label><span class="lang-bn">পেমেন্ট মেথড <span class="required">*</span></span><span class="lang-en">Payment Method <span class="required">*</span></span></label>
+                <label><span class="lang-bn">\u09aa\u09c7\u09ae\u09c7\u09a8\u09cd\u099f \u09ae\u09c7\u09a5\u09a1 <span class="required">*</span></span><span class="lang-en">Payment Method <span class="required">*</span></span></label>
                 <div class="payment-options" id="paymentOptions">
                   <label class="payment-option">
                     <input type="radio" name="payment" value="COD" checked>
                     <span class="payment-radio"></span>
                     <span class="payment-info">
-                      <span class="payment-name"><span class="lang-bn">ক্যাশ অন ডেলিভারি</span><span class="lang-en">Cash on Delivery</span></span>
-                      <span class="payment-desc"><span class="lang-bn">পেমেন্ট করুন পণ্য হাতে পেয়ে</span><span class="lang-en">Pay when you receive</span></span>
+                      <span class="payment-name"><span class="lang-bn">\u0995\u09cd\u09af\u09be\u09b6 \u0985\u09a8 \u09a1\u09c7\u09b2\u09bf\u09ad\u09be\u09b0\u09bf</span><span class="lang-en">Cash on Delivery</span></span>
+                      <span class="payment-desc"><span class="lang-bn">\u09aa\u09c7\u09ae\u09c7\u09a8\u09cd\u099f \u0995\u09b0\u09c1\u09a8 \u09aa\u09a3\u09cd\u09af \u09b9\u09be\u09a4\u09c7 \u09aa\u09c7\u09af\u09bc\u09c7</span><span class="lang-en">Pay when you receive</span></span>
                     </span>
                   </label>
                   <label class="payment-option">
@@ -2204,7 +2204,7 @@ def _build_order_page(name: str, phone: str, canonical: str,
                     <span class="payment-radio"></span>
                     <span class="payment-info">
                       <span class="payment-name">bKash</span>
-                      <span class="payment-desc"><span class="lang-bn">সেন্ড মানি করতে ০১৭১২৩৪৫৬৭৮</span><span class="lang-en">Send money to 01712345678</span></span>
+                      <span class="payment-desc"><span class="lang-bn">\u09b8\u09c7\u09a8\u09cd\u09a1 \u09ae\u09be\u09a8\u09bf \u0995\u09b0\u09a4\u09c7 \u09e6\u09e7\u09ed\u09e7\u09e8\u09e9\u09ea\u09eb\u09ec\u09ed\u09ee</span><span class="lang-en">Send money to 01712345678</span></span>
                     </span>
                   </label>
                   <label class="payment-option">
@@ -2212,17 +2212,17 @@ def _build_order_page(name: str, phone: str, canonical: str,
                     <span class="payment-radio"></span>
                     <span class="payment-info">
                       <span class="payment-name">Nagad</span>
-                      <span class="payment-desc"><span class="lang-bn">সেন্ড মানি করতে ০১৭১২৩৪৫৬৭৮</span><span class="lang-en">Send money to 01712345678</span></span>
+                      <span class="payment-desc"><span class="lang-bn">\u09b8\u09c7\u09a8\u09cd\u09a1 \u09ae\u09be\u09a8\u09bf \u0995\u09b0\u09a4\u09c7 \u09e6\u09e7\u09ed\u09e7\u09e8\u09e9\u09ea\u09eb\u09ec\u09ed\u09ee</span><span class="lang-en">Send money to 01712345678</span></span>
                     </span>
                   </label>
                 </div>
               </div>
               <div class="form-row" style="gap:12px">
                 <button class="submit-btn" id="infoBack" style="background:transparent;color:var(--text);border:1.5px solid var(--border)">
-                  <span class="lang-bn">পেছনে</span><span class="lang-en">Back</span>
+                  <span class="lang-bn">\u09aa\u09c7\u099b\u09a8\u09c7</span><span class="lang-en">Back</span>
                 </button>
                 <button class="submit-btn" id="infoToConfirm">
-                  <span class="lang-bn">অর্ডার পর্যালোচনা করুন</span><span class="lang-en">Review Order</span>
+                  <span class="lang-bn">\u0985\u09b0\u09cd\u09a1\u09be\u09b0 \u09aa\u09b0\u09cd\u09af\u09be\u09b2\u09cb\u099a\u09a8\u09be \u0995\u09b0\u09c1\u09a8</span><span class="lang-en">Review Order</span>
                 </button>
               </div>
             </div>
@@ -2235,28 +2235,28 @@ def _build_order_page(name: str, phone: str, canonical: str,
           <div class="order-grid">
             <div class="order-form-card">
               <h3>
-                <span class="lang-bn">পেমেন্ট তথ্য</span>
+                <span class="lang-bn">\u09aa\u09c7\u09ae\u09c7\u09a8\u09cd\u099f \u09a4\u09a5\u09cd\u09af</span>
                 <span class="lang-en">Payment Details</span>
               </h3>
               <div id="paymentMethodLabel" style="font-size:14px;color:var(--text-muted);margin-bottom:20px"></div>
               <div class="form-group">
-                <label><span class="lang-bn">প্রেরকের নম্বর <span class="required">*</span></span><span class="lang-en">Your Sending Number <span class="required">*</span></span></label>
-                <input type="tel" id="paySenderNumber" required placeholder="০১XXX-XXXXXX">
+                <label><span class="lang-bn">\u09aa\u09cd\u09b0\u09c7\u09b0\u0995\u09c7\u09b0 \u09a8\u09ae\u09cd\u09ac\u09b0 <span class="required">*</span></span><span class="lang-en">Your Sending Number <span class="required">*</span></span></label>
+                <input type="tel" id="paySenderNumber" required placeholder="\u09e6\u09e7XXX-XXXXXX">
               </div>
               <div class="form-group">
-                <label><span class="lang-bn">প্রেরিত পরিমাণ (৳) <span class="required">*</span></span><span class="lang-en">Sent Amount (৳) <span class="required">*</span></span></label>
-                <input type="number" id="payAmount" required min="1" placeholder="০">
+                <label><span class="lang-bn">\u09aa\u09cd\u09b0\u09c7\u09b0\u09bf\u09a4 \u09aa\u09b0\u09bf\u09ae\u09be\u09a3 (\u09f3) <span class="required">*</span></span><span class="lang-en">Sent Amount (\u09f3) <span class="required">*</span></span></label>
+                <input type="number" id="payAmount" required min="1" placeholder="\u09e6">
               </div>
               <div class="form-group">
-                <label><span class="lang-bn">ট্রানজেকশন আইডি (TrxID) <span class="required">*</span></span><span class="lang-en">Transaction ID <span class="required">*</span></span></label>
-                <input type="text" id="payTrxId" required placeholder="TrxID লিখুন">
+                <label><span class="lang-bn">\u099f\u09cd\u09b0\u09be\u09a8\u099c\u09c7\u0995\u09b6\u09a8 \u0986\u0987\u09a1\u09bf (TrxID) <span class="required">*</span></span><span class="lang-en">Transaction ID <span class="required">*</span></span></label>
+                <input type="text" id="payTrxId" required placeholder="TrxID \u09b2\u09bf\u0996\u09c1\u09a8">
               </div>
               <div class="form-row" style="gap:12px">
                 <button class="submit-btn" id="payBack" style="background:transparent;color:var(--text);border:1.5px solid var(--border)">
-                  <span class="lang-bn">পেছনে</span><span class="lang-en">Back</span>
+                  <span class="lang-bn">\u09aa\u09c7\u099b\u09a8\u09c7</span><span class="lang-en">Back</span>
                 </button>
                 <button class="submit-btn" id="payToConfirm">
-                  <span class="lang-bn">অর্ডার কনফার্ম করুন</span><span class="lang-en">Confirm Order</span>
+                  <span class="lang-bn">\u0985\u09b0\u09cd\u09a1\u09be\u09b0 \u0995\u09a8\u09ab\u09be\u09b0\u09cd\u09ae \u0995\u09b0\u09c1\u09a8</span><span class="lang-en">Confirm Order</span>
                 </button>
               </div>
             </div>
@@ -2267,30 +2267,30 @@ def _build_order_page(name: str, phone: str, canonical: str,
         <!-- Step 4: Confirmation -->
         <div id="step4" class="checkout-step-content" style="display:none">
           <div class="order-confirm-card" id="orderConfirmCard">
-            <div class="confirm-icon">✅</div>
+            <div class="confirm-icon">\u2705</div>
             <h2>
-              <span class="lang-bn">অর্ডার কনফার্ম হয়েছে!</span>
+              <span class="lang-bn">\u0985\u09b0\u09cd\u09a1\u09be\u09b0 \u0995\u09a8\u09ab\u09be\u09b0\u09cd\u09ae \u09b9\u09af\u09bc\u09c7\u099b\u09c7!</span>
               <span class="lang-en">Order Confirmed!</span>
             </h2>
             <p class="confirm-subtitle">
-              <span class="lang-bn">আপনার অর্ডারটি সফলভাবে গৃহীত হয়েছে। আমরা শীঘ্রই আপনার সাথে যোগাযোগ করব।</span>
+              <span class="lang-bn">\u0986\u09aa\u09a8\u09be\u09b0 \u0985\u09b0\u09cd\u09a1\u09be\u09b0\u099f\u09bf \u09b8\u09ab\u09b2\u09ad\u09be\u09ac\u09c7 \u0997\u09c3\u09b9\u09c0\u09a4 \u09b9\u09af\u09bc\u09c7\u099b\u09c7\u0964 \u0986\u09ae\u09b0\u09be \u09b6\u09c0\u0998\u09cd\u09b0\u0987 \u0986\u09aa\u09a8\u09be\u09b0 \u09b8\u09be\u09a5\u09c7 \u09af\u09cb\u0997\u09be\u09af\u09cb\u0997 \u0995\u09b0\u09ac\u0964</span>
               <span class="lang-en">Your order has been placed successfully. We'll contact you shortly.</span>
             </p>
             <div class="confirm-details">
-              <div class="confirm-row"><span class="lang-bn">অর্ডার নম্বর</span><span class="lang-en">Order Number</span><span id="confirmOrderNum">#BD-0000</span></div>
-              <div class="confirm-row"><span class="lang-bn">নাম</span><span class="lang-en">Name</span><span id="confirmName">—</span></div>
-              <div class="confirm-row"><span class="lang-bn">ফোন</span><span class="lang-en">Phone</span><span id="confirmPhone">—</span></div>
-              <div class="confirm-row"><span class="lang-bn">ঠিকানা</span><span class="lang-en">Address</span><span id="confirmAddress">—</span></div>
-              <div class="confirm-row"><span class="lang-bn">পেমেন্ট</span><span class="lang-en">Payment</span><span id="confirmPayment">—</span></div>
-              <div class="confirm-row"><span class="lang-bn">মোট</span><span class="lang-en">Total</span><span id="confirmTotal">—</span></div>
+              <div class="confirm-row"><span class="lang-bn">\u0985\u09b0\u09cd\u09a1\u09be\u09b0 \u09a8\u09ae\u09cd\u09ac\u09b0</span><span class="lang-en">Order Number</span><span id="confirmOrderNum">#BD-0000</span></div>
+              <div class="confirm-row"><span class="lang-bn">\u09a8\u09be\u09ae</span><span class="lang-en">Name</span><span id="confirmName">\u2014</span></div>
+              <div class="confirm-row"><span class="lang-bn">\u09ab\u09cb\u09a8</span><span class="lang-en">Phone</span><span id="confirmPhone">\u2014</span></div>
+              <div class="confirm-row"><span class="lang-bn">\u09a0\u09bf\u0995\u09be\u09a8\u09be</span><span class="lang-en">Address</span><span id="confirmAddress">\u2014</span></div>
+              <div class="confirm-row"><span class="lang-bn">\u09aa\u09c7\u09ae\u09c7\u09a8\u09cd\u099f</span><span class="lang-en">Payment</span><span id="confirmPayment">\u2014</span></div>
+              <div class="confirm-row"><span class="lang-bn">\u09ae\u09cb\u099f</span><span class="lang-en">Total</span><span id="confirmTotal">\u2014</span></div>
             </div>
             <div id="confirmItems" class="confirm-items"></div>
             <p class="confirm-message" id="confirmMessage">
-              <span class="lang-bn">আপনাকে ধন্যবাদ! আপনার অর্ডারটি প্রক্রিয়াকরণ করা হবে।</span>
+              <span class="lang-bn">\u0986\u09aa\u09a8\u09be\u0995\u09c7 \u09a7\u09a8\u09cd\u09af\u09ac\u09be\u09a6! \u0986\u09aa\u09a8\u09be\u09b0 \u0985\u09b0\u09cd\u09a1\u09be\u09b0\u099f\u09bf \u09aa\u09cd\u09b0\u0995\u09cd\u09b0\u09bf\u09af\u09bc\u09be\u0995\u09b0\u09a3 \u0995\u09b0\u09be \u09b9\u09ac\u09c7\u0964</span>
               <span class="lang-en">Thank you! Your order will be processed.</span>
             </p>
             <a href="/" class="submit-btn" style="display:inline-block;text-align:center;text-decoration:none;margin-top:16px">
-              <span class="lang-bn">হোমপেজে ফিরে যান</span>
+              <span class="lang-bn">\u09b9\u09cb\u09ae\u09aa\u09c7\u099c\u09c7 \u09ab\u09bf\u09b0\u09c7 \u09af\u09be\u09a8</span>
               <span class="lang-en">Back to Home</span>
             </a>
           </div>
@@ -2331,10 +2331,10 @@ def _build_order_page(name: str, phone: str, canonical: str,
       total += t;
       items.push({{ name: p, price: pr, qty: q, total: t }});
     }});
-    document.getElementById('checkoutTotal').textContent = '৳' + total;
+    document.getElementById('checkoutTotal').textContent = '\u09f3' + total;
     const sb = document.getElementById('summaryItems');
     if (sb) sb.innerHTML = items.map(function(i) {{
-      return '<div class="order-summary-row"><span>' + i.name + ' × ' + i.qty + '</span><span>৳' + i.total + '</span></div>';
+      return '<div class="order-summary-row"><span>' + i.name + ' \u00d7 ' + i.qty + '</span><span>\u09f3' + i.total + '</span></div>';
     }}).join('');
     return items;
   }}
@@ -2377,10 +2377,10 @@ def _build_order_page(name: str, phone: str, canonical: str,
   function updateSummarySidebar(targetId, items, total) {{
     var sb = document.getElementById(targetId);
     if (!sb) return;
-    var html = '<h3 style="font-family:var(--font-heading);font-size:18px;font-weight:700;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--border)"><span class=\"lang-bn\">অর্ডার সারাংশ</span><span class=\"lang-en\">Order Summary</span></h3>';
-    items.forEach(function(i) {{ html += '<div class=\"order-summary-row\"><span>' + i.name + ' × ' + i.qty + '</span><span>৳' + i.total + '</span></div>'; }});
-    html += '<div class=\"order-summary-row\"><span><span class=\"lang-bn\">ডেলিভারি</span><span class=\"lang-en\">Delivery</span></span><span style=\"color:#10B981\">ফ্রি / Free</span></div>';
-    html += '<div class=\"order-summary-total\"><span><span class=\"lang-bn\">মোট</span><span class=\"lang-en\">Total</span></span><span>৳' + total + '</span></div>';
+    var html = '<h3 style="font-family:var(--font-heading);font-size:18px;font-weight:700;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--border)"><span class=\"lang-bn\">\u0985\u09b0\u09cd\u09a1\u09be\u09b0 \u09b8\u09be\u09b0\u09be\u0982\u09b6</span><span class=\"lang-en\">Order Summary</span></h3>';
+    items.forEach(function(i) {{ html += '<div class=\"order-summary-row\"><span>' + i.name + ' \u00d7 ' + i.qty + '</span><span>\u09f3' + i.total + '</span></div>'; }});
+    html += '<div class=\"order-summary-row\"><span><span class=\"lang-bn\">\u09a1\u09c7\u09b2\u09bf\u09ad\u09be\u09b0\u09bf</span><span class=\"lang-en\">Delivery</span></span><span style=\"color:#10B981\">\u09ab\u09cd\u09b0\u09bf / Free</span></div>';
+    html += '<div class=\"order-summary-total\"><span><span class=\"lang-bn\">\u09ae\u09cb\u099f</span><span class=\"lang-en\">Total</span></span><span>\u09f3' + total + '</span></div>';
     sb.innerHTML = html;
   }}
 
@@ -2408,9 +2408,9 @@ def _build_order_page(name: str, phone: str, canonical: str,
       // COD skips payment details, go straight to confirmation
       placeOrder(name, phone, address, payment, 'Cash on Delivery', '', total, items);
     }} else {{
-      // bKash/Nagad — show payment details step
+      // bKash/Nagad \u2014 show payment details step
       var label = document.getElementById('paymentMethodLabel');
-      if (label) label.innerHTML = '<span class=\"lang-bn\">আপনি <strong>' + payment + '</strong> সিলেক্ট করেছেন। নিচের তথ্য দিন:</span><span class=\"lang-en\">You selected <strong>' + payment + '</strong>. Fill in the details below:</span>';
+      if (label) label.innerHTML = '<span class=\"lang-bn\">\u0986\u09aa\u09a8\u09bf <strong>' + payment + '</strong> \u09b8\u09bf\u09b2\u09c7\u0995\u09cd\u099f \u0995\u09b0\u09c7\u099b\u09c7\u09a8\u0964 \u09a8\u09bf\u099a\u09c7\u09b0 \u09a4\u09a5\u09cd\u09af \u09a6\u09bf\u09a8:</span><span class=\"lang-en\">You selected <strong>' + payment + '</strong>. Fill in the details below:</span>';
       // Pre-fill amount
       var amt = document.getElementById('payAmount');
       if (amt) amt.value = total;
@@ -2444,20 +2444,20 @@ def _build_order_page(name: str, phone: str, canonical: str,
     document.getElementById('confirmPhone').textContent = phone;
     document.getElementById('confirmAddress').textContent = address;
     document.getElementById('confirmPayment').textContent = paymentLabel;
-    document.getElementById('confirmTotal').textContent = '৳' + total;
+    document.getElementById('confirmTotal').textContent = '\u09f3' + total;
 
     var ci = document.getElementById('confirmItems');
     if (ci) ci.innerHTML = items.map(function(i) {{
-      return '<div class=\"confirm-item\"><span>' + i.name + ' × ' + i.qty + '</span><span>৳' + i.total + '</span></div>';
+      return '<div class=\"confirm-item\"><span>' + i.name + ' \u00d7 ' + i.qty + '</span><span>\u09f3' + i.total + '</span></div>';
     }}).join('');
 
     showStep(4);
 
-    var msg = '🛍 NEW ORDER\\n📋 Order: ' + orderNum + '\\n👤 ' + name + '\\n📞 ' + phone + '\\n📍 ' + address;
-    items.forEach(function(i) {{ msg += '\\n🛒 ' + i.name + ' × ' + i.qty + ' = ৳' + i.total; }});
-    msg += '\\n💳 Payment: ' + paymentLabel;
-    if (payDetail) msg += '\\n🔢 ' + payDetail;
-    msg += '\\n💰 Total: ৳' + total;
+    var msg = '\u1f6cd NEW ORDER\\n\u1f4cb Order: ' + orderNum + '\\n\u1f464 ' + name + '\\n\u1f4de ' + phone + '\\n\u1f4cd ' + address;
+    items.forEach(function(i) {{ msg += '\\n\u1f6d2 ' + i.name + ' \u00d7 ' + i.qty + ' = \u09f3' + i.total; }});
+    msg += '\\n\u1f4b3 Payment: ' + paymentLabel;
+    if (payDetail) msg += '\\n\u1f522 ' + payDetail;
+    msg += '\\n\u1f4b0 Total: \u09f3' + total;
   }}
 
   updateTotals();
@@ -2470,7 +2470,7 @@ def _build_order_page(name: str, phone: str, canonical: str,
     return html
 
 
-# ── About Page ────────────────────────────────────────────────────────
+# \u2500\u2500 About Page \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 def _build_about(name: str, phone: str, canonical: str, address: str,
                  store_type: str, bengali_name: str,
@@ -2480,14 +2480,14 @@ def _build_about(name: str, phone: str, canonical: str, address: str,
     text_color = '#fff' if is_dark else 'var(--text)'
 
     stories = {
-        "fashion": ("Style Meets Tradition", "Bella-BD started with a simple vision: bring the finest fashion to every woman in Bangladesh. From our small boutique in Gulshan, we've grown to serve thousands of customers nationwide, always prioritizing quality, fit, and elegance.", "We believe fashion is more than clothing — it's confidence. Every piece in our collection is handpicked for its craftsmanship, fabric quality, and timeless appeal."),
+        "fashion": ("Style Meets Tradition", "Bella-BD started with a simple vision: bring the finest fashion to every woman in Bangladesh. From our small boutique in Gulshan, we've grown to serve thousands of customers nationwide, always prioritizing quality, fit, and elegance.", "We believe fashion is more than clothing \u2014 it's confidence. Every piece in our collection is handpicked for its craftsmanship, fabric quality, and timeless appeal."),
         "jewelry": ("Crafted with Love", "Our journey began with a passion for authentic jewelry. Each piece tells a story of heritage, craftsmanship, and timeless beauty. We source the finest materials to bring you jewelry that lasts a lifetime.", "We believe every woman deserves to feel radiant. Our collections are designed to celebrate your unique beauty, from everyday elegance to special occasion glamour."),
         "skincare": ("Glow Naturally", "Bella-BD Skincare was born from a desire to make premium skincare accessible in Bangladesh. We partner with trusted laboratories to bring science-backed formulas that deliver real results.", "Healthy skin is happy skin. We're committed to clean, cruelty-free formulations that nourish your skin and boost your confidence naturally."),
         "baby": ("Caring for Little Ones", "Every product in our baby collection is selected with the utmost care. From organic fabrics to BPA-free feeding essentials, we prioritize safety, comfort, and quality for your little ones.", "We believe babies deserve the best. Our mission is to make parenting easier by offering safe, premium, and affordable baby products."),
-        "home": ("Make Your House a Home", "Your home is your sanctuary. We curate home essentials that blend functionality with beauty — from elegant dinnerware to smart storage solutions that transform your living space.", "We believe great design starts at home. Every product we offer is chosen to bring comfort, style, and joy to your everyday life."),
+        "home": ("Make Your House a Home", "Your home is your sanctuary. We curate home essentials that blend functionality with beauty \u2014 from elegant dinnerware to smart storage solutions that transform your living space.", "We believe great design starts at home. Every product we offer is chosen to bring comfort, style, and joy to your everyday life."),
         "restaurant": ("A Taste of Excellence", "Our restaurant partners serve dishes crafted with passion and the finest ingredients. From family feasts to intimate dinners, we bring restaurant-quality dining to your table.", "Good food brings people together. We're on a mission to make exceptional dining accessible to every family in Bangladesh."),
-        "beauty": ("Beauty Redefined", "Bella-BD Beauty brings you the best of global beauty trends. From K-beauty inspired skincare to professional-grade makeup, we help you look and feel your best.", "Beauty is for everyone. We believe in inclusivity, quality, and innovation — making premium beauty products accessible across Bangladesh."),
-        "general": ("Our Story", "Bella-BD started with a dream: to make quality products accessible to everyone. Today we serve thousands of happy customers across Bangladesh with a commitment to excellence.", "Quality, trust, and customer satisfaction are at the heart of everything we do. We're not just a store — we're your trusted shopping partner."),
+        "beauty": ("Beauty Redefined", "Bella-BD Beauty brings you the best of global beauty trends. From K-beauty inspired skincare to professional-grade makeup, we help you look and feel your best.", "Beauty is for everyone. We believe in inclusivity, quality, and innovation \u2014 making premium beauty products accessible across Bangladesh."),
+        "general": ("Our Story", "Bella-BD started with a dream: to make quality products accessible to everyone. Today we serve thousands of happy customers across Bangladesh with a commitment to excellence.", "Quality, trust, and customer satisfaction are at the heart of everything we do. We're not just a store \u2014 we're your trusted shopping partner."),
     }
     story = stories.get(canonical, stories['general'])
 
@@ -2500,9 +2500,9 @@ def _build_about(name: str, phone: str, canonical: str, address: str,
     )
 
     values = [
-        ("🎯", "Quality First", "Every product meets our strict quality standards before reaching you."),
-        ("🤝", "Trust & Transparency", "Honest pricing, genuine products, and clear communication always."),
-        ("🚚", "Customer First", "Free delivery, easy returns, and 24/7 support via WhatsApp."),
+        ("\u1f3af", "Quality First", "Every product meets our strict quality standards before reaching you."),
+        ("\u1f91d", "Trust & Transparency", "Honest pricing, genuine products, and clear communication always."),
+        ("\u1f69a", "Customer First", "Free delivery, easy returns, and 24/7 support via WhatsApp."),
     ]
     value_cards = '\n'.join(
         f'<div class="value-card"><span class="value-icon">{v[0]}</span>'
@@ -2517,8 +2517,8 @@ def _build_about(name: str, phone: str, canonical: str, address: str,
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>About Us — {name}</title>
-  <meta name="description" content="Learn about {name} — our story, mission, and values">
+  <title>About Us \u2014 {name}</title>
+  <meta name="description" content="Learn about {name} \u2014 our story, mission, and values">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -2528,12 +2528,12 @@ def _build_about(name: str, phone: str, canonical: str, address: str,
   <section class="page-hero">
     <div class="container">
       <h1>
-        <span class="lang-bn">আমাদের সম্পর্কে</span>
+        <span class="lang-bn">\u0986\u09ae\u09be\u09a6\u09c7\u09b0 \u09b8\u09ae\u09cd\u09aa\u09b0\u09cd\u0995\u09c7</span>
         <span class="lang-en">About Us</span>
       </h1>
       <p>
-        <span class="lang-bn">{name} — আপনার বিশ্বস্ত অনলাইন গন্তব্য</span>
-        <span class="lang-en">{name} — Your trusted online destination</span>
+        <span class="lang-bn">{name} \u2014 \u0986\u09aa\u09a8\u09be\u09b0 \u09ac\u09bf\u09b6\u09cd\u09ac\u09b8\u09cd\u09a4 \u0985\u09a8\u09b2\u09be\u0987\u09a8 \u0997\u09a8\u09cd\u09a4\u09ac\u09cd\u09af</span>
+        <span class="lang-en">{name} \u2014 Your trusted online destination</span>
       </p>
     </div>
   </section>
@@ -2556,11 +2556,11 @@ def _build_about(name: str, phone: str, canonical: str, address: str,
     <div class="container">
       <div class="about-mission">
         <h2>
-          <span class="lang-bn">আমাদের লক্ষ্য</span>
+          <span class="lang-bn">\u0986\u09ae\u09be\u09a6\u09c7\u09b0 \u09b2\u0995\u09cd\u09b7\u09cd\u09af</span>
           <span class="lang-en">Our Mission</span>
         </h2>
         <p>
-          <span class="lang-bn">আমাদের লক্ষ্য হলো বাংলাদেশের প্রতিটি ঘরে গুণগত মানের পণ্য পৌঁছে দেওয়া, সাশ্রয়ী মূল্যে এবং বিশ্বস্ত সেবার সাথে।</span>
+          <span class="lang-bn">\u0986\u09ae\u09be\u09a6\u09c7\u09b0 \u09b2\u0995\u09cd\u09b7\u09cd\u09af \u09b9\u09b2\u09cb \u09ac\u09be\u0982\u09b2\u09be\u09a6\u09c7\u09b6\u09c7\u09b0 \u09aa\u09cd\u09b0\u09a4\u09bf\u099f\u09bf \u0998\u09b0\u09c7 \u0997\u09c1\u09a3\u0997\u09a4 \u09ae\u09be\u09a8\u09c7\u09b0 \u09aa\u09a3\u09cd\u09af \u09aa\u09cc\u0981\u099b\u09c7 \u09a6\u09c7\u0993\u09af\u09bc\u09be, \u09b8\u09be\u09b6\u09cd\u09b0\u09af\u09bc\u09c0 \u09ae\u09c2\u09b2\u09cd\u09af\u09c7 \u098f\u09ac\u0982 \u09ac\u09bf\u09b6\u09cd\u09ac\u09b8\u09cd\u09a4 \u09b8\u09c7\u09ac\u09be\u09b0 \u09b8\u09be\u09a5\u09c7\u0964</span>
           <span class="lang-en">Our mission is to deliver quality products to every home in Bangladesh, at affordable prices with trusted service.</span>
         </p>
       </div>
@@ -2571,15 +2571,15 @@ def _build_about(name: str, phone: str, canonical: str, address: str,
   <section class="section">
     <div class="container" style="text-align:center">
       <h2 style="font-family:var(--font-heading);font-size:24px;margin-bottom:16px">
-        <span class="lang-bn">আমাদের সাথে যোগাযোগ করুন</span>
+        <span class="lang-bn">\u0986\u09ae\u09be\u09a6\u09c7\u09b0 \u09b8\u09be\u09a5\u09c7 \u09af\u09cb\u0997\u09be\u09af\u09cb\u0997 \u0995\u09b0\u09c1\u09a8</span>
         <span class="lang-en">Get in Touch</span>
       </h2>
       <p style="color:var(--text-muted);margin-bottom:24px;max-width:500px;margin-left:auto;margin-right:auto">
-        <span class="lang-bn">আপনার প্রশ্ন বা মতামত জানাতে চাইলে আমাদের সাথে যোগাযোগ করুন</span>
+        <span class="lang-bn">\u0986\u09aa\u09a8\u09be\u09b0 \u09aa\u09cd\u09b0\u09b6\u09cd\u09a8 \u09ac\u09be \u09ae\u09a4\u09be\u09ae\u09a4 \u099c\u09be\u09a8\u09be\u09a4\u09c7 \u099a\u09be\u0987\u09b2\u09c7 \u0986\u09ae\u09be\u09a6\u09c7\u09b0 \u09b8\u09be\u09a5\u09c7 \u09af\u09cb\u0997\u09be\u09af\u09cb\u0997 \u0995\u09b0\u09c1\u09a8</span>
         <span class="lang-en">Have a question or feedback? We'd love to hear from you</span>
       </p>
       <a href="contact.html" class="btn btn-primary btn-lg">
-        <span class="lang-bn">যোগাযোগ করুন</span>
+        <span class="lang-bn">\u09af\u09cb\u0997\u09be\u09af\u09cb\u0997 \u0995\u09b0\u09c1\u09a8</span>
         <span class="lang-en">Contact Us</span>
       </a>
     </div>
@@ -2594,7 +2594,7 @@ def _build_about(name: str, phone: str, canonical: str, address: str,
     return html
 
 
-# ── Contact Page ──────────────────────────────────────────────────────
+# \u2500\u2500 Contact Page \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 def _build_contact(name: str, phone: str, canonical: str, address: str,
                    store_type: str, bengali_name: str,
@@ -2607,8 +2607,8 @@ def _build_contact(name: str, phone: str, canonical: str, address: str,
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Contact Us — {name}</title>
-  <meta name="description" content="Get in touch with {name} — we're here to help">
+  <title>Contact Us \u2014 {name}</title>
+  <meta name="description" content="Get in touch with {name} \u2014 we're here to help">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -2618,11 +2618,11 @@ def _build_contact(name: str, phone: str, canonical: str, address: str,
   <section class="page-hero">
     <div class="container">
       <h1>
-        <span class="lang-bn">যোগাযোগ</span>
+        <span class="lang-bn">\u09af\u09cb\u0997\u09be\u09af\u09cb\u0997</span>
         <span class="lang-en">Contact Us</span>
       </h1>
       <p>
-        <span class="lang-bn">আমরা আপনার কথা শুনতে চাই</span>
+        <span class="lang-bn">\u0986\u09ae\u09b0\u09be \u0986\u09aa\u09a8\u09be\u09b0 \u0995\u09a5\u09be \u09b6\u09c1\u09a8\u09a4\u09c7 \u099a\u09be\u0987</span>
         <span class="lang-en">We'd love to hear from you</span>
       </p>
     </div>
@@ -2633,69 +2633,69 @@ def _build_contact(name: str, phone: str, canonical: str, address: str,
       <div class="contact-grid">
         <div class="contact-info-card">
           <h2>
-            <span class="lang-bn">আমাদের ঠিকানা</span>
+            <span class="lang-bn">\u0986\u09ae\u09be\u09a6\u09c7\u09b0 \u09a0\u09bf\u0995\u09be\u09a8\u09be</span>
             <span class="lang-en">Our Information</span>
           </h2>
           <div class="contact-item">
-            <span class="ci-icon">📍</span>
-            <div><div class="ci-label"><span class="lang-bn">ঠিকানা</span><span class="lang-en">Address</span></div><div class="ci-value">{address}</div></div>
+            <span class="ci-icon">\u1f4cd</span>
+            <div><div class="ci-label"><span class="lang-bn">\u09a0\u09bf\u0995\u09be\u09a8\u09be</span><span class="lang-en">Address</span></div><div class="ci-value">{address}</div></div>
           </div>
           <div class="contact-item">
-            <span class="ci-icon">📞</span>
-            <div><div class="ci-label"><span class="lang-bn">ফোন</span><span class="lang-en">Phone</span></div><div class="ci-value"><a href="tel:{phone_disp}" style="color:var(--primary);text-decoration:none">{phone_disp}</a></div></div>
+            <span class="ci-icon">\u1f4de</span>
+            <div><div class="ci-label"><span class="lang-bn">\u09ab\u09cb\u09a8</span><span class="lang-en">Phone</span></div><div class="ci-value"><a href="tel:{phone_disp}" style="color:var(--primary);text-decoration:none">{phone_disp}</a></div></div>
           </div>
           <div class="contact-item">
-            <span class="ci-icon">💬</span>
+            <span class="ci-icon">\u1f4ac</span>
             <div><div class="ci-label">WhatsApp</div><div class="ci-value"><a href="https://wa.me/{wa}" target="_blank" style="color:var(--primary);text-decoration:none">Chat with us</a></div></div>
           </div>
           <div class="contact-item">
-            <span class="ci-icon">🕐</span>
-            <div><div class="ci-label"><span class="lang-bn">ব্যবসায়িক সময়</span><span class="lang-en">Business Hours</span></div><div class="ci-value"><span class="lang-bn">শনি-বৃহস্পতি: ৯AM-৯PM</span><span class="lang-en">Sat-Thu: 9AM-9PM</span></div></div>
+            <span class="ci-icon">\u1f550</span>
+            <div><div class="ci-label"><span class="lang-bn">\u09ac\u09cd\u09af\u09ac\u09b8\u09be\u09af\u09bc\u09bf\u0995 \u09b8\u09ae\u09af\u09bc</span><span class="lang-en">Business Hours</span></div><div class="ci-value"><span class="lang-bn">\u09b6\u09a8\u09bf-\u09ac\u09c3\u09b9\u09b8\u09cd\u09aa\u09a4\u09bf: \u09efAM-\u09efPM</span><span class="lang-en">Sat-Thu: 9AM-9PM</span></div></div>
           </div>
           <div class="contact-item">
-            <span class="ci-icon">📅</span>
-            <div><div class="ci-label"><span class="lang-bn">সাপ্তাহিক ছুটি</span><span class="lang-en">Weekly Holiday</span></div><div class="ci-value" style="color:#EF4444"><span class="lang-bn">শুক্রবার</span><span class="lang-en">Friday</span></div></div>
+            <span class="ci-icon">\u1f4c5</span>
+            <div><div class="ci-label"><span class="lang-bn">\u09b8\u09be\u09aa\u09cd\u09a4\u09be\u09b9\u09bf\u0995 \u099b\u09c1\u099f\u09bf</span><span class="lang-en">Weekly Holiday</span></div><div class="ci-value" style="color:#EF4444"><span class="lang-bn">\u09b6\u09c1\u0995\u09cd\u09b0\u09ac\u09be\u09b0</span><span class="lang-en">Friday</span></div></div>
           </div>
           <div class="contact-map-placeholder">
-            <span class="lang-bn">📍 গুগল ম্যাপে দেখুন</span>
-            <span class="lang-en">📍 View on Google Maps</span>
+            <span class="lang-bn">\u1f4cd \u0997\u09c1\u0997\u09b2 \u09ae\u09cd\u09af\u09be\u09aa\u09c7 \u09a6\u09c7\u0996\u09c1\u09a8</span>
+            <span class="lang-en">\u1f4cd View on Google Maps</span>
           </div>
         </div>
 
         <div class="contact-form-card">
           <h2>
-            <span class="lang-bn">মেসেজ পাঠান</span>
+            <span class="lang-bn">\u09ae\u09c7\u09b8\u09c7\u099c \u09aa\u09be\u09a0\u09be\u09a8</span>
             <span class="lang-en">Send us a Message</span>
           </h2>
           <form id="contactForm">
             <div class="form-group">
-              <label><span class="lang-bn">আপনার নাম <span class="required">*</span></span><span class="lang-en">Your Name <span class="required">*</span></span></label>
-              <input type="text" id="contactName" required placeholder="আপনার নাম লিখুন">
+              <label><span class="lang-bn">\u0986\u09aa\u09a8\u09be\u09b0 \u09a8\u09be\u09ae <span class="required">*</span></span><span class="lang-en">Your Name <span class="required">*</span></span></label>
+              <input type="text" id="contactName" required placeholder="\u0986\u09aa\u09a8\u09be\u09b0 \u09a8\u09be\u09ae \u09b2\u09bf\u0996\u09c1\u09a8">
             </div>
             <div class="form-group">
-              <label><span class="lang-bn">ইমেইল</span><span class="lang-en">Email</span></label>
+              <label><span class="lang-bn">\u0987\u09ae\u09c7\u0987\u09b2</span><span class="lang-en">Email</span></label>
               <input type="email" id="contactEmail" placeholder="your@email.com">
             </div>
             <div class="form-group">
-              <label><span class="lang-bn">ফোন নম্বর <span class="required">*</span></span><span class="lang-en">Phone Number <span class="required">*</span></span></label>
-              <input type="tel" id="contactPhone" required placeholder="০১XXX-XXXXXX">
+              <label><span class="lang-bn">\u09ab\u09cb\u09a8 \u09a8\u09ae\u09cd\u09ac\u09b0 <span class="required">*</span></span><span class="lang-en">Phone Number <span class="required">*</span></span></label>
+              <input type="tel" id="contactPhone" required placeholder="\u09e6\u09e7XXX-XXXXXX">
             </div>
             <div class="form-group">
-              <label><span class="lang-bn">বিষয়</span><span class="lang-en">Subject</span></label>
+              <label><span class="lang-bn">\u09ac\u09bf\u09b7\u09af\u09bc</span><span class="lang-en">Subject</span></label>
               <select id="contactSubject">
-                <option value="general"><span class="lang-bn">সাধারণ জিজ্ঞাসা</span><span class="lang-en">General Inquiry</span></option>
-                <option value="order"><span class="lang-bn">অর্ডার সংক্রান্ত</span><span class="lang-en">Order Related</span></option>
-                <option value="return"><span class="lang-bn">রিটার্ন / রিফান্ড</span><span class="lang-en">Return / Refund</span></option>
-                <option value="feedback"><span class="lang-bn">মতামত</span><span class="lang-en">Feedback</span></option>
-                <option value="other"><span class="lang-bn">অন্যান্য</span><span class="lang-en">Other</span></option>
+                <option value="general"><span class="lang-bn">\u09b8\u09be\u09a7\u09be\u09b0\u09a3 \u099c\u09bf\u099c\u09cd\u099e\u09be\u09b8\u09be</span><span class="lang-en">General Inquiry</span></option>
+                <option value="order"><span class="lang-bn">\u0985\u09b0\u09cd\u09a1\u09be\u09b0 \u09b8\u0982\u0995\u09cd\u09b0\u09be\u09a8\u09cd\u09a4</span><span class="lang-en">Order Related</span></option>
+                <option value="return"><span class="lang-bn">\u09b0\u09bf\u099f\u09be\u09b0\u09cd\u09a8 / \u09b0\u09bf\u09ab\u09be\u09a8\u09cd\u09a1</span><span class="lang-en">Return / Refund</span></option>
+                <option value="feedback"><span class="lang-bn">\u09ae\u09a4\u09be\u09ae\u09a4</span><span class="lang-en">Feedback</span></option>
+                <option value="other"><span class="lang-bn">\u0985\u09a8\u09cd\u09af\u09be\u09a8\u09cd\u09af</span><span class="lang-en">Other</span></option>
               </select>
             </div>
             <div class="form-group">
-              <label><span class="lang-bn">মেসেজ <span class="required">*</span></span><span class="lang-en">Message <span class="required">*</span></span></label>
-              <textarea id="contactMessage" required rows="4" placeholder="আপনার মেসেজ লিখুন..."></textarea>
+              <label><span class="lang-bn">\u09ae\u09c7\u09b8\u09c7\u099c <span class="required">*</span></span><span class="lang-en">Message <span class="required">*</span></span></label>
+              <textarea id="contactMessage" required rows="4" placeholder="\u0986\u09aa\u09a8\u09be\u09b0 \u09ae\u09c7\u09b8\u09c7\u099c \u09b2\u09bf\u0996\u09c1\u09a8..."></textarea>
             </div>
             <button type="submit" class="submit-btn">
-              <span class="lang-bn">WhatsApp এ মেসেজ পাঠান</span>
+              <span class="lang-bn">WhatsApp \u098f \u09ae\u09c7\u09b8\u09c7\u099c \u09aa\u09be\u09a0\u09be\u09a8</span>
               <span class="lang-en">Send via WhatsApp</span>
             </button>
           </form>
@@ -2713,7 +2713,7 @@ def _build_contact(name: str, phone: str, canonical: str, address: str,
     return html
 
 
-# ── Login Page ────────────────────────────────────────────────────────
+# \u2500\u2500 Login Page \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 def _build_login(name: str, phone: str, canonical: str) -> str:
     wa = clean_phone_for_whatsapp(phone)
@@ -2725,7 +2725,7 @@ def _build_login(name: str, phone: str, canonical: str) -> str:
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Login — {name}</title>
+  <title>Login \u2014 {name}</title>
   <meta name="description" content="Login to your {name} account">
   <link rel="stylesheet" href="styles.css">
 </head>
@@ -2735,52 +2735,52 @@ def _build_login(name: str, phone: str, canonical: str) -> str:
 <main class="auth-wrapper">
   <div class="auth-card">
     <h1>
-      <span class="lang-bn">সাইন ইন</span>
+      <span class="lang-bn">\u09b8\u09be\u0987\u09a8 \u0987\u09a8</span>
       <span class="lang-en">Sign In</span>
     </h1>
     <p class="auth-subtitle">
-      <span class="lang-bn">আপনার অ্যাকাউন্টে লগইন করুন</span>
+      <span class="lang-bn">\u0986\u09aa\u09a8\u09be\u09b0 \u0985\u09cd\u09af\u09be\u0995\u09be\u0989\u09a8\u09cd\u099f\u09c7 \u09b2\u0997\u0987\u09a8 \u0995\u09b0\u09c1\u09a8</span>
       <span class="lang-en">Welcome back! Sign in to your account</span>
     </p>
     <form id="loginForm">
       <div class="form-group">
-        <label><span class="lang-bn">ইমেইল বা ফোন নম্বর <span class="required">*</span></span><span class="lang-en">Email or Phone <span class="required">*</span></span></label>
-        <input type="text" id="loginEmail" required placeholder="your@email.com বা ০১XXX-XXXXXX">
+        <label><span class="lang-bn">\u0987\u09ae\u09c7\u0987\u09b2 \u09ac\u09be \u09ab\u09cb\u09a8 \u09a8\u09ae\u09cd\u09ac\u09b0 <span class="required">*</span></span><span class="lang-en">Email or Phone <span class="required">*</span></span></label>
+        <input type="text" id="loginEmail" required placeholder="your@email.com \u09ac\u09be \u09e6\u09e7XXX-XXXXXX">
       </div>
       <div class="form-group">
-        <label><span class="lang-bn">পাসওয়ার্ড <span class="required">*</span></span><span class="lang-en">Password <span class="required">*</span></span></label>
-        <input type="password" id="loginPassword" required placeholder="••••••••">
+        <label><span class="lang-bn">\u09aa\u09be\u09b8\u0993\u09af\u09bc\u09be\u09b0\u09cd\u09a1 <span class="required">*</span></span><span class="lang-en">Password <span class="required">*</span></span></label>
+        <input type="password" id="loginPassword" required placeholder="\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022">
       </div>
       <div class="form-group" style="display:flex;justify-content:space-between;align-items:center">
         <label class="auth-checkbox">
           <input type="checkbox" checked>
-          <span class="lang-bn">মনে রাখুন</span><span class="lang-en">Remember me</span>
+          <span class="lang-bn">\u09ae\u09a8\u09c7 \u09b0\u09be\u0996\u09c1\u09a8</span><span class="lang-en">Remember me</span>
         </label>
         <a href="#" style="color:var(--primary);font-size:14px;text-decoration:none">
-          <span class="lang-bn">পাসওয়ার্ড ভুলে গেছেন?</span>
+          <span class="lang-bn">\u09aa\u09be\u09b8\u0993\u09af\u09bc\u09be\u09b0\u09cd\u09a1 \u09ad\u09c1\u09b2\u09c7 \u0997\u09c7\u099b\u09c7\u09a8?</span>
           <span class="lang-en">Forgot password?</span>
         </a>
       </div>
       <button type="submit" class="auth-btn">
-        <span class="lang-bn">সাইন ইন</span>
+        <span class="lang-bn">\u09b8\u09be\u0987\u09a8 \u0987\u09a8</span>
         <span class="lang-en">Sign In</span>
       </button>
     </form>
     <div class="auth-divider">
-      <span><span class="lang-bn">অথবা</span><span class="lang-en">Or</span></span>
+      <span><span class="lang-bn">\u0985\u09a5\u09ac\u09be</span><span class="lang-en">Or</span></span>
     </div>
     <div class="auth-social">
       <a href="https://wa.me/{wa}" target="_blank">
-        <span>💬</span> <span class="lang-bn">WhatsApp</span><span class="lang-en">WhatsApp</span>
+        <span>\u1f4ac</span> <span class="lang-bn">WhatsApp</span><span class="lang-en">WhatsApp</span>
       </a>
       <a href="#">
-        <span>📧</span> <span class="lang-bn">ইমেইল</span><span class="lang-en">Email</span>
+        <span>\u1f4e7</span> <span class="lang-bn">\u0987\u09ae\u09c7\u0987\u09b2</span><span class="lang-en">Email</span>
       </a>
     </div>
     <div class="auth-footer">
-      <span class="lang-bn">নতুন গ্রাহক?</span><span class="lang-en">New customer?</span>
+      <span class="lang-bn">\u09a8\u09a4\u09c1\u09a8 \u0997\u09cd\u09b0\u09be\u09b9\u0995?</span><span class="lang-en">New customer?</span>
       <a href="register.html">
-        <span class="lang-bn">রেজিস্টার করুন</span><span class="lang-en">Create Account</span>
+        <span class="lang-bn">\u09b0\u09c7\u099c\u09bf\u09b8\u09cd\u099f\u09be\u09b0 \u0995\u09b0\u09c1\u09a8</span><span class="lang-en">Create Account</span>
       </a>
     </div>
   </div>
@@ -2794,7 +2794,7 @@ def _build_login(name: str, phone: str, canonical: str) -> str:
     return html
 
 
-# ── Register Page ─────────────────────────────────────────────────────
+# \u2500\u2500 Register Page \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 def _build_register(name: str, phone: str, canonical: str) -> str:
     wa = clean_phone_for_whatsapp(phone)
@@ -2804,7 +2804,7 @@ def _build_register(name: str, phone: str, canonical: str) -> str:
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Create Account — {name}</title>
+  <title>Create Account \u2014 {name}</title>
   <meta name="description" content="Create your {name} account">
   <link rel="stylesheet" href="styles.css">
 </head>
@@ -2814,58 +2814,58 @@ def _build_register(name: str, phone: str, canonical: str) -> str:
 <main class="auth-wrapper">
   <div class="auth-card">
     <h1>
-      <span class="lang-bn">নতুন অ্যাকাউন্ট</span>
+      <span class="lang-bn">\u09a8\u09a4\u09c1\u09a8 \u0985\u09cd\u09af\u09be\u0995\u09be\u0989\u09a8\u09cd\u099f</span>
       <span class="lang-en">Create Account</span>
     </h1>
     <p class="auth-subtitle">
-      <span class="lang-bn">রেজিস্টার করে শুরু করুন</span>
+      <span class="lang-bn">\u09b0\u09c7\u099c\u09bf\u09b8\u09cd\u099f\u09be\u09b0 \u0995\u09b0\u09c7 \u09b6\u09c1\u09b0\u09c1 \u0995\u09b0\u09c1\u09a8</span>
       <span class="lang-en">Register and start shopping</span>
     </p>
     <form id="registerForm">
       <div class="form-group">
-        <label><span class="lang-bn">পূর্ণ নাম <span class="required">*</span></span><span class="lang-en">Full Name <span class="required">*</span></span></label>
-        <input type="text" id="regName" required placeholder="আপনার নাম লিখুন">
+        <label><span class="lang-bn">\u09aa\u09c2\u09b0\u09cd\u09a3 \u09a8\u09be\u09ae <span class="required">*</span></span><span class="lang-en">Full Name <span class="required">*</span></span></label>
+        <input type="text" id="regName" required placeholder="\u0986\u09aa\u09a8\u09be\u09b0 \u09a8\u09be\u09ae \u09b2\u09bf\u0996\u09c1\u09a8">
       </div>
       <div class="form-group">
-        <label><span class="lang-bn">ইমেইল</span><span class="lang-en">Email</span></label>
+        <label><span class="lang-bn">\u0987\u09ae\u09c7\u0987\u09b2</span><span class="lang-en">Email</span></label>
         <input type="email" id="regEmail" placeholder="your@email.com">
       </div>
       <div class="form-group">
-        <label><span class="lang-bn">ফোন নম্বর <span class="required">*</span></span><span class="lang-en">Phone Number <span class="required">*</span></span></label>
-        <input type="tel" id="regPhone" required placeholder="০১XXX-XXXXXX">
+        <label><span class="lang-bn">\u09ab\u09cb\u09a8 \u09a8\u09ae\u09cd\u09ac\u09b0 <span class="required">*</span></span><span class="lang-en">Phone Number <span class="required">*</span></span></label>
+        <input type="tel" id="regPhone" required placeholder="\u09e6\u09e7XXX-XXXXXX">
       </div>
       <div class="form-group">
-        <label><span class="lang-bn">পাসওয়ার্ড <span class="required">*</span></span><span class="lang-en">Password <span class="required">*</span></span></label>
-        <input type="password" id="regPassword" required placeholder="কমপক্ষে ৬ অক্ষর">
+        <label><span class="lang-bn">\u09aa\u09be\u09b8\u0993\u09af\u09bc\u09be\u09b0\u09cd\u09a1 <span class="required">*</span></span><span class="lang-en">Password <span class="required">*</span></span></label>
+        <input type="password" id="regPassword" required placeholder="\u0995\u09ae\u09aa\u0995\u09cd\u09b7\u09c7 \u09ec \u0985\u0995\u09cd\u09b7\u09b0">
       </div>
       <div class="form-group">
-        <label><span class="lang-bn">পাসওয়ার্ড নিশ্চিত করুন <span class="required">*</span></span><span class="lang-en">Confirm Password <span class="required">*</span></span></label>
-        <input type="password" id="regConfirm" required placeholder="পুনরায় পাসওয়ার্ড লিখুন">
+        <label><span class="lang-bn">\u09aa\u09be\u09b8\u0993\u09af\u09bc\u09be\u09b0\u09cd\u09a1 \u09a8\u09bf\u09b6\u09cd\u099a\u09bf\u09a4 \u0995\u09b0\u09c1\u09a8 <span class="required">*</span></span><span class="lang-en">Confirm Password <span class="required">*</span></span></label>
+        <input type="password" id="regConfirm" required placeholder="\u09aa\u09c1\u09a8\u09b0\u09be\u09af\u09bc \u09aa\u09be\u09b8\u0993\u09af\u09bc\u09be\u09b0\u09cd\u09a1 \u09b2\u09bf\u0996\u09c1\u09a8">
       </div>
       <div class="form-group">
         <label class="auth-checkbox">
           <input type="checkbox" required>
-          <span class="lang-bn">আমি শর্তাবলী এবং গোপনীয়তা নীতিতে সম্মতি জানাচ্ছি</span>
+          <span class="lang-bn">\u0986\u09ae\u09bf \u09b6\u09b0\u09cd\u09a4\u09be\u09ac\u09b2\u09c0 \u098f\u09ac\u0982 \u0997\u09cb\u09aa\u09a8\u09c0\u09af\u09bc\u09a4\u09be \u09a8\u09c0\u09a4\u09bf\u09a4\u09c7 \u09b8\u09ae\u09cd\u09ae\u09a4\u09bf \u099c\u09be\u09a8\u09be\u099a\u09cd\u099b\u09bf</span>
           <span class="lang-en">I agree to the Terms & Conditions and Privacy Policy</span>
         </label>
       </div>
       <button type="submit" class="auth-btn">
-        <span class="lang-bn">অ্যাকাউন্ট তৈরি করুন</span>
+        <span class="lang-bn">\u0985\u09cd\u09af\u09be\u0995\u09be\u0989\u09a8\u09cd\u099f \u09a4\u09c8\u09b0\u09bf \u0995\u09b0\u09c1\u09a8</span>
         <span class="lang-en">Create Account</span>
       </button>
     </form>
     <div class="auth-divider">
-      <span><span class="lang-bn">অথবা</span><span class="lang-en">Or</span></span>
+      <span><span class="lang-bn">\u0985\u09a5\u09ac\u09be</span><span class="lang-en">Or</span></span>
     </div>
     <div class="auth-social">
       <a href="https://wa.me/{wa}" target="_blank">
-        <span>💬</span> <span class="lang-bn">WhatsApp দিয়ে রেজিস্টার</span><span class="lang-en">Register via WhatsApp</span>
+        <span>\u1f4ac</span> <span class="lang-bn">WhatsApp \u09a6\u09bf\u09af\u09bc\u09c7 \u09b0\u09c7\u099c\u09bf\u09b8\u09cd\u099f\u09be\u09b0</span><span class="lang-en">Register via WhatsApp</span>
       </a>
     </div>
     <div class="auth-footer">
-      <span class="lang-bn">ইতিমধ্যে অ্যাকাউন্ট আছে?</span><span class="lang-en">Already have an account?</span>
+      <span class="lang-bn">\u0987\u09a4\u09bf\u09ae\u09a7\u09cd\u09af\u09c7 \u0985\u09cd\u09af\u09be\u0995\u09be\u0989\u09a8\u09cd\u099f \u0986\u099b\u09c7?</span><span class="lang-en">Already have an account?</span>
       <a href="login.html">
-        <span class="lang-bn">সাইন ইন করুন</span><span class="lang-en">Sign In</span>
+        <span class="lang-bn">\u09b8\u09be\u0987\u09a8 \u0987\u09a8 \u0995\u09b0\u09c1\u09a8</span><span class="lang-en">Sign In</span>
       </a>
     </div>
   </div>
@@ -2879,7 +2879,7 @@ def _build_register(name: str, phone: str, canonical: str) -> str:
     return html
 
 
-# ── Main Generator ────────────────────────────────────────────────────
+# \u2500\u2500 Main Generator \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 def generate_site(out_dir: str, name: str, phone: str, canonical: str,
                   address: str = 'Dhaka, Bangladesh',
@@ -2895,22 +2895,22 @@ def generate_site(out_dir: str, name: str, phone: str, canonical: str,
     stats = CATEGORY_STAT_ITEMS.get(canonical, CATEGORY_STAT_ITEMS['general'])
     trust = CATEGORY_TRUST_ITEMS.get(canonical, CATEGORY_TRUST_ITEMS['general'])
     store_type = CATEGORY_STORE_NAMES.get(canonical, 'store')
-    bengali_name = CATEGORY_BENGALI_NAMES.get(canonical, 'জেনারেল')
+    bengali_name = CATEGORY_BENGALI_NAMES.get(canonical, '\u099c\u09c7\u09a8\u09be\u09b0\u09c7\u09b2')
     story_title = CATEGORY_STORY_TITLE.get(canonical, 'Our Story')
     story_text = CATEGORY_STORY_TEXT.get(canonical, 'Committed to excellence.')
-    story_title_bn = CATEGORY_ABOUT_TITLE_BN.get(canonical, 'আমাদের গল্প')
+    story_title_bn = CATEGORY_ABOUT_TITLE_BN.get(canonical, '\u0986\u09ae\u09be\u09a6\u09c7\u09b0 \u0997\u09b2\u09cd\u09aa')
 
     if services is None:
         services_cfg = {
-            "fashion": [("👗", "Trendy Collection", "Latest fashion trends with quality fabrics"), ("🚚", "Fast Delivery", "Free delivery across Bangladesh"), ("🔄", "Easy Return", "Hassle-free returns within 7 days")],
-            "jewelry": [("💍", "Premium Designs", "Handcrafted jewelry with authentic materials"), ("🎁", "Gift Wrapping", "Beautiful complimentary gift wrapping"), ("✅", "Certified", "Hallmarked and certified genuine")],
-            "skincare": [("🧴", "Premium Formulas", "Science-backed skincare for radiant skin"), ("🧪", "Dermatologist Tested", "Safe for all skin types"), ("🚚", "Free Delivery", "Free shipping on all orders")],
-            "baby": [("👶", "Baby Safe", "All products meet safety standards"), ("🧸", "Premium Quality", "Soft, safe, and durable materials"), ("🚚", "Fast Delivery", "Quick delivery across Bangladesh")],
-            "home": [("🏠", "Premium Quality", "Durable home essentials for everyday use"), ("📦", "Smart Storage", "Space-saving organization solutions"), ("🚚", "Free Delivery", "Free shipping on orders over ৳999")],
-            "restaurant": [("🍽️", "Chef Specials", "Crafted by expert chefs with fresh ingredients"), ("🚚", "Home Delivery", "Hot, fresh meals delivered to your door"), ("🎉", "Event Catering", "Full-service catering for any occasion")],
-            "beauty": [("💇", "Expert Products", "Premium beauty products for every need"), ("💄", "Trendy Styles", "Stay on trend with our curated collection"), ("📦", "Fast Shipping", "Quick delivery across the country")],
-            "retail": [("🛍️", "Curated Collection", "Carefully selected products for you"), ("🚚", "Free Delivery", "Free shipping on all orders"), ("💳", "COD Available", "Pay when you receive")],
-            "general": [("⭐", "Quality Service", "Professional service you can rely on"), ("🚚", "Fast Delivery", "Timely delivery every time"), ("💳", "COD", "Cash on delivery available")],
+            "fashion": [("\u1f457", "Trendy Collection", "Latest fashion trends with quality fabrics"), ("\u1f69a", "Fast Delivery", "Free delivery across Bangladesh"), ("\u1f504", "Easy Return", "Hassle-free returns within 7 days")],
+            "jewelry": [("\u1f48d", "Premium Designs", "Handcrafted jewelry with authentic materials"), ("\u1f381", "Gift Wrapping", "Beautiful complimentary gift wrapping"), ("\u2705", "Certified", "Hallmarked and certified genuine")],
+            "skincare": [("\u1f9f4", "Premium Formulas", "Science-backed skincare for radiant skin"), ("\u1f9ea", "Dermatologist Tested", "Safe for all skin types"), ("\u1f69a", "Free Delivery", "Free shipping on all orders")],
+            "baby": [("\u1f476", "Baby Safe", "All products meet safety standards"), ("\u1f9f8", "Premium Quality", "Soft, safe, and durable materials"), ("\u1f69a", "Fast Delivery", "Quick delivery across Bangladesh")],
+            "home": [("\u1f3e0", "Premium Quality", "Durable home essentials for everyday use"), ("\u1f4e6", "Smart Storage", "Space-saving organization solutions"), ("\u1f69a", "Free Delivery", "Free shipping on orders over \u09f3999")],
+            "restaurant": [("\u1f37d\ufe0f", "Chef Specials", "Crafted by expert chefs with fresh ingredients"), ("\u1f69a", "Home Delivery", "Hot, fresh meals delivered to your door"), ("\u1f389", "Event Catering", "Full-service catering for any occasion")],
+            "beauty": [("\u1f487", "Expert Products", "Premium beauty products for every need"), ("\u1f484", "Trendy Styles", "Stay on trend with our curated collection"), ("\u1f4e6", "Fast Shipping", "Quick delivery across the country")],
+            "retail": [("\u1f6cd\ufe0f", "Curated Collection", "Carefully selected products for you"), ("\u1f69a", "Free Delivery", "Free shipping on all orders"), ("\u1f4b3", "COD Available", "Pay when you receive")],
+            "general": [("\u2b50", "Quality Service", "Professional service you can rely on"), ("\u1f69a", "Fast Delivery", "Timely delivery every time"), ("\u1f4b3", "COD", "Cash on delivery available")],
         }
         services = services_cfg.get(canonical, services_cfg['general'])
 
@@ -2946,45 +2946,45 @@ def generate_site(out_dir: str, name: str, phone: str, canonical: str,
                          bengali_name, store_type, facebook_url, instagram)
     with open(os.path.join(out_dir, 'index.html'), 'w', encoding='utf-8') as f:
         f.write(index)
-    print(f"  index.html ✓")
+    print(f"  index.html \u2713")
 
     products_page = _build_products(name, phone, canonical,
                                     products, descs, prices, store_type,
                                     CATEGORY_PRODUCT_SUBCATS.get(canonical))
     with open(os.path.join(out_dir, 'products.html'), 'w', encoding='utf-8') as f:
         f.write(products_page)
-    print(f"  products.html ✓")
+    print(f"  products.html \u2713")
 
     order_page = _build_order_page(name, phone, canonical,
                                    products, prices, descs, store_type)
     with open(os.path.join(out_dir, 'order.html'), 'w', encoding='utf-8') as f:
         f.write(order_page)
-    print(f"  order.html ✓")
+    print(f"  order.html \u2713")
 
     about = _build_about(name, phone, canonical, address,
                          store_type, bengali_name, facebook_url, instagram)
     with open(os.path.join(out_dir, 'about.html'), 'w', encoding='utf-8') as f:
         f.write(about)
-    print(f"  about.html ✓")
+    print(f"  about.html \u2713")
 
     contact = _build_contact(name, phone, canonical, address,
                              store_type, bengali_name, facebook_url, instagram)
     with open(os.path.join(out_dir, 'contact.html'), 'w', encoding='utf-8') as f:
         f.write(contact)
-    print(f"  contact.html ✓")
+    print(f"  contact.html \u2713")
 
     login = _build_login(name, phone, canonical)
     with open(os.path.join(out_dir, 'login.html'), 'w', encoding='utf-8') as f:
         f.write(login)
-    print(f"  login.html ✓")
+    print(f"  login.html \u2713")
 
     register = _build_register(name, phone, canonical)
     with open(os.path.join(out_dir, 'register.html'), 'w', encoding='utf-8') as f:
         f.write(register)
-    print(f"  register.html ✓")
+    print(f"  register.html \u2713")
 
-    print(f"  styles.css ✓")
-    print(f"  script.js ✓")
+    print(f"  styles.css \u2713")
+    print(f"  script.js \u2713")
 
 
 def main():
@@ -3006,7 +3006,7 @@ def main():
         canonical = args.category.lower().replace(' ', '_')
 
     print(f"Generating site for: {args.name}")
-    print(f"  Category: {args.category} → canonical: {canonical}")
+    print(f"  Category: {args.category} \u2192 canonical: {canonical}")
     print(f"  Output:   {args.out}")
 
     generate_site(
