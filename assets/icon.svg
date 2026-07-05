@@ -16,7 +16,7 @@
   <!-- Background -->
   <rect width="64" height="64" rx="14" fill="#050A14"/>
   <!-- Border -->
-  <rect x="2.5" y="2.5" width="59" height="59" rx="11.5" fill="none" stroke="url(#brandGrad)" stroke-width="1.2" opacity="0.5"/>
+  <rect x="2.5" y="2.5" width="59" height="59" rx="11.5" fill="none" stroke="#F8FAFC" stroke-width="1.2" opacity="0.6"/>
   <!-- Glow -->
   <ellipse cx="52" cy="52" rx="14" ry="14" fill="url(#glowGrad)"/>
   <!-- S monogram -->
