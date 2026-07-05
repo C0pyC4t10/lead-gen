@@ -16,6 +16,7 @@ except ImportError:
     mongo_db = None
     cloudinary_storage = None
 USE_MONGO = False
+import leads_db
 
 # Load .env (force override shell env so .env values always win)
 env_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '.env')
@@ -431,11 +432,19 @@ def is_social_website(url):
     if not url: return False
     return any(d in url.lower() for d in SOCIAL_DOMAINS)
 
-def send_telegram_notification(lead, action='saved'):
+def send_telegram_notification(lead, action='saved', user_id=None):
+    chat_id = TELEGRAM_CHAT_ID
+    thread_id = TELEGRAM_THREAD_ID
     token = TELEGRAM_TOKEN
     if not token:
         print("  TELEGRAM_TOKEN not set, skipping notification", flush=True)
         return None
+    if user_id:
+        cfg = leads_db.get_telegram_config(user_id)
+        if cfg.get('bot_token'):
+            token = cfg['bot_token']
+        if cfg.get('chat_id'):
+            chat_id = cfg['chat_id']
 
     try:
         score = int(lead.get('qualification_score', 0))
@@ -510,12 +519,13 @@ def send_telegram_notification(lead, action='saved'):
         message += "\n\n\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\n\u26a1 <b>Quick actions</b> \u2192 tell me: <i>qualify</i> / <i>disqualify</i> / <i>demo</i>"
 
     payload = {
-        "chat_id": TELEGRAM_CHAT_ID,
-        "message_thread_id": TELEGRAM_THREAD_ID,
+        "chat_id": chat_id,
         "text": message,
         "parse_mode": "HTML",
         "disable_web_page_preview": True,
     }
+    if chat_id == TELEGRAM_CHAT_ID:
+        payload['message_thread_id'] = thread_id
 
     def _do_send():
         bot_url = f"https://api.telegram.org/bot{token}/sendMessage"
@@ -537,68 +547,20 @@ def append_lead(data, notify_telegram=True, user_id=None):
     page_url = data.get('page_url', '').strip()
     if not page_url:
         return False, 'page_url is required'
-    data['_notify_telegram'] = bool(notify_telegram)
 
-    if USE_MONGO:
-        result = mongo_db.save_lead(data, user_id)
-        if result and isinstance(result, dict) and result.get('duplicate'):
-            existing = mongo_db.find_lead_by_url(page_url, user_id)
-            if data.get('_notify_telegram', True):
-                send_telegram_notification(existing, 'duplicate')
-            return False, 'duplicate'
-        if result:
-            row = mongo_db.serialize(result)
-            row['date'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-            if data.get('_notify_telegram', True):
-                send_telegram_notification(row, 'saved')
-            return True, 'Lead saved'
-        return False, 'Failed to save lead'
-
-    target_path = user_csv_path(user_id)
-
-    rows = []
-    found_idx = -1
-    rows = read_csv_rows(target_path)
-    for i, row in enumerate(rows):
-        for col in CSV_COLUMNS:
-            if col not in row:
-                row[col] = ''
-        if row.get('page_url', '').strip() == page_url:
-            found_idx = i
-            break
-
-    if found_idx >= 0:
-        existing = rows[found_idx]
-        print(f"DUPLICATE: {existing.get('business_name') or 'Unknown'} | {page_url}", flush=True)
-        if data.get('_notify_telegram', True):
-            send_telegram_notification(existing, 'duplicate')
+    ok, msg = leads_db.add_lead(data, user_id)
+    if msg == 'duplicate':
+        existing = leads_db.get_lead_by_url(page_url)
+        if existing and notify_telegram:
+            send_telegram_notification(existing, 'duplicate', user_id=user_id)
         return False, 'duplicate'
+    if not ok:
+        return False, msg
 
-    row = {col: '' for col in CSV_COLUMNS}
-    row['date'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-    if not row.get('platform'):
-        row['platform'] = 'facebook'
-    row['status'] = 'new'
-    for key in CSV_COLUMNS:
-        if key in data and data[key] not in (None, ''):
-            row[key] = str(data[key])
-
-    row['category'] = classify_category(row.get('category', ''))
-
-    rows.append(row)
-    msg = 'Lead saved'
-    notify = data.get('_notify_telegram', True)
-    user_name = (data.get('_saved_by_name') or '').strip()
-    saved_by_id = data.get('_saved_by_id', 0)
-    by = f" by {user_name}#{saved_by_id}" if user_name else ""
-    print(f"LEAD SAVED{by}: {row['business_name'] or 'Unknown'} | Score: {row['qualification_score'] or 'N/A'} | {page_url} | telegram={notify}", flush=True)
-    if notify:
-        send_telegram_notification(row, 'saved')
-    append_to_daily_qualified_csv(row, qualified_by='extension-flow')
-
-    write_csv_rows(target_path, rows)
-
-    return True, msg
+    print(f"LEAD SAVED: {data.get('business_name') or 'Unknown'} | {page_url} | telegram={notify_telegram}", flush=True)
+    if notify_telegram:
+        send_telegram_notification(data, 'saved', user_id=user_id)
+    return True, 'Lead saved'
 
 
 def delete_lead(page_url, user_id=None):
@@ -626,263 +588,67 @@ def delete_lead(page_url, user_id=None):
     return True, 'Lead deleted'
 
 
-def _mutate_lead(page_url, mutator, user_id=None):
-    target_path = user_csv_path(user_id) if user_id else CSV_PATH
-    if not os.path.exists(target_path):
-        return False, 'No leads file found'
-    rows = read_csv_rows(target_path)
-    for row in rows:
-        for col in CSV_COLUMNS:
-            if col not in row: row[col] = ''
-    found = False
-    for row in rows:
-        if row.get('page_url', '').strip() == page_url:
-            mutator(row)
-            found = True
-            break
-    if not found:
-        return False, 'Lead not found'
-    write_csv_rows(target_path, rows)
-    return True, 'ok'
-
-
 def trash_lead(page_url, user_id=None):
-    def _set(r):
-        r['deleted_at'] = datetime.now().isoformat()
-        r['status'] = 'trashed'
-    return _mutate_lead(page_url, _set, user_id=user_id)
+    ok = leads_db.trash_lead(page_url)
+    return (True, 'trashed') if ok else (False, 'Lead not found')
 
 
 def restore_lead(page_url, user_id=None):
-    if USE_MONGO:
-        ok = mongo_db.restore_lead(page_url, user_id)
-        return (ok, 'restored') if ok else (False, 'Lead not found')
-    def _set(r):
-        r['deleted_at'] = ''
-        if r.get('status', '').strip().lower() == 'trashed':
-            r['status'] = 'new'
-    return _mutate_lead(page_url, _set, user_id=user_id)
+    ok = leads_db.restore_lead(page_url)
+    return (True, 'restored') if ok else (False, 'Lead not found')
 
 
 def purge_lead(page_url, user_id=None):
-    if USE_MONGO:
-        ok = mongo_db.purge_lead(page_url, user_id)
-        return (ok, 'purged') if ok else (False, 'Lead not found')
-    target_path = user_csv_path(user_id) if user_id else CSV_PATH
-    rows = read_csv_rows(target_path)
-    new_rows = []
-    found = False
-    for row in rows:
-        for col in CSV_COLUMNS:
-            if col not in row: row[col] = ''
-        if row.get('page_url', '').strip() == page_url:
-            found = True
-            continue
-        new_rows.append(row)
-    if not found:
-        return False, 'Lead not found'
-    write_csv_rows(target_path, new_rows)
-    return True, 'purged'
+    ok = leads_db.delete_lead_permanently(page_url)
+    return (True, 'purged') if ok else (False, 'Lead not found')
 
 
 def read_trashed_leads(user_id=None, include_all_users=False):
-    """Read trashed leads. By default returns the current user's trash.
-    Admins with include_all_users=True get trash across all users."""
-    if USE_MONGO:
-        is_admin = bool(include_all_users)
-        rows = mongo_db.list_trashed_leads(user_id, is_admin=is_admin)
-        return [mongo_db.serialize(r) for r in rows]
-    if user_id and not include_all_users:
-        rows = read_csv_rows(user_csv_path(user_id))
-        rows = [r for r in rows if (r.get('deleted_at') or '').strip() and _is_valid_lead(r)]
-        rows.sort(key=lambda r: r.get('deleted_at', ''), reverse=True)
-        return rows
-    all_rows = []
-    if os.path.exists(CSV_PATH):
-        for r in read_csv_rows(CSV_PATH):
-            if (r.get('deleted_at') or '').strip() and _is_valid_lead(r):
-                all_rows.append(r)
-    users_dir = os.path.join(LEADS_DIR, 'users')
-    if os.path.isdir(users_dir):
-        for uid in os.listdir(users_dir):
-            user_dir = os.path.join(users_dir, uid)
-            if not os.path.isdir(user_dir): continue
-            p = os.path.join(user_dir, 'leads.csv')
-            if not os.path.exists(p): continue
-            for r in read_csv_rows(p):
-                if (r.get('deleted_at') or '').strip() and _is_valid_lead(r):
-                    all_rows.append(r)
-    all_rows.sort(key=lambda r: r.get('deleted_at', ''), reverse=True)
-    return all_rows
+    rows = leads_db.get_leads(include_trashed=True, user_id=user_id, include_all_users=include_all_users)
+    rows = [r for r in rows if r.get('deleted_at', '')]
+    rows.sort(key=lambda r: r.get('deleted_at', ''), reverse=True)
+    return rows
 
 
 def append_qualified_lead(lead):
-    if USE_MONGO:
-        mongo_db.save_qualified_lead(lead, lead.get('_saved_by_id', 0))
-        mongo_db.save_daily_qualified(lead, lead.get('_saved_by_id', 0))
-        print(f"QUALIFIED: {lead.get('business_name')} -> MongoDB", flush=True)
-        return
-    ensure_qualified_csv()
-    qrows = []
-    if os.path.exists(QUALIFIED_CSV_PATH):
-        with open(QUALIFIED_CSV_PATH, 'r') as f:
-            reader = csv.DictReader(f)
-            qrows = [r for r in reader]
-
-    qrow = {col: lead.get(col, '') for col in CSV_COLUMNS}
-    for col in ['qualified_at', 'qualified_by']:
-        qrow[col] = ''
-    qrow['qualified_at'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-    qrow['qualified_by'] = 'telegram-bot'
-
-    qrows.append(qrow)
-    with open(QUALIFIED_CSV_PATH, 'w', newline='') as f:
-        writer = csv.DictWriter(f, fieldnames=QUALIFIED_COLUMNS)
-        writer.writeheader()
-        writer.writerows(qrows)
-
-    append_to_daily_qualified_csv(qrow, qualified_by='telegram-bot')
-
-    print(f"QUALIFIED: {lead.get('business_name')} -> {QUALIFIED_CSV_PATH}", flush=True)
+    page_url = lead.get('page_url', '')
+    leads_db.qualify_lead(page_url)
+    print(f"QUALIFIED: {lead.get('business_name')}", flush=True)
 
 
 def update_lead_status(page_url, new_status, follow_up_date=None, user_id=None):
     if new_status not in VALID_STATUSES:
         return False, f"Invalid status. Valid: {', '.join(VALID_STATUSES)}"
-
-    if USE_MONGO:
-        ok = mongo_db.update_lead_status(page_url, user_id, new_status, follow_up_date)
-        if not ok:
-            return False, 'Lead not found'
-        if new_status == 'qualified':
-            lead = mongo_db.find_lead_by_url(page_url, user_id)
-            if lead:
-                mongo_db.save_qualified_lead(mongo_db.serialize(lead), user_id)
-                mongo_db.save_daily_qualified(mongo_db.serialize(lead), user_id)
-                send_telegram_notification(mongo_db.serialize(lead), 'qualified')
-        else:
-            lead = mongo_db.find_lead_by_url(page_url, user_id, include_trashed=True)
-            if lead:
-                send_telegram_notification(mongo_db.serialize(lead), 'status_update')
-        return True, f"Status updated to {new_status}"
-
-    target_path = user_csv_path(user_id) if user_id else CSV_PATH
-    rows = read_csv_rows(target_path)
-    for row in rows:
-        for col in CSV_COLUMNS:
-            if col not in row: row[col] = ''
-    found = False
-    for row in rows:
-        if row.get('page_url', '').strip() == page_url:
-            row['status'] = new_status
-            if follow_up_date:
-                row['follow_up_date'] = follow_up_date
-            found = True
-            break
-
-    if not found:
+    ok = leads_db.update_lead_status(page_url, new_status, follow_up_date)
+    if not ok:
         return False, 'Lead not found'
-
-    write_csv_rows(target_path, rows)
-
-    for r in rows:
-        if r.get('page_url', '').strip() == page_url:
-            if new_status == 'qualified':
-                append_qualified_lead(r)
-                send_telegram_notification(r, 'qualified')
-            else:
-                send_telegram_notification(r, 'status_update')
-            return True, f"Status updated to {new_status}"
-    return False, 'Error updating lead'
+    if new_status == 'qualified':
+        lead = leads_db.get_lead_by_url(page_url)
+        if lead:
+            append_qualified_lead(lead)
+            send_telegram_notification(lead, 'qualified', user_id=user_id)
+    else:
+        lead = leads_db.get_lead_by_url(page_url, include_trashed=True)
+        if lead:
+            send_telegram_notification(lead, 'status_update', user_id=user_id)
+    return True, f"Status updated to {new_status}"
 
 
 def get_funnel_stats(user_id=None, include_all_users=False):
-    if USE_MONGO:
-        is_admin = bool(include_all_users)
-        return mongo_db.funnel_stats(user_id, is_admin=is_admin)
-    leads = read_all_leads(user_id=user_id, include_all_users=include_all_users)
-    stats = {s: 0 for s in VALID_STATUSES}
-    for row in leads:
-        if (row.get('deleted_at') or '').strip(): continue
-        st = row.get('status', 'new').strip().lower()
-        if st in stats:
-            stats[st] += 1
-        else:
-            stats['new'] = stats.get('new', 0) + 1
-    return stats
+    return leads_db.get_funnel_stats(user_id=user_id, is_admin=bool(include_all_users))
 
 
 def get_qualified_leads():
-    if USE_MONGO:
-        return [mongo_db.serialize(r) for r in mongo_db.list_qualified_leads()]
-    if not os.path.exists(QUALIFIED_CSV_PATH):
-        return []
-    with open(QUALIFIED_CSV_PATH, 'r') as f:
-        reader = csv.DictReader(f)
-        return [row for row in reader]
+    return leads_db.get_qualified_leads()
 
 
 def read_all_leads(filter_status=None, include_trashed=False, user_id=None, include_all_users=False):
-    """Read leads.
-    - user_id given \u2192 only that user's CSV.
-    - include_all_users=True (admin) \u2192 merged view across all per-user CSVs AND global CSV.
-    - neither \u2192 fall back to global CSV (legacy).
-    """
-    if USE_MONGO:
-        is_admin = bool(include_all_users)
-        rows = mongo_db.list_leads(
-            user_id=user_id,
-            is_admin=is_admin,
-            status=filter_status,
-            include_trashed=bool(include_trashed),
-        )
-        return [mongo_db.serialize(r) for r in rows]
-
-    paths = []
-    if user_id:
-        paths = [user_csv_path(user_id)]
-    elif include_all_users:
-        paths = [CSV_PATH]
-        users_dir = os.path.join(LEADS_DIR, 'users')
-        if os.path.isdir(users_dir):
-            for uid in os.listdir(users_dir):
-                user_dir = os.path.join(users_dir, uid)
-                if not os.path.isdir(user_dir): continue
-                p = os.path.join(user_dir, 'leads.csv')
-                if os.path.exists(p): paths.append(p)
-    else:
-        paths = [CSV_PATH]
-
-    leads = []
-    seen_urls = set() if include_all_users else None
-    for p in paths:
-        for row in read_csv_rows(p):
-            if not _is_valid_lead(row):
-                continue
-            if include_all_users:
-                url = row.get('page_url', '').strip()
-                if url in seen_urls: continue
-                seen_urls.add(url)
-            if not include_trashed:
-                if (row.get('deleted_at') or '').strip(): continue
-            elif include_trashed == 'only':
-                if not (row.get('deleted_at') or '').strip(): continue
-            leads.append(row)
-    if filter_status:
-        leads = [l for l in leads if l.get('status', '').strip().lower() == filter_status.lower()]
-    return leads
-
-
-def _is_valid_lead(row):
-    url = (row.get('page_url') or '').strip()
-    name = (row.get('business_name') or '').strip()
-    if not url:
-        return False
-    if not name:
-        return False
-    if not (url.startswith('http://') or url.startswith('https://') or url.startswith('www.')):
-        return False
-    return True
+    return leads_db.get_leads(
+        filter_status=filter_status,
+        include_trashed=bool(include_trashed),
+        user_id=user_id,
+        include_all_users=bool(include_all_users),
+    )
 
 
 def h(val):
@@ -2684,12 +2450,17 @@ class Handler(BaseHTTPRequestHandler):
         elif parsed.path == '/api/user/preferences':
             user = require_auth(self)
             if not user: return
+            config = leads_db.get_telegram_config(user['id'])
             conn = sqlite3.connect(AUTH_DB_PATH)
             c = conn.cursor()
             c.execute('SELECT COALESCE(telegram_notifications, 1) FROM users WHERE id = ?', (user['id'],))
             row = c.fetchone()
             conn.close()
-            self._json(200, {'telegram_notifications': (str(row[0]) == '1') if row else True})
+            self._json(200, {
+                'telegram_notifications': (str(row[0]) == '1') if row else True,
+                'telegram_bot_token': config.get('bot_token') or '',
+                'telegram_chat_id': config.get('chat_id') or '',
+            })
         elif parsed.path.startswith('/api/avatars/'):
             fname = os.path.basename(parsed.path)
             if USE_MONGO and cloudinary_storage and cloudinary_storage.is_configured():
@@ -3241,15 +3012,8 @@ class Handler(BaseHTTPRequestHandler):
                 token = TELEGRAM_TOKEN
                 if token:
                     msg = f"\U0001F525 HIGH SCORE LinkedIn Lead: {name} | {data.get('headline', '')} | Score: {kb_score}/10\n\U0001F517 {url}"
-                    payload = {
-                        "chat_id": TELEGRAM_CHAT_ID,
-                        "message_thread_id": TELEGRAM_THREAD_ID,
-                        "text": msg,
-                        "parse_mode": "HTML",
-                        "disable_web_page_preview": True,
-                    }
                     try:
-                        requests.post(f"https://api.telegram.org/bot{token}/sendMessage", json=payload, timeout=10)
+                        requests.post(f"https://api.telegram.org/bot{token}/sendMessage", json={"chat_id": TELEGRAM_CHAT_ID, "text": msg, "parse_mode": "HTML"}, timeout=10)
                     except Exception:
                         pass
             self._json(201, {'status': 'ok', 'saved': name, 'score': kb_score})
@@ -3514,6 +3278,16 @@ class Handler(BaseHTTPRequestHandler):
             conn.commit()
             conn.close()
             self._json(200, {'telegram_notifications': bool(tg)})
+        elif parsed.path == '/api/user/telegram-bot':
+            user = require_auth(self)
+            if not user: return
+            if data is None:
+                self._json(400, {'error': 'Invalid JSON'})
+                return
+            bot_token = (data.get('bot_token') or '').strip()
+            chat_id = (data.get('chat_id') or '').strip()
+            leads_db.update_telegram_config(user['id'], bot_token, chat_id)
+            self._json(200, {'status': 'saved'})
         elif parsed.path == '/api/auth/logout':
             auth = self.headers.get('Authorization', '')
             if auth.startswith('Bearer '):
@@ -4048,9 +3822,8 @@ if __name__ == '__main__':
         print("WARNING: TELEGRAM_TOKEN not set. Notifications disabled.", flush=True)
 
     ensure_csv()
-    ensure_qualified_csv()
-    _ensure_fcommerce_csv()
     init_auth_db()
+    leads_db.init_db()
 
     # Register Telegram bot commands
     if TELEGRAM_TOKEN:

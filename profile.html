@@ -280,6 +280,20 @@
       <div id="prefStatus" style="font-size:11px; color:#94A3B8; min-height:14px;"></div>
     </div>
 
+    <div class="card" id="telegramBotCard">
+      <div class="card-header">Your Telegram Bot</div>
+      <div class="form-group">
+        <label for="telegramBotToken">Bot Token</label>
+        <input type="text" id="telegramBotToken" placeholder="1234567890:ABCdefGHIjklMNOpqrsTUVwxyz" />
+      </div>
+      <div class="form-group">
+        <label for="telegramChatId">Chat ID <span style="color:#94A3B8;font-weight:400;text-transform:none;">(optional — send to @userinfobot to get yours)</span></label>
+        <input type="text" id="telegramChatId" placeholder="-1001234567890" />
+      </div>
+      <button id="btnSaveTelegramBot" class="btn-primary" style="width:100%">Save Bot Settings</button>
+      <div id="telegramBotStatus" style="font-size:11px; color:#94A3B8; min-height:14px; margin-top:8px;"></div>
+    </div>
+
     <div class="card">
       <div class="card-header">Session</div>
       <div class="flex-row">
@@ -481,6 +495,42 @@
       localStorage.removeItem('skarbol_token');
       localStorage.removeItem('skarbol_user');
       window.location.href = '/login';
+    });
+
+    const botTokenInput = document.getElementById('telegramBotToken');
+    const chatIdInput = document.getElementById('telegramChatId');
+    const botStatus = document.getElementById('telegramBotStatus');
+    (async function loadBotConfig() {
+      try {
+        const r = await fetch(API_BASE + '/api/user/preferences', { headers: { 'Authorization': 'Bearer ' + token } });
+        if (r.ok) {
+          const d = await r.json();
+          if (d.telegram_bot_token) botTokenInput.value = d.telegram_bot_token;
+          if (d.telegram_chat_id) chatIdInput.value = d.telegram_chat_id;
+        }
+      } catch (_) {}
+    })();
+    document.getElementById('btnSaveTelegramBot').addEventListener('click', async () => {
+      botStatus.textContent = 'Saving…';
+      try {
+        const r = await fetch(API_BASE + '/api/user/telegram-bot', {
+          method: 'POST',
+          headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ bot_token: botTokenInput.value.trim(), chat_id: chatIdInput.value.trim() })
+        });
+        if (r.ok) {
+          botStatus.textContent = '✓ Bot settings saved';
+          botStatus.style.color = '#10B981';
+        } else {
+          const d = await r.json();
+          botStatus.textContent = '✗ ' + (d.error || 'Failed');
+          botStatus.style.color = '#EF4444';
+        }
+      } catch (_) {
+        botStatus.textContent = '✗ Network error';
+        botStatus.style.color = '#EF4444';
+      }
+      setTimeout(() => { botStatus.textContent = ''; }, 4000);
     });
 
     const prefChk = document.getElementById('prefNotifyTelegram');
