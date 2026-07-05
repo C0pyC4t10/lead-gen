@@ -27,6 +27,10 @@
     .logo{display:flex;align-items:center;gap:10px;text-decoration:none;color:#F8FAFC;font-size:18px;font-weight:700;transition:transform .2s}
     .logo:hover{transform:scale(1.03)}
     .logo-icon{width:36px;height:36px;border-radius:10px;object-fit:contain;flex-shrink:0;display:block}
+    .brand-navy{color:#0A4FD9}
+    .brand-white{color:#F8FAFC}
+    .brand-navy { color: #0A4FD9; }
+    .brand-white { color: #F8FAFC; }
     .nav-links{display:flex;align-items:center;gap:12px}
     .nav-links a,.nav-links button{color:#94A3B8;text-decoration:none;font-size:14px;padding:8px 14px;border-radius:8px;transition:all .2s;background:none;border:none;cursor:pointer;font-family:inherit}
     .nav-links a:hover,.nav-links button:hover{color:#F8FAFC;background:rgba(148,163,184,0.08)}
@@ -357,7 +361,7 @@
   <nav class="nav">
     <a href="/" class="logo">
       <img src="/assets/icon32.png" alt="Scraven" class="logo-icon">
-      <span>Scraven</span>
+      <span><span class="brand-navy">Scra</span><span class="brand-white">ven</span></span>
     </a>
     <div class="nav-links">
       <a href="/">Extract</a>
@@ -442,6 +446,23 @@
         </div>
       </div>
 
+      <div class="action-row">
+        <button id="btnSave" class="btn-glow">Save Lead</button>
+        <button id="btnTryApify" class="btn-ghost" style="font-size:13px" title="Uses Facebook-internal API — costs Apify tokens">⚡ Try Apify (slower)</button>
+        <div style="font-size:11px;color:#64748B;margin-top:6px;width:100%">Missing data? Click <b>Try Apify</b> above (uses Apify tokens) OR upload cookies at <a href="/profile" style="color:#00E5FF">Profile → Facebook Cookies</a> for free logged-in extraction.</div>
+      </div>
+
+      <div class="notify-options" id="notifyOptions">
+        <label>
+          <input type="checkbox" id="chkNotifyTelegram" checked />
+          <span>📣 Also send to Telegram agent</span>
+        </label>
+        <span class="hint" id="notifyHint">uncheck to save DB-only</span>
+        <span class="hint" id="notifyLocked" style="display:none">🔒 Telegram alerts are admin-only · saving DB-only</span>
+      </div>
+
+      <div id="statusMsg" class="status-msg"></div>
+
       <div class="manual-card">
         <div class="mc-title">Manual Override <span style="font-size:11px;color:#64748B;font-weight:400">— fill any missing fields below</span></div>
         <div class="input-group">
@@ -465,25 +486,6 @@
           <input type="text" id="manAddress" placeholder="Enter address if not found above" />
         </div>
       </div>
-
-      <div class="action-row">
-        <button id="btnSave" class="btn-glow">Save Lead</button>
-        <button id="btnCopyEmail" class="btn-copy" disabled>Copy Email</button>
-        <button id="btnCopyPhone" class="btn-copy" disabled>Copy Phone</button>
-        <button id="btnTryApify" class="btn-ghost" style="font-size:13px" title="Uses Facebook-internal API — costs Apify tokens">⚡ Try Apify (slower)</button>
-      <div style="font-size:11px;color:#64748B;margin-top:6px">Missing data? Click <b>Try Apify</b> above (uses Apify tokens) OR upload cookies at <a href="/profile" style="color:#00E5FF">Profile → Facebook Cookies</a> for free logged-in extraction.</div>
-      </div>
-
-      <div class="notify-options" id="notifyOptions">
-        <label>
-          <input type="checkbox" id="chkNotifyTelegram" checked />
-          <span>📣 Also send to Telegram agent</span>
-        </label>
-        <span class="hint" id="notifyHint">uncheck to save DB-only</span>
-        <span class="hint" id="notifyLocked" style="display:none">🔒 Telegram alerts are admin-only · saving DB-only</span>
-      </div>
-
-      <div id="statusMsg" class="status-msg"></div>
     </div>
 
     <div class="bm-card">
@@ -628,8 +630,8 @@
       }
       updateScoreDisplay(data.qualification_score);
       // Manual override inputs are 100% user-controlled — never auto-clear or auto-fill them
-      document.getElementById('btnCopyEmail').disabled = !data.email;
-      document.getElementById('btnCopyPhone').disabled = !data.phone;
+      const copyEmailBtn = document.getElementById('btnCopyEmail'); if (copyEmailBtn) copyEmailBtn.disabled = !data.email;
+      const copyPhoneBtn = document.getElementById('btnCopyPhone'); if (copyPhoneBtn) copyPhoneBtn.disabled = !data.phone;
       document.getElementById('result').style.display = 'block';
       document.getElementById('result').scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
@@ -781,11 +783,11 @@
       }
     });
 
-    document.getElementById('btnCopyEmail').addEventListener('click', () => {
+    document.getElementById('btnCopyEmail')?.addEventListener('click', () => {
       if (!currentData?.email) return;
       navigator.clipboard.writeText(currentData.email).then(() => showStatus('Email copied', 'success')).catch(() => showStatus('Failed to copy', 'error'));
     });
-    document.getElementById('btnCopyPhone').addEventListener('click', () => {
+    document.getElementById('btnCopyPhone')?.addEventListener('click', () => {
       if (!currentData?.phone) return;
       navigator.clipboard.writeText(currentData.phone).then(() => showStatus('Phone copied', 'success')).catch(() => showStatus('Failed to copy', 'error'));
     });

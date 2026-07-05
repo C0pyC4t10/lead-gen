@@ -1599,7 +1599,7 @@ def _extract_facebook_page(fb_url):
           }
           if (phoneResults.length > 0) d.phone = phoneResults.join(', ');
 
-          var siteExcl = ['facebook.com','fb.com','fbcdn','instagram','twitter','youtube','whatsapp','wa.me','messenger','google','gmail','maps.google.com','google.com/maps','dms.net','m.me','mng.com','doubleclick.net','googlesyndication.com','googleadservices.com','msn.com','live.com','bing.com','yahoo.com','cnn.com','bbc.com','nypost.com','apple.com','microsoft.com','support.google','policies.google','play.google.com','developers.facebook','about.meta','news.'];
+          var siteExcl = ['facebook.com','fb.com','fbcdn','instagram','twitter','youtube','whatsapp','wa.me','messenger','google','gmail','maps.google.com','google.com/maps','dms.net','m.me','mng.com','doubleclick.net','googlesyndication.com','googleadservices.com','msn.com','live.com','bing.com','yahoo.com','cnn.com','bbc.com','nypost.com','apple.com','microsoft.com','support.google','policies.google','play.google.com','developers.facebook','about.meta','meta.com','www.meta.com','news.'];
           function isExcluded(url) {
             try {
               var u = new URL(url);
