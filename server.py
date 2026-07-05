@@ -3094,7 +3094,7 @@ class Handler(BaseHTTPRequestHandler):
                 self._json(200, {'ok': True, 'data': result})
             except Exception as e:
                 self._json(500, {'ok': False, 'error': str(e)})
-elif parsed.path == '/api/extract-facebook/apify':
+        elif parsed.path == '/api/extract-facebook/apify':
             # Slower but more reliable — uses FB-internal API via Apify
             if data is None:
                 self._json(400, {'error': 'Invalid JSON'})
