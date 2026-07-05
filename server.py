@@ -47,7 +47,7 @@ def send_verification_email(to_email, code):
     msg['From'] = GMAIL_USER
     msg['To'] = to_email
     try:
-        with smtplib.SMTP('smtp.gmail.com', 587) as s:
+        with smtplib.SMTP('smtp.gmail.com', 587, timeout=15) as s:
             s.starttls()
             s.login(GMAIL_USER, GMAIL_APP_PASS)
             s.send_message(msg)
@@ -3128,9 +3128,7 @@ class Handler(BaseHTTPRequestHandler):
             token = create_session(user_id)
             conn.close()
             if role != 'admin':
-                sent = send_verification_email(email, code)
-            else:
-                sent = False
+                threading.Thread(target=send_verification_email, args=(email, code), daemon=True).start()
             self._json(201, {'token': token,
                              'user': {'id': user_id, 'name': name, 'email': email, 'role': role,
                                       'email_verified': role == 'admin'},
