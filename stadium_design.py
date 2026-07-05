@@ -1,4 +1,4 @@
-"""Floodlit Monuments — stadium atmosphere canvas"""
+"""Floodlit Monuments \u2014 stadium atmosphere canvas"""
 
 from PIL import Image, ImageDraw, ImageFont, ImageFilter
 import math, os
@@ -22,7 +22,7 @@ def create_stadium_canvas():
     img = Image.new('RGBA', (W, H), (0, 0, 0, 255))
     draw = ImageDraw.Draw(img)
 
-    # ── Background gradients ──
+    # \u2500\u2500 Background gradients \u2500\u2500
     # Deep night sky from top
     for y in range(H):
         t = y / H
@@ -45,7 +45,7 @@ def create_stadium_canvas():
 
     draw = ImageDraw.Draw(img)
 
-    # ── Stadium architecture — sweeping structural lines ──
+    # \u2500\u2500 Stadium architecture \u2014 sweeping structural lines \u2500\u2500
     # Main arch (stadium roof curve)
     arch_pts = []
     for x in range(0, W, 4):
@@ -77,7 +77,7 @@ def create_stadium_canvas():
         draw.line([(int(x), int(arch_y)), (int(x-20), int(bottom_y))],
                   fill=(40, 45, 65, 120), width=2)
 
-    # ── Tiered stand patterns (silhouetted rows) ──
+    # \u2500\u2500 Tiered stand patterns (silhouetted rows) \u2500\u2500
     for tier in range(6):
         base_y = 450 + tier * 65
         for row in range(20):
@@ -91,7 +91,7 @@ def create_stadium_canvas():
                 fill=(18, 20, 30, alpha)
             )
 
-    # ── Floodlights ──
+    # \u2500\u2500 Floodlights \u2500\u2500
     light_sources = [
         (150, 100), (350, 80), (550, 70), (750, 80), (950, 100),
         (250, 60), (450, 55), (650, 55), (850, 60),
@@ -113,7 +113,7 @@ def create_stadium_canvas():
                 draw.line([(lx, ly), (int(ex), int(ey))],
                           fill=(220, 220, 240, beam_alpha), width=6-abs(angle_offset))
 
-    # ── Pitch glow at bottom ──
+    # \u2500\u2500 Pitch glow at bottom \u2500\u2500
     pitch_rect = [80, 1550, W-80, 1850]
     # Green gradient on pitch
     for y in range(pitch_rect[1], pitch_rect[3], 2):
@@ -143,7 +143,7 @@ def create_stadium_canvas():
     cy = (pitch_rect[1] + pitch_rect[3]) // 2
     draw.ellipse([cx-60, cy-60, cx+60, cy+60], outline=(60, 120, 70, 60), width=2)
 
-    # ── Goal frame silhouette ──
+    # \u2500\u2500 Goal frame silhouette \u2500\u2500
     goal_x = pitch_rect[0] + 30
     goal_top = pitch_rect[1] - 40
     # Post
@@ -208,9 +208,9 @@ def add_text(img):
     if not font_small:
         font_small = ImageFont.load_default()
 
-    # ── Text layout ──
+    # \u2500\u2500 Text layout \u2500\u2500
 
-    # "GER vs PAR" — big, centered
+    # "GER vs PAR" \u2014 big, centered
     team_text = "GER  vs  PAR"
     bbox = draw.textbbox((0, 0), team_text, font=font_team)
     tw = bbox[2] - bbox[0]
@@ -222,7 +222,7 @@ def add_text(img):
                   fill=(255, 255, 255, alpha), font=font_team)
     draw.text((tx, ty), team_text, fill=(255, 255, 255, 230), font=font_team)
 
-    # "ROUND OF 32" — above teams
+    # "ROUND OF 32" \u2014 above teams
     round_text = "ROUND OF 32"
     if font_info:
         bbox2 = draw.textbbox((0, 0), round_text, font=font_info)
@@ -232,23 +232,23 @@ def add_text(img):
 
     # Date + venue line
     if font_small:
-        meta_text = "BOSTON  •  29 JUNE 2026  •  KICKOFF 20:30"
+        meta_text = "BOSTON  \u2022  29 JUNE 2026  \u2022  KICKOFF 20:30"
         bbox3 = draw.textbbox((0, 0), meta_text, font=font_small)
         mw = bbox3[2] - bbox3[0]
         draw.text(((W - mw) // 2, ty + 170), meta_text,
                   fill=(160, 160, 180, 120), font=font_small)
 
     # FIFA World Cup badge-like accent
-    accent_text = "FIFA WORLD CUP 2026™"
+    accent_text = "FIFA WORLD CUP 2026\u2122"
     if font_small:
         bbox4 = draw.textbbox((0, 0), accent_text, font=font_small)
         aw = bbox4[2] - bbox4[0]
         draw.text(((W - aw) // 2, ty - 115), accent_text,
                   fill=(200, 180, 100, 80), font=font_small)
 
-    # Subtle corner mark — bottom right
+    # Subtle corner mark \u2014 bottom right
     if font_small:
-        corner = "sn  •  fc  •  bk"
+        corner = "sn  \u2022  fc  \u2022  bk"
         draw.text((W - 250, H - 60), corner,
                   fill=(100, 100, 120, 60), font=font_small)
 
@@ -260,19 +260,19 @@ def create_design_philosophy():
 
 ## A Design Philosophy
 
-The stadium at night is the closest thing our century has to a cathedral. Sixty-five thousand souls gathered in a bowl of concrete and steel, floodlights burning away the darkness, the pitch glowing like an illuminated manuscript below. This philosophy treats the World Cup knockout match not as a sporting event but as a ritual gathering — ancient in its emotional architecture, modern in its material expression.
+The stadium at night is the closest thing our century has to a cathedral. Sixty-five thousand souls gathered in a bowl of concrete and steel, floodlights burning away the darkness, the pitch glowing like an illuminated manuscript below. This philosophy treats the World Cup knockout match not as a sporting event but as a ritual gathering \u2014 ancient in its emotional architecture, modern in its material expression.
 
-Space and form are dictated by the structural logic of the modern colosseum. Sweeping roof arches echo the curve of a held breath. Tiered stands rise in rhythmic repetition — not as detailed figures but as aggregate masses, humanity reduced to pattern and texture. The frame is architectural first, emotional second. The viewer exists within the structure, not outside it.
+Space and form are dictated by the structural logic of the modern colosseum. Sweeping roof arches echo the curve of a held breath. Tiered stands rise in rhythmic repetition \u2014 not as detailed figures but as aggregate masses, humanity reduced to pattern and texture. The frame is architectural first, emotional second. The viewer exists within the structure, not outside it.
 
-Light is the primary medium. Floodlight beams cut through darkness at precise angles, creating diagonal planes of visibility against deep shadow. This is not natural light — it is engineered illumination, purposeful and dramatic. The light source is always visible, always a reminder of the constructed nature of the spectacle. Warm white cutting through indigo night.
+Light is the primary medium. Floodlight beams cut through darkness at precise angles, creating diagonal planes of visibility against deep shadow. This is not natural light \u2014 it is engineered illumination, purposeful and dramatic. The light source is always visible, always a reminder of the constructed nature of the spectacle. Warm white cutting through indigo night.
 
-Color is restrained to a nearly monochromatic palette of deep navy, charcoal, and black, punctuated by the specific green of a floodlit pitch and the stark white of light beams. This is not a celebration of color but a study of contrast — the few vivid elements (pitch, floodlight, text) gaining power from the surrounding darkness.
+Color is restrained to a nearly monochromatic palette of deep navy, charcoal, and black, punctuated by the specific green of a floodlit pitch and the stark white of light beams. This is not a celebration of color but a study of contrast \u2014 the few vivid elements (pitch, floodlight, text) gaining power from the surrounding darkness.
 
-Typography operates as an architectural element — not as information delivery but as structural accent. Large, condensed typefaces suggest scoreboard numerals and stadium signage. Small, precise labels float in the negative space like wayfinding systems. Text never explains; it anchors. The relationship between word and image is spatial, not narrative.
+Typography operates as an architectural element \u2014 not as information delivery but as structural accent. Large, condensed typefaces suggest scoreboard numerals and stadium signage. Small, precise labels float in the negative space like wayfinding systems. Text never explains; it anchors. The relationship between word and image is spatial, not narrative.
 
-Composition follows the vertical logic of portrait format — from the vault of the roof through the mass of the stand down to the luminous field of play. The eye is guided downward by structural lines and light beams, arriving at the pitch as at an altar. Every element is meticulously positioned so the composition reads as a single, unified artifact — the product of countless refinements by someone at the absolute summit of their craft.
+Composition follows the vertical logic of portrait format \u2014 from the vault of the roof through the mass of the stand down to the luminous field of play. The eye is guided downward by structural lines and light beams, arriving at the pitch as at an altar. Every element is meticulously positioned so the composition reads as a single, unified artifact \u2014 the product of countless refinements by someone at the absolute summit of their craft.
 
-The work should feel like a film still from a documentary that does not exist — a single frame that contains an entire atmosphere. It is not about a specific match but about the condition of anticipation itself: the moment before anything happens, when everything is still possible, and sixty-five thousand people hold their breath together in a bowl of light and concrete.
+The work should feel like a film still from a documentary that does not exist \u2014 a single frame that contains an entire atmosphere. It is not about a specific match but about the condition of anticipation itself: the moment before anything happens, when everything is still possible, and sixty-five thousand people hold their breath together in a bowl of light and concrete.
 """
 
 
