@@ -660,7 +660,7 @@
       showLoading('Trying Apify...', 'Slower (~60s) — only fills empty fields, keeps existing data');
       try {
         const resp = await fetch(API_BASE + '/api/extract-facebook/apify', {
-          method: 'POST', signal: AbortSignal.timeout(360000), headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url }),
+          method: 'POST', signal: AbortSignal.timeout(60000), headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url }),
         });
         const result = await resp.json();
         if (!result.ok) throw new Error(result.error || 'Apify extraction failed');

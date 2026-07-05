@@ -1165,7 +1165,7 @@ def _extract_via_apify(fb_url, timeout=300):
         norm = fb_url.replace('m.facebook.com', 'www.facebook.com').rstrip('/').split('?')[0].split('#')[0]
         # Start the run
         payload = {'startUrls': [{'url': norm}], 'maxPagesPerQuery': 1}
-        resp = requests.post(f'{APIFY_BASE}/acts/{APIFY_ACTOR_ID}/runs', headers=headers, json=payload, timeout=60)
+        resp = requests.post(f'{APIFY_BASE}/acts/{APIFY_ACTOR_ID}/runs', headers=headers, json=payload, timeout=30)
         data = resp.json()
         run_id = data.get('data', {}).get('id')
         if not run_id:
@@ -1174,19 +1174,19 @@ def _extract_via_apify(fb_url, timeout=300):
         # Poll for completion
         deadline = time.time() + timeout
         while time.time() < deadline:
-            r = requests.get(f'{APIFY_BASE}/actor-runs/{run_id}', headers=headers, timeout=60)
+            r = requests.get(f'{APIFY_BASE}/actor-runs/{run_id}', headers=headers, timeout=20)
             status = r.json().get('data', {}).get('status', 'UNKNOWN')
             if status == 'SUCCEEDED':
                 break
             if status in ('FAILED', 'TIMED-OUT', 'ABORTED'):
                 print(f'[apify] run ended: {status}', flush=True)
                 return None
-            time.sleep(3)
+            time.sleep(2)
         else:
             print('[apify] timeout', flush=True)
             return None
         # Get results
-        r = requests.get(f'{APIFY_BASE}/actor-runs/{run_id}/dataset/items', headers=headers, timeout=60)
+        r = requests.get(f'{APIFY_BASE}/actor-runs/{run_id}/dataset/items', headers=headers, timeout=20)
         items = r.json()
         if not items:
             return None
@@ -1348,10 +1348,10 @@ def _extract_facebook_page(fb_url):
         _apply_fb_cookies(ctx)
         page = ctx.new_page()
         try:
-            page.goto(fb_url, timeout=25000, wait_until='domcontentloaded')
+            page.goto(fb_url, timeout=15000, wait_until='domcontentloaded')
 
             try:
-                page.wait_for_selector('[data-pagelet], time, abbr, [role="main"]', timeout=8000)
+                page.wait_for_selector('[data-pagelet], time, abbr, [role="main"]', timeout=5000)
             except Exception:
                 pass
 
@@ -1772,11 +1772,15 @@ def _extract_facebook_page(fb_url):
             except Exception:
                 pass
 
+            # Early exit: if we have phone + email + website, skip the slow fallbacks
+            if result.get('phone') and result.get('email') and result.get('website'):
+                return result
+
             if not result.get('phone') or not result.get('email'):
                 contact_info_url = fb_url.rstrip('/') + '/directory_contact_info'
                 try:
-                    page.goto(contact_info_url, timeout=10000, wait_until='domcontentloaded')
-                    page.wait_for_timeout(3000)
+                    page.goto(contact_info_url, timeout=8000, wait_until='domcontentloaded')
+                    page.wait_for_timeout(2000)
                     html_ci = page.content()
                     fb_ci = _extract_fb_json_data(html_ci)
                     if not result.get('phone') and fb_ci.get('phone'):
@@ -1794,12 +1798,14 @@ def _extract_facebook_page(fb_url):
                         if re.match(r'^\+?8801[3-9]\d{8}$', p): result['phone'] = p
                 except Exception:
                     pass
+                if result.get('phone') and result.get('email') and result.get('website'):
+                    return result
 
             if not result.get('phone') or not result.get('email') or not result.get('address') or not result.get('website'):
                 about_url = fb_url.rstrip('/') + '/about'
                 try:
-                    page.goto(about_url, timeout=10000, wait_until='domcontentloaded')
-                    page.wait_for_timeout(2000)
+                    page.goto(about_url, timeout=8000, wait_until='domcontentloaded')
+                    page.wait_for_timeout(1500)
                     try:
                         clicked = page.evaluate('''() => {
                             for (const el of document.querySelectorAll('span, a, div, [role="tab"]')) {
@@ -1811,9 +1817,9 @@ def _extract_facebook_page(fb_url):
                             return false;
                         }''')
                         if clicked:
-                            page.wait_for_timeout(2000)
+                            page.wait_for_timeout(1500)
                             page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
-                            page.wait_for_timeout(800)
+                            page.wait_for_timeout(500)
                     except Exception:
                         pass
                     about_js = '''() => {
@@ -1874,13 +1880,15 @@ def _extract_facebook_page(fb_url):
                     if about_data.get('category') and not result.get('category'): result['category'] = about_data['category']
                 except Exception:
                     pass
+                if result.get('phone') and result.get('email') and result.get('website'):
+                    return result
 
             # Fallback: try mbasic.facebook.com (text-only, harder to block)
             if not result.get('phone') or not result.get('website'):
                 try:
                     mbasic_url = fb_url.replace('www.facebook.com', 'mbasic.facebook.com').replace('facebook.com', 'mbasic.facebook.com')
-                    page.goto(mbasic_url, timeout=15000, wait_until='domcontentloaded')
-                    page.wait_for_timeout(2000)
+                    page.goto(mbasic_url, timeout=10000, wait_until='domcontentloaded')
+                    page.wait_for_timeout(1000)
                     mbasic_text = page.evaluate('() => document.body ? document.body.innerText : ""')
                     phone_match = re.search(r'(?:01[3-9]\d{8}|\+?8801[3-9]\d{8})', re.sub(r'\s', '', mbasic_text))
                     if phone_match and not result.get('phone'):
@@ -3040,7 +3048,7 @@ class Handler(BaseHTTPRequestHandler):
             if not fb_url or 'facebook.com' not in fb_url:
                 self._json(400, {'error': 'Valid Facebook URL required'})
                 return
-            result = _extract_via_apify(fb_url, timeout=300)
+            result = _extract_via_apify(fb_url, timeout=60)
             if result is None:
                 self._json(500, {'ok': False, 'error': 'Apify extraction failed or timed out'})
                 return

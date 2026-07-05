@@ -910,7 +910,7 @@
       showLoading('Apify re-extracting...', 'Fetching ' + (lead.business_name || leadUrl));
       try {
         const resp = await fetch(API_BASE + '/api/extract-facebook/apify', {
-          method: 'POST', signal: AbortSignal.timeout(360000), headers: { 'Content-Type': 'application/json' },
+          method: 'POST', signal: AbortSignal.timeout(60000), headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ url: leadUrl }),
         });
         const result = await resp.json();
@@ -963,7 +963,7 @@
         showLoading('Apify re-extracting...', `(${++done}/${targets.length}) ${lead.business_name || leadUrl}`);
         try {
           const resp = await fetch(API_BASE + '/api/extract-facebook/apify', {
-            method: 'POST', signal: AbortSignal.timeout(360000), headers: { 'Content-Type': 'application/json' },
+            method: 'POST', signal: AbortSignal.timeout(60000), headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ url: leadUrl }),
           });
           const result = await resp.json();
@@ -1154,7 +1154,7 @@
       for (let p = start; p <= end; p++) {
         const btn = document.createElement('button');
         btn.className = 'page-btn' + (p === page ? ' active' : '');
-        btn.textContent = dates[p - 1].date.slice(5) + '(' + dates[p - 1].count + ')';
+        btn.textContent = (dates[p - 1].date === 'unknown' ? '??' : dates[p - 1].date.slice(5)) + '(' + dates[p - 1].count + ')';
         btn.title = dates[p - 1].date;
         btn.onclick = () => { currentPage = p; renderPage(p); };
         nums.appendChild(btn);
@@ -1167,17 +1167,18 @@
 
     function renderPage(page) {
       const filtered = getFilteredLeads();
-      // Group by date, with newest day first
       const groups = {};
-      // allLeads is in CSV order (oldest first), so higher index = more recently saved.
-      // Reverse filtered so that within each group the default order is newest-first.
-      const reversed = [...filtered].reverse();
-      reversed.forEach(l => {
-        const d = (l.date || 'unknown').substring(0, 10);
+      filtered.forEach(l => {
+        const raw = (l.date || '').substring(0, 10);
+        const d = /^\d{4}-\d{2}-\d{2}/.test(raw) ? raw : 'unknown';
         if (!groups[d]) groups[d] = [];
         groups[d].push(l);
       });
-      const dates = Object.keys(groups).sort().reverse().map(d => ({ date: d, leads: groups[d], count: groups[d].length }));
+      const dates = Object.keys(groups).sort((a, b) => {
+        if (a === 'unknown') return 1;
+        if (b === 'unknown') return -1;
+        return a < b ? 1 : a > b ? -1 : 0;
+      }).map(d => ({ date: d, leads: groups[d], count: groups[d].length }));
       if (page > dates.length) page = dates.length || 1;
       if (page < 1) page = 1;
       renderPagination(dates, page);
@@ -1187,14 +1188,15 @@
       if (!day) { tbody.innerHTML = '<tr><td colspan="11" style="text-align:center;padding:32px;color:#475569">No leads match your filters.</td></tr>'; return; }
       // Sort within the day: status='new' first, then by allLeads index descending (newest first)
       day.leads.sort((a, b) => {
-        const aNew = (a.status || '').toLowerCase() === 'new' ? 0 : 1;
-        const bNew = (b.status || '').toLowerCase() === 'new' ? 0 : 1;
-        if (aNew !== bNew) return aNew - bNew;
-        return (allLeads.indexOf(b) || 0) - (allLeads.indexOf(a) || 0);
+        const aDate = a.date || '';
+        const bDate = b.date || '';
+        if (aDate > bDate) return -1;
+        if (aDate < bDate) return 1;
+        return 0;
       });
       day.leads.forEach((l, i) => {
         const tr = document.createElement('tr');
-        const dateDisp = l.date && l.date.length > 10 ? l.date.slice(0, 16) : day.date;
+        const dateDisp = day.date === 'unknown' ? 'Unknown' : (l.date && l.date.length > 10 ? l.date.slice(0, 16) : day.date);
         tr.innerHTML = `
           <td><input type="checkbox" class="hist-select" data-url="${esc(l.page_url || '')}" /></td>
           <td style="text-align:center;font-size:11px;color:#64748B">${i + 1}</td>
@@ -1226,10 +1228,18 @@
         if (!resp.ok) {
           throw new Error('HTTP ' + resp.status);
         }
-        const leads = await resp.json();
+        let leads = await resp.json();
         if (!Array.isArray(leads)) {
           throw new Error('Invalid response (not an array)');
         }
+        // Sort newest first by date, then by CSV position (newest last = reverse index)
+        leads.sort((a, b) => {
+          const aDate = a.date || '';
+          const bDate = b.date || '';
+          if (aDate > bDate) return -1;
+          if (aDate < bDate) return 1;
+          return 0;
+        });
         allLeads = leads;
         const sa = document.getElementById('selectAllHist');
         if (sa) sa.checked = false;
@@ -1793,7 +1803,7 @@
         showLoading('Apify re-extracting...', `(${++done}/${urls.length}) ${url}`);
         try {
           const resp = await fetch(API_BASE + '/api/extract-facebook/apify', {
-            method: 'POST', signal: AbortSignal.timeout(360000), headers: { 'Content-Type': 'application/json' },
+            method: 'POST', signal: AbortSignal.timeout(60000), headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ url }),
           });
           const result = await resp.json();
@@ -1822,7 +1832,7 @@
       showLoading('Apify re-extracting...', url);
       try {
         const resp = await fetch(API_BASE + '/api/extract-facebook/apify', {
-          method: 'POST', signal: AbortSignal.timeout(360000), headers: { 'Content-Type': 'application/json' },
+          method: 'POST', signal: AbortSignal.timeout(60000), headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ url }),
         });
         const result = await resp.json();
