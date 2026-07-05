@@ -12,11 +12,10 @@ from openpyxl.styles import Alignment
 try:
     import mongo_db
     import cloudinary_storage
-    USE_MONGO = bool(os.environ.get('MONGODB_URI'))
 except ImportError:
     mongo_db = None
     cloudinary_storage = None
-    USE_MONGO = False
+USE_MONGO = False
 
 # Load .env (force override shell env so .env values always win)
 env_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '.env')
