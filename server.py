@@ -1553,7 +1553,9 @@ def _extract_facebook_page(fb_url):
         'email': '', 'phone': '', 'website': '', 'has_website': False,
         'address': '', 'last_post_date': '', 'qualification_score': 5,
     }
-    browser = _get_browser()
+    from playwright.sync_api import sync_playwright
+    _p = sync_playwright().start()
+    browser = _p.chromium.launch(headless=True)
     ctx = browser.new_context(
         user_agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36',
         viewport={'width': 1920, 'height': 1080},
@@ -2128,11 +2130,13 @@ def _extract_facebook_page(fb_url):
                 if about_data.get('address') and not result.get('address'): result['address'] = about_data['address']
                 if about_data.get('category') and not result.get('category'): result['category'] = about_data['category']
             except Exception:
-                pass  # About page may be behind login \u2014 best-effort
+                pass  # About page may be behind login — best-effort
     except Exception as e:
         raise Exception(f'Extraction failed: {e}')
     finally:
         ctx.close()
+        browser.close()
+        _p.stop()
 
     # Score calculation
     score = 5
@@ -2164,13 +2168,14 @@ def _extract_instagram_page(ig_url):
         'email': '', 'phone': '', 'website': '', 'has_website': False,
         'address': '', 'last_post_date': '', 'qualification_score': 5,
     }
-    browser = _get_browser()
+    from playwright.sync_api import sync_playwright
+    _p = sync_playwright().start()
+    browser = _p.chromium.launch(headless=True)
     ctx = browser.new_context(
         user_agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36',
         locale='en_US',
         viewport={'width': 1280, 'height': 720},
     )
-    _apply_fb_cookies(ctx)
     page = ctx.new_page()
     try:
         page.goto(ig_url, timeout=30000, wait_until='domcontentloaded')
@@ -2293,6 +2298,8 @@ def _extract_instagram_page(ig_url):
         raise Exception(f'Extraction failed: {e}')
     finally:
         ctx.close()
+        browser.close()
+        _p.stop()
 
     score = 5
     if not result.get('has_website'):
