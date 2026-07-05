@@ -2123,7 +2123,7 @@ def _build_order_page(name: str, phone: str, canonical: str,
                     <div class="cart-item-img">{p[:2].upper()}</div>
                     <div class="cart-item-body">
                       <div class="cart-item-name">{p}</div>
-                      <div class="cart-item-price">৳{pr}</div>
+                      <div class="cart-item-price">\u09F3{pr}</div>
                     </div>
                     <div class="cart-item-qty">
                       <button class="cart-qty-btn" data-action="minus">−</button>
