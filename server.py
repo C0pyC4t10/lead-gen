@@ -338,6 +338,36 @@ def init_auth_db():
         conn.close()
     except Exception:
         pass
+    _seed_default_users()
+
+
+def _seed_default_users():
+    """Seed default admin users if the users table is empty."""
+    try:
+        conn = sqlite3.connect(AUTH_DB_PATH, timeout=30)
+        c = conn.cursor()
+        c.execute('SELECT COUNT(*) FROM users')
+        if c.fetchone()[0] > 0:
+            conn.close()
+            return
+        now = datetime.now().isoformat()
+        users = [
+            ('Jahid', 'jahid.skarbol@gmail.com', 'Jahid@17', 'super_admin'),
+            ('Xahid Joy', 'xahidjoy1@gmail.com', 'Jahid@17', 'admin'),
+        ]
+        for name, email, pw, role in users:
+            h, salt = hash_password(pw)
+            c.execute('''INSERT INTO users (name, email, password_hash, password_salt, role,
+                         email_verified, created_at, updated_at)
+                         VALUES (?, ?, ?, ?, ?, 1, ?, ?)''',
+                      (name, email, h, salt, role, now, now))
+            uid = c.lastrowid
+            c.execute('INSERT INTO settings (user_id) VALUES (?)', (uid,))
+        conn.commit()
+        conn.close()
+        print(f'[seed] Seeded {len(users)} default users', flush=True)
+    except Exception as e:
+        print(f'[seed] Error: {e}', flush=True)
 
 def hash_password(password, salt=None):
     if salt is None:
