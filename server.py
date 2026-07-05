@@ -1,5 +1,5 @@
 import csv, html, io, json, os, sys, re, subprocess, threading, time, signal
-import sqlite3, hashlib, secrets, smtplib, string
+import hashlib, secrets, smtplib, string
 from email.mime.text import MIMEText
 from datetime import datetime, timedelta
 from http.server import HTTPServer, BaseHTTPRequestHandler
@@ -7,6 +7,16 @@ from urllib.parse import urlparse, parse_qs
 import requests
 import openpyxl
 from openpyxl.styles import Alignment
+
+# MongoDB + Cloudinary storage layer
+try:
+    import mongo_db
+    import cloudinary_storage
+    USE_MONGO = bool(os.environ.get('MONGODB_URI'))
+except ImportError:
+    mongo_db = None
+    cloudinary_storage = None
+    USE_MONGO = False
 
 # Load .env (force override shell env so .env values always win)
 env_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '.env')
@@ -266,15 +276,32 @@ def verify_password(password, hash_val, salt):
     return hash_password(password, salt)[0] == hash_val
 
 def create_session(user_id):
-    from db import execute as _exec
     token = secrets.token_hex(32)
-    _exec('INSERT INTO sessions (user_id, token, created_at) VALUES (?, ?, ?)',
-          (user_id, token, datetime.now().isoformat()))
+    if USE_MONGO:
+        mongo_db.create_session(user_id, token)
+    else:
+        from db import execute as _exec
+        _exec('INSERT INTO sessions (user_id, token, created_at) VALUES (?, ?, ?)',
+              (user_id, token, datetime.now().isoformat()))
     return token
 
 def get_user_from_token(token):
     if not token:
         return None
+    if USE_MONGO:
+        u = mongo_db.get_user_from_token(token)
+        if not u:
+            return None
+        return {
+            'id': str(u['_id']),
+            'name': u.get('name', ''),
+            'email': u.get('email', ''),
+            'role': u.get('role', 'user'),
+            'created_at': u.get('created_at', ''),
+            'email_verified': bool(u.get('email_verified', 0)),
+            'leads_used': u.get('leads_used', 0) or 0,
+            'subscription_tier': u.get('subscription_tier', 'free'),
+        }
     from db import auth_conn, USE_POSTGRES
     cutoff_iso = (datetime.now() - timedelta(days=SESSION_EXPIRY_DAYS)).isoformat()
     row = None
@@ -287,7 +314,9 @@ def get_user_from_token(token):
             cutoff_ts = datetime.now().timestamp() - SESSION_EXPIRY_DAYS * 86400
             c.execute("DELETE FROM sessions WHERE CAST(strftime('%s', created_at) AS real) < ?", (cutoff_ts,))
         c.execute('''SELECT u.id, u.name, u.email, u.role, u.created_at,
-                     COALESCE(u.email_verified, 0), COALESCE(u.leads_used, 0), COALESCE(u.subscription_tier, 'free')
+                     COALESCE(u.email_verified, 0) AS email_verified,
+                     COALESCE(u.leads_used, 0) AS leads_used,
+                     COALESCE(u.subscription_tier, 'free') AS subscription_tier
                      FROM users u JOIN sessions s ON u.id = s.user_id
                      WHERE s.token = ?''', (token,))
         row = c.fetchone()
@@ -505,6 +534,21 @@ def append_lead(data, notify_telegram=True, user_id=None):
         return False, 'page_url is required'
     data['_notify_telegram'] = bool(notify_telegram)
 
+    if USE_MONGO:
+        result = mongo_db.save_lead(data, user_id)
+        if result and isinstance(result, dict) and result.get('duplicate'):
+            existing = mongo_db.find_lead_by_url(page_url, user_id)
+            if data.get('_notify_telegram', True):
+                send_telegram_notification(existing, 'duplicate')
+            return False, 'duplicate'
+        if result:
+            row = mongo_db.serialize(result)
+            row['date'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            if data.get('_notify_telegram', True):
+                send_telegram_notification(row, 'saved')
+            return True, 'Lead saved'
+        return False, 'Failed to save lead'
+
     target_path = user_csv_path(user_id)
 
     rows = []
@@ -553,8 +597,12 @@ def append_lead(data, notify_telegram=True, user_id=None):
 
 
 def delete_lead(page_url, user_id=None):
-    """Hard delete (legacy). Prefer trash_lead(). Operates on user_id's CSV if given,
-    else the global CSV (legacy location)."""
+    """Hard delete (legacy). Prefer trash_lead()."""
+    if USE_MONGO:
+        ok = mongo_db.bulk_purge([page_url], user_id)
+        if ok:
+            print(f"LEAD DELETED: {page_url}", flush=True)
+        return ok, 'Lead deleted' if ok else 'Lead not found'
     target_path = user_csv_path(user_id) if user_id else CSV_PATH
     rows = read_csv_rows(target_path)
     found = False
@@ -601,6 +649,9 @@ def trash_lead(page_url, user_id=None):
 
 
 def restore_lead(page_url, user_id=None):
+    if USE_MONGO:
+        ok = mongo_db.restore_lead(page_url, user_id)
+        return (ok, 'restored') if ok else (False, 'Lead not found')
     def _set(r):
         r['deleted_at'] = ''
         if r.get('status', '').strip().lower() == 'trashed':
@@ -609,6 +660,9 @@ def restore_lead(page_url, user_id=None):
 
 
 def purge_lead(page_url, user_id=None):
+    if USE_MONGO:
+        ok = mongo_db.purge_lead(page_url, user_id)
+        return (ok, 'purged') if ok else (False, 'Lead not found')
     target_path = user_csv_path(user_id) if user_id else CSV_PATH
     rows = read_csv_rows(target_path)
     new_rows = []
@@ -629,12 +683,15 @@ def purge_lead(page_url, user_id=None):
 def read_trashed_leads(user_id=None, include_all_users=False):
     """Read trashed leads. By default returns the current user's trash.
     Admins with include_all_users=True get trash across all users."""
+    if USE_MONGO:
+        is_admin = bool(include_all_users)
+        rows = mongo_db.list_trashed_leads(user_id, is_admin=is_admin)
+        return [mongo_db.serialize(r) for r in rows]
     if user_id and not include_all_users:
         rows = read_csv_rows(user_csv_path(user_id))
         rows = [r for r in rows if (r.get('deleted_at') or '').strip() and _is_valid_lead(r)]
         rows.sort(key=lambda r: r.get('deleted_at', ''), reverse=True)
         return rows
-    # Admin / cross-user mode: gather from all per-user CSVs and global CSV
     all_rows = []
     if os.path.exists(CSV_PATH):
         for r in read_csv_rows(CSV_PATH):
@@ -655,6 +712,11 @@ def read_trashed_leads(user_id=None, include_all_users=False):
 
 
 def append_qualified_lead(lead):
+    if USE_MONGO:
+        mongo_db.save_qualified_lead(lead, lead.get('_saved_by_id', 0))
+        mongo_db.save_daily_qualified(lead, lead.get('_saved_by_id', 0))
+        print(f"QUALIFIED: {lead.get('business_name')} -> MongoDB", flush=True)
+        return
     ensure_qualified_csv()
     qrows = []
     if os.path.exists(QUALIFIED_CSV_PATH):
@@ -682,6 +744,22 @@ def append_qualified_lead(lead):
 def update_lead_status(page_url, new_status, follow_up_date=None, user_id=None):
     if new_status not in VALID_STATUSES:
         return False, f"Invalid status. Valid: {', '.join(VALID_STATUSES)}"
+
+    if USE_MONGO:
+        ok = mongo_db.update_lead_status(page_url, user_id, new_status, follow_up_date)
+        if not ok:
+            return False, 'Lead not found'
+        if new_status == 'qualified':
+            lead = mongo_db.find_lead_by_url(page_url, user_id)
+            if lead:
+                mongo_db.save_qualified_lead(mongo_db.serialize(lead), user_id)
+                mongo_db.save_daily_qualified(mongo_db.serialize(lead), user_id)
+                send_telegram_notification(mongo_db.serialize(lead), 'qualified')
+        else:
+            lead = mongo_db.find_lead_by_url(page_url, user_id, include_trashed=True)
+            if lead:
+                send_telegram_notification(mongo_db.serialize(lead), 'status_update')
+        return True, f"Status updated to {new_status}"
 
     target_path = user_csv_path(user_id) if user_id else CSV_PATH
     rows = read_csv_rows(target_path)
@@ -714,6 +792,9 @@ def update_lead_status(page_url, new_status, follow_up_date=None, user_id=None):
 
 
 def get_funnel_stats(user_id=None, include_all_users=False):
+    if USE_MONGO:
+        is_admin = bool(include_all_users)
+        return mongo_db.funnel_stats(user_id, is_admin=is_admin)
     leads = read_all_leads(user_id=user_id, include_all_users=include_all_users)
     stats = {s: 0 for s in VALID_STATUSES}
     for row in leads:
@@ -727,6 +808,8 @@ def get_funnel_stats(user_id=None, include_all_users=False):
 
 
 def get_qualified_leads():
+    if USE_MONGO:
+        return [mongo_db.serialize(r) for r in mongo_db.list_qualified_leads()]
     if not os.path.exists(QUALIFIED_CSV_PATH):
         return []
     with open(QUALIFIED_CSV_PATH, 'r') as f:
@@ -740,6 +823,16 @@ def read_all_leads(filter_status=None, include_trashed=False, user_id=None, incl
     - include_all_users=True (admin) → merged view across all per-user CSVs AND global CSV.
     - neither → fall back to global CSV (legacy).
     """
+    if USE_MONGO:
+        is_admin = bool(include_all_users)
+        rows = mongo_db.list_leads(
+            user_id=user_id,
+            is_admin=is_admin,
+            status=filter_status,
+            include_trashed=bool(include_trashed),
+        )
+        return [mongo_db.serialize(r) for r in rows]
+
     paths = []
     if user_id:
         paths = [user_csv_path(user_id)]
@@ -793,6 +886,12 @@ def h(val):
 
 def _find_lead_by_url(page_url, user_id=None):
     """Find a lead by URL. user_id given → only that user's CSV. None → all CSVs (admin)."""
+    if USE_MONGO:
+        is_admin = user_id is None
+        lead = mongo_db.find_lead_by_url(page_url, user_id, is_admin=is_admin)
+        if lead:
+            return mongo_db.serialize(lead)
+        return None
     paths = []
     if user_id is not None:
         paths = [user_csv_path(user_id)]
@@ -892,6 +991,15 @@ def _generate_and_send_demo(chat_id, thread_id, lead_info, name, phone, category
 def _find_lead_by_name(name, user_id=None):
     """Find a lead by business_name. user_id given → only that user's CSV. None → all CSVs (admin)."""
     name_lower = name.strip().lower()
+    if USE_MONGO:
+        from db import get_db
+        is_admin = user_id is None
+        if is_admin:
+            q = {'business_name': {'$regex': f'^{name.strip()}$', '$options': 'i'}, 'deleted_at': None}
+        else:
+            q = {'business_name': {'$regex': f'^{name.strip()}$', '$options': 'i'}, 'saved_by_user_id': to_object_id(user_id), 'deleted_at': None}
+        lead = mongo_db.get_db().leads.find_one(q) if mongo_db else None
+        return mongo_db.serialize(lead) if lead else None
     paths = []
     if user_id is not None:
         paths = [user_csv_path(user_id)]
@@ -1545,7 +1653,7 @@ def _extract_facebook_page(fb_url):
           if (fm) d.followers = fm[1];
 
           // ── Email (extension approach: mailto: + contact sections + JSON scripts) ──
-          var emailExcl = ['facebook.com', 'fb.com', 'sentry.io', 'example.com', '.png', '.jpg', '.svg', '.gif'];
+          var emailExcl = ['facebook.com', 'fb.com', 'sentry.io', 'example.com', '.png', '.jpg', '.svg', '.gif', 'w3.org', 'schema.org', 'google.com', 'googleapis.com', 'play.google', 'support.google', 'policies.google', 'developers.facebook', 'about.meta'];
           var emailRe = /[a-zA-Z0-9._%+\\-]+@[a-zA-Z0-9.\\-]+\\.[a-zA-Z]{2,}/g;
           var emailResults = [];
           var emailSeen = {};
@@ -1561,19 +1669,30 @@ def _extract_facebook_page(fb_url):
             var raw = mailLinks[mi].getAttribute('href').replace('mailto:', '').split('?')[0].trim();
             if (raw) addEmail(raw);
           }
-          // Contact sections (use textContent since innerText is empty in headless)
-          var contactSels = document.querySelectorAll('[data-pagelet="ProfileCards"],[data-pagelet="PageHeader"],[role="main"],[aria-label*="about" i]');
+          // Contact sections (expanded selectors)
+          var contactSels = document.querySelectorAll('[data-pagelet="ProfileCards"],[data-pagelet="PageHeader"],[data-pagelet="ProfileSection"],[role="main"],[aria-label*="about" i],[aria-label*="contact" i]');
           for (var ci = 0; ci < contactSels.length; ci++) {
             var ct = contactSels[ci].textContent || '';
             var m = ct.match(emailRe) || [];
             for (var cj = 0; cj < m.length; cj++) addEmail(m[cj]);
           }
-          // JSON scripts
+          // JSON scripts (full document)
           var jsonScripts = document.querySelectorAll('script[type="application/json"]');
           for (var si = 0; si < jsonScripts.length; si++) {
             var raw = jsonScripts[si].textContent || '';
             var m = raw.match(emailRe) || [];
             for (var sj = 0; sj < m.length; sj++) addEmail(m[sj]);
+          }
+          // Page innerHTML (broader JSON search) — strips script tags first
+          if (emailResults.length === 0) {
+            try {
+              var allScripts = document.querySelectorAll('script');
+              for (var sk = 0; sk < allScripts.length; sk++) {
+                var skText = allScripts[sk].textContent || '';
+                var skM = skText.match(emailRe) || [];
+                for (var skj = 0; skj < skM.length; skj++) addEmail(skM[skj]);
+              }
+            } catch(e) {}
           }
           // meta description fallback
           if (emailResults.length === 0) {
@@ -1583,6 +1702,13 @@ def _extract_facebook_page(fb_url):
               var mem = mc.match(emailRe) || [];
               for (var mj = 0; mj < mem.length; mj++) addEmail(mem[mj]);
             }
+          }
+          // Visible page text fallback (last resort)
+          if (emailResults.length === 0) {
+            try {
+              var m = fullText.match(emailRe) || [];
+              for (var fi = 0; fi < m.length; fi++) addEmail(m[fi]);
+            } catch(e) {}
           }
           if (emailResults.length > 0) d.email = emailResults[0];
 
@@ -2544,6 +2670,18 @@ class Handler(BaseHTTPRequestHandler):
             self._json(200, {'telegram_notifications': (str(row[0]) == '1') if row else True})
         elif parsed.path.startswith('/api/avatars/'):
             fname = os.path.basename(parsed.path)
+            if USE_MONGO and cloudinary_storage and cloudinary_storage.is_configured():
+                user_id = fname.rsplit('.', 1)[0]
+                url = cloudinary_storage.get_avatar_url(user_id)
+                if url:
+                    self.send_response(302)
+                    self.send_header('Location', url)
+                    self.send_header('Cache-Control', 'public, max-age=86400')
+                    self._cors_headers()
+                    self.end_headers()
+                    return
+                self._json(404, {'error': 'Not found'})
+                return
             fpath = os.path.join(AVATAR_DIR, fname)
             if not os.path.exists(fpath):
                 self._json(404, {'error': 'Not found'})
@@ -2589,7 +2727,6 @@ class Handler(BaseHTTPRequestHandler):
     def _handle_avatar_upload(self):
         user = require_auth(self)
         if not user: return
-        os.makedirs(AVATAR_DIR, exist_ok=True)
         length = int(self.headers.get('Content-Length', 0))
         if length == 0:
             self._json(400, {'error': 'No file data'})
@@ -2607,7 +2744,6 @@ class Handler(BaseHTTPRequestHandler):
         if not boundary:
             self._json(400, {'error': 'No boundary in Content-Type'})
             return
-        # Simple multipart parser
         delimiter = b'--' + boundary.encode()
         parts = raw.split(delimiter)
         for part in parts:
@@ -2615,10 +2751,18 @@ class Handler(BaseHTTPRequestHandler):
                 idx = part.find(b'\r\n\r\n')
                 if idx > -1:
                     fdata = part[idx + 4:].rstrip(b'\r\n--')
-                    fpath = os.path.join(AVATAR_DIR, f'{user["id"]}.jpg')
-                    with open(fpath, 'wb') as fout:
-                        fout.write(fdata)
-                    self._json(200, {'status': 'uploaded', 'url': f'/api/avatars/{user["id"]}.jpg'})
+                    public_url = None
+                    if USE_MONGO and cloudinary_storage and cloudinary_storage.is_configured():
+                        public_url = cloudinary_storage.upload_avatar(user['id'], fdata)
+                        if public_url and USE_MONGO:
+                            mongo_db.update_user(user['id'], {'avatar_url': public_url})
+                    if not public_url:
+                        os.makedirs(AVATAR_DIR, exist_ok=True)
+                        fpath = os.path.join(AVATAR_DIR, f'{user["id"]}.jpg')
+                        with open(fpath, 'wb') as fout:
+                            fout.write(fdata)
+                        public_url = f'/api/avatars/{user["id"]}.jpg'
+                    self._json(200, {'status': 'uploaded', 'url': public_url})
                     return
         self._json(400, {'error': 'avatar field not found in upload'})
 
