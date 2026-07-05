@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 """lead_gen_outreach.py — Shopify 2026 e-commerce demo generator.
 
 Generates multi-page (index, products, order) Shopify-style websites
