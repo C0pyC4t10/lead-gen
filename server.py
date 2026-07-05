@@ -1115,6 +1115,24 @@ def _load_fb_cookies():
         return None
 
 
+def _stealth_init_script():
+    """JS that runs before any page load to hide Playwright automation signals from Facebook."""
+    return '''() => {
+        Object.defineProperty(navigator, 'webdriver', { get: () => false });
+        Object.defineProperty(navigator, 'plugins', { get: () => [1, 2, 3, 4, 5] });
+        Object.defineProperty(navigator, 'languages', { get: () => ['en-US', 'en'] });
+        window.chrome = { runtime: {} };
+        const origQuery = window.navigator.permissions.query;
+        window.navigator.permissions.query = (params) => (
+            params.name === 'notifications'
+                ? Promise.resolve({ state: Notification.permission })
+                : origQuery(params)
+        );
+    }'''
+
+
+
+
 def _apply_fb_cookies(ctx):
     """Apply loaded FB cookies to a Playwright context (best-effort)."""
     cookies = _load_fb_cookies()
@@ -1124,7 +1142,6 @@ def _apply_fb_cookies(ctx):
         ctx.add_cookies(cookies)
     except Exception as e:
         print(f"[cookies] add failed: {e}", flush=True)
-
 
 
 
@@ -1320,591 +1337,571 @@ def _extract_facebook_page(fb_url):
         'address': '', 'last_post_date': '', 'qualification_score': 5,
     }
     from playwright.sync_api import sync_playwright
-    _p = sync_playwright().start()
-    browser = _p.chromium.launch(headless=True)
-    ctx = browser.new_context(
-        user_agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36',
-        viewport={'width': 1920, 'height': 1080},
-        locale='en_US',
-    )
-    _apply_fb_cookies(ctx)
-    page = ctx.new_page()
-    try:
-        page.goto(fb_url, timeout=20000, wait_until='domcontentloaded')
-
-        # Try to wait for actual page content (not the "browser not supported" wall)
+    with sync_playwright() as _p:
+        browser = _p.chromium.launch(headless=True, args=['--disable-blink-features=AutomationControlled'])
+        ctx = browser.new_context(
+            user_agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36',
+            viewport={'width': 1920, 'height': 1080},
+            locale='en_US',
+        )
+        ctx.add_init_script(_stealth_init_script())
+        _apply_fb_cookies(ctx)
+        page = ctx.new_page()
         try:
-            page.wait_for_selector('[data-pagelet], time, abbr, [role="main"]', timeout=8000)
-        except Exception:
-            pass  # Page didn't render useful content; we'll try anyway
+            page.goto(fb_url, timeout=25000, wait_until='domcontentloaded')
 
-        # Extract JSON-LD structured data first (often has full info without login)
-        try:
-            ld_raw = page.evaluate('''() => {
-              var out = {};
-              var scripts = document.querySelectorAll('script[type="application/ld+json"]');
-              for (var si = 0; si < scripts.length; si++) {
-                try {
-                  var d = JSON.parse(scripts[si].textContent);
-                  if (d.name && !out.name) out.name = d.name;
-                  if (d.description && !out.description) out.description = d.description;
-                  if (d.telephone && !out.telephone) out.telephone = d.telephone;
-                  if (d.email && !out.email) out.email = d.email;
-                  if (d.url && !out.url) out.url = d.url;
-                  if (d.address) {
-                    var a = d.address;
-                    if (typeof a === 'object') {
-                      var parts = [];
-                      if (a.streetAddress) parts.push(a.streetAddress);
-                      if (a.addressLocality) parts.push(a.addressLocality);
-                      if (a.addressRegion) parts.push(a.addressRegion);
-                      if (a.postalCode) parts.push(a.postalCode);
-                      if (a.addressCountry) parts.push(a.addressCountry);
-                      if (parts.length) out.address = parts.join(', ');
-                    }
+            try:
+                page.wait_for_selector('[data-pagelet], time, abbr, [role="main"]', timeout=8000)
+            except Exception:
+                pass
+
+            try:
+                ld_raw = page.evaluate('''() => {
+                  var out = {};
+                  var scripts = document.querySelectorAll('script[type="application/ld+json"]');
+                  for (var si = 0; si < scripts.length; si++) {
+                    try {
+                      var d = JSON.parse(scripts[si].textContent);
+                      if (d.name && !out.name) out.name = d.name;
+                      if (d.description && !out.description) out.description = d.description;
+                      if (d.telephone && !out.telephone) out.telephone = d.telephone;
+                      if (d.email && !out.email) out.email = d.email;
+                      if (d.url && !out.url) out.url = d.url;
+                      if (d.address) {
+                        var a = d.address;
+                        if (typeof a === 'object') {
+                          var parts = [];
+                          if (a.streetAddress) parts.push(a.streetAddress);
+                          if (a.addressLocality) parts.push(a.addressLocality);
+                          if (a.addressRegion) parts.push(a.addressRegion);
+                          if (a.postalCode) parts.push(a.postalCode);
+                          if (a.addressCountry) parts.push(a.addressCountry);
+                          if (parts.length) out.address = parts.join(', ');
+                        }
+                      }
+                      if (d.sameAs && Array.isArray(d.sameAs)) {
+                        for (var si2 = 0; si2 < d.sameAs.length; si2++) {
+                          var u = d.sameAs[si2];
+                          if (/^(https?:\/\/)?(?!.*facebook)/i.test(u) && !out.website) out.website = u;
+                        }
+                      }
+                    } catch(e) {}
                   }
-                  if (d.sameAs && Array.isArray(d.sameAs)) {
-                    for (var si2 = 0; si2 < d.sameAs.length; si2++) {
-                      var u = d.sameAs[si2];
-                      if (/^(https?:\\/\\/)?(?!.*facebook)/i.test(u) && !out.website) out.website = u;
-                    }
+                  return JSON.stringify(out);
+                }''')
+                ld_data = json.loads(ld_raw)
+                if ld_data.get('name'): result['business_name'] = ld_data['name']
+                if ld_data.get('telephone'): result['phone'] = ld_data['telephone']
+                if ld_data.get('email'): result['email'] = ld_data['email']
+                if ld_data.get('website'): result['website'] = ld_data['website']; result['has_website'] = True
+                if ld_data.get('address'): result['address'] = ld_data['address']
+            except Exception:
+                pass
+
+            page.evaluate('window.scrollTo(0, document.body.scrollHeight)')
+            page.wait_for_timeout(2000)
+            page.evaluate('window.scrollTo(0, Math.ceil(document.body.scrollHeight/2))')
+            page.wait_for_timeout(1500)
+            page.evaluate('window.scrollTo(0, document.body.scrollHeight)')
+            page.wait_for_timeout(1500)
+            page.evaluate('window.scrollTo(0, 0)')
+            page.wait_for_timeout(1500)
+            page.evaluate('window.scrollTo(0, document.body.scrollHeight)')
+            page.wait_for_timeout(1500)
+            page.evaluate('window.scrollTo(0, 0)')
+            page.wait_for_timeout(1500)
+
+            extract_js = '''
+            (function() {
+              var d = {url: window.location.href.split('?')[0].replace(/\\/+$/, '')};
+              var body = document.body ? document.body.innerText || '' : '';
+              var ftEl = document.createElement('div');
+              ftEl.appendChild(document.body.cloneNode(true));
+              var ftScripts = ftEl.querySelectorAll('script,style,svg');
+              for (var fi = 0; fi < ftScripts.length; fi++) ftScripts[fi].remove();
+              var fullText = ftEl.textContent || '';
+
+              var h = document.querySelector('[data-pagelet="ProfileHeader"],[data-pagelet="CommercialProfile"],header');
+              if (h) { var el = h.querySelector('h1,h2,strong'); if (el) d.business_name = el.innerText.trim(); }
+              if (!d.business_name) { var og = document.querySelector('meta[property="og:title"]'); if (og) d.business_name = (og.getAttribute('content') || '').trim(); }
+              if (!d.business_name) { var h1 = document.querySelector('h1'); if (h1) { var ht = h1.innerText.replace(/\u00a0/g, ' ').replace(/\s+Verified\s*(?:account|page)?\s*$/i, '').replace(/\s+/g, ' ').trim(); if (ht && ht.length > 1) d.business_name = ht; } }
+              if (!d.business_name) { var t = document.title.replace(/ \\| Facebook/, '').replace(/ - Facebook/, '').trim(); if (t && !/^search/i.test(t)) d.business_name = t; }
+
+              var cats = ['Beauty Salon','Boutique','Clothing','Store','Shop','Restaurant','Cafe','Bakery','Jewelry','Skincare','Cosmetics','Fashion','Grocery','Pharmacy','Clinic','Fitness','Gym','Salon','Spa','Tailor','Studio'];
+              for (var i = 0; i < cats.length; i++) { if (new RegExp('\\\\b' + cats[i] + '\\\\b', 'i').test(body)) { d.category = cats[i]; break; } }
+              if (!d.category) { var des = document.querySelector('meta[property="og:description"],meta[name="description"]'); if (des) { var dc = des.getAttribute('content') || ''; for (var i = 0; i < cats.length; i++) { if (new RegExp('\\\\b' + cats[i] + '\\\\b', 'i').test(dc)) { d.category = cats[i]; break; } } } }
+              if (!d.category) { for (var ci = 0; ci < cats.length; ci++) { if (new RegExp('\\\\b' + cats[ci] + '\\\\b', 'i').test(fullText)) { d.category = cats[ci]; break; } } }
+
+              var fm = body.match(/([\\d,.]+[KkMmBb]?)\\s*(followers|likes|people follow|\u099c\u09a8 \u09ab\u09b2\u09cb\u09af\u09bc\u09be\u09b0|follower)/i);
+              if (!fm) fm = body.match(/([\\d,.]+[KkMmBb]?)\\s*followers?\\s*[\\u2022\\/\\|\\-]\\s*(?:\\d+\\s*)?following/i);
+              if (!fm) fm = body.match(/([\\d,.]+[KkMmBb]?)\\s*(?:\\w+\\s+)?(?:followers?|likes?)/i);
+              if (!fm) { var fl = body.match(/(\\d[\\d,]*)\\s*(?:people|person)\\s+(?:follow|like)/i); if (fl) fm = fl; }
+              if (!fm) { var ogd = (document.querySelector('meta[property="og:description"],meta[name="description"]') || {}).content || ''; var ofm = ogd.match(/([\\d,.]+[KkMmBb]?)\\s*(likes|followers)/i); if (ofm) fm = ofm; }
+              if (!fm) { var ftm = fullText.match(/([\\d,.]+[KkMmBb]?)\\s*(followers|likes|people follow|\u099c\u09a8 \u09ab\u09b2\u09cb\u09af\u09bc\u09be\u09b0|follower)/i); if (ftm) fm = ftm; }
+              if (!fm) { var ftm = fullText.match(/([\\d,.]+[KkMmBb]?)\\s*followers?\\s*[\\u2022\\/\\|\\-]\\s*(?:\\d+\\s*)?following/i); if (ftm) fm = ftm; }
+              if (!fm) { var ftm = fullText.match(/([\\d,.]+[KkMmBb]?)\\s*(?:\\w+\\s+)?(?:followers?|likes?)/i); if (ftm) fm = ftm; }
+              if (fm) d.followers = fm[1];
+
+              var emailExcl = ['facebook.com', 'fb.com', 'sentry.io', 'example.com', '.png', '.jpg', '.svg', '.gif', 'w3.org', 'schema.org', 'google.com', 'googleapis.com', 'play.google', 'support.google', 'policies.google', 'developers.facebook', 'about.meta'];
+              var emailRe = /[a-zA-Z0-9._%+\\-]+@[a-zA-Z0-9.\\-]+\\.[a-zA-Z]{2,}/g;
+              var emailResults = [];
+              var emailSeen = {};
+              function addEmail(e) {
+                var k = e.toLowerCase().trim();
+                if (k && !emailSeen[k] && !emailExcl.some(function(x) { return k.indexOf(x) > -1; })) {
+                  emailSeen[k] = true; emailResults.push(k);
+                }
+              }
+              var mailLinks = document.querySelectorAll('a[href^="mailto:"]');
+              for (var mi = 0; mi < mailLinks.length; mi++) {
+                var raw = mailLinks[mi].getAttribute('href').replace('mailto:', '').split('?')[0].trim();
+                if (raw) addEmail(raw);
+              }
+              var contactSels = document.querySelectorAll('[data-pagelet="ProfileCards"],[data-pagelet="PageHeader"],[data-pagelet="ProfileSection"],[role="main"],[aria-label*="about" i],[aria-label*="contact" i]');
+              for (var ci = 0; ci < contactSels.length; ci++) {
+                var ct = contactSels[ci].textContent || '';
+                var m = ct.match(emailRe) || [];
+                for (var cj = 0; cj < m.length; cj++) addEmail(m[cj]);
+              }
+              var jsonScripts = document.querySelectorAll('script[type="application/json"]');
+              for (var si = 0; si < jsonScripts.length; si++) {
+                var raw = jsonScripts[si].textContent || '';
+                var m = raw.match(emailRe) || [];
+                for (var sj = 0; sj < m.length; sj++) addEmail(m[sj]);
+              }
+              if (emailResults.length === 0) {
+                try {
+                  var allScripts = document.querySelectorAll('script');
+                  for (var sk = 0; sk < allScripts.length; sk++) {
+                    var skText = allScripts[sk].textContent || '';
+                    var skM = skText.match(emailRe) || [];
+                    for (var skj = 0; skj < skM.length; skj++) addEmail(skM[skj]);
                   }
                 } catch(e) {}
               }
-              return JSON.stringify(out);
-            }''')
-            ld_data = json.loads(ld_raw)
-            if ld_data.get('name'): result['business_name'] = ld_data['name']
-            if ld_data.get('telephone'): result['phone'] = ld_data['telephone']
-            if ld_data.get('email'): result['email'] = ld_data['email']
-            if ld_data.get('website'): result['website'] = ld_data['website']; result['has_website'] = True
-            if ld_data.get('address'): result['address'] = ld_data['address']
-        except Exception:
-            pass  # JSON-LD extraction is best-effort
-
-        page.evaluate('window.scrollTo(0, document.body.scrollHeight)')
-        page.wait_for_timeout(2000)
-        page.evaluate('window.scrollTo(0, Math.ceil(document.body.scrollHeight/2))')
-        page.wait_for_timeout(1500)
-        page.evaluate('window.scrollTo(0, document.body.scrollHeight)')
-        page.wait_for_timeout(1500)
-        page.evaluate('window.scrollTo(0, 0)')
-        page.wait_for_timeout(1500)
-
-        extract_js = '''
-        (function() {
-          var d = {url: window.location.href.split('?')[0].replace(/\\/+$/, '')};
-          var body = document.body ? document.body.innerText || '' : '';
-          // fullText = textContent with script/style contents stripped (for FB pages that hide content)
-          var ftEl = document.createElement('div');
-          ftEl.appendChild(document.body.cloneNode(true));
-          var ftScripts = ftEl.querySelectorAll('script,style,svg');
-          for (var fi = 0; fi < ftScripts.length; fi++) ftScripts[fi].remove();
-          var fullText = ftEl.textContent || '';
-
-          var h = document.querySelector('[data-pagelet="ProfileHeader"],[data-pagelet="CommercialProfile"],header');
-          if (h) { var el = h.querySelector('h1,h2,strong'); if (el) d.business_name = el.innerText.trim(); }
-          if (!d.business_name) { var og = document.querySelector('meta[property="og:title"]'); if (og) d.business_name = (og.getAttribute('content') || '').trim(); }
-          if (!d.business_name) { var h1 = document.querySelector('h1'); if (h1) { var ht = h1.innerText.replace(/\u00a0/g, ' ').replace(/\s+Verified\s*(?:account|page)?\s*$/i, '').replace(/\s+/g, ' ').trim(); if (ht && ht.length > 1) d.business_name = ht; } }
-          if (!d.business_name) { var t = document.title.replace(/ \\| Facebook/, '').replace(/ - Facebook/, '').trim(); if (t && !/^search/i.test(t)) d.business_name = t; }
-
-          var cats = ['Beauty Salon','Boutique','Clothing','Store','Shop','Restaurant','Cafe','Bakery','Jewelry','Skincare','Cosmetics','Fashion','Grocery','Pharmacy','Clinic','Fitness','Gym','Salon','Spa','Tailor','Studio'];
-          for (var i = 0; i < cats.length; i++) { if (new RegExp('\\\\b' + cats[i] + '\\\\b', 'i').test(body)) { d.category = cats[i]; break; } }
-          if (!d.category) { var des = document.querySelector('meta[property="og:description"],meta[name="description"]'); if (des) { var dc = des.getAttribute('content') || ''; for (var i = 0; i < cats.length; i++) { if (new RegExp('\\\\b' + cats[i] + '\\\\b', 'i').test(dc)) { d.category = cats[i]; break; } } } }
-          if (!d.category) { for (var ci = 0; ci < cats.length; ci++) { if (new RegExp('\\\\b' + cats[ci] + '\\\\b', 'i').test(fullText)) { d.category = cats[ci]; break; } } }
-
-          var fm = body.match(/([\\d,.]+[KkMmBb]?)\\s*(followers|likes|people follow|\u099c\u09a8 \u09ab\u09b2\u09cb\u09af\u09bc\u09be\u09b0|follower)/i);
-          if (!fm) fm = body.match(/([\\d,.]+[KkMmBb]?)\\s*followers?\\s*[\\u2022\\/\\|\\-]\\s*(?:\\d+\\s*)?following/i);
-          if (!fm) fm = body.match(/([\\d,.]+[KkMmBb]?)\\s*(?:\\w+\\s+)?(?:followers?|likes?)/i);
-          if (!fm) { var fl = body.match(/(\\d[\\d,]*)\\s*(?:people|person)\\s+(?:follow|like)/i); if (fl) fm = fl; }
-          // Fallback: extract followers from og:description (e.g. "Pearl Kingdom, Dhaka. 266,936 likes ...")
-          if (!fm) { var ogd = (document.querySelector('meta[property="og:description"],meta[name="description"]') || {}).content || ''; var ofm = ogd.match(/([\\d,.]+[KkMmBb]?)\\s*(likes|followers)/i); if (ofm) fm = ofm; }
-          // Fallback: extract followers from fullText (textContent with script/style stripped)
-          if (!fm) { var ftm = fullText.match(/([\\d,.]+[KkMmBb]?)\\s*(followers|likes|people follow|\u099c\u09a8 \u09ab\u09b2\u09cb\u09af\u09bc\u09be\u09b0|follower)/i); if (ftm) fm = ftm; }
-          if (!fm) { var ftm = fullText.match(/([\\d,.]+[KkMmBb]?)\\s*followers?\\s*[\\u2022\\/\\|\\-]\\s*(?:\\d+\\s*)?following/i); if (ftm) fm = ftm; }
-          if (!fm) { var ftm = fullText.match(/([\\d,.]+[KkMmBb]?)\\s*(?:\\w+\\s+)?(?:followers?|likes?)/i); if (ftm) fm = ftm; }
-          if (fm) d.followers = fm[1];
-
-          // \u2500\u2500 Email (extension approach: mailto: + contact sections + JSON scripts) \u2500\u2500
-          var emailExcl = ['facebook.com', 'fb.com', 'sentry.io', 'example.com', '.png', '.jpg', '.svg', '.gif', 'w3.org', 'schema.org', 'google.com', 'googleapis.com', 'play.google', 'support.google', 'policies.google', 'developers.facebook', 'about.meta'];
-          var emailRe = /[a-zA-Z0-9._%+\\-]+@[a-zA-Z0-9.\\-]+\\.[a-zA-Z]{2,}/g;
-          var emailResults = [];
-          var emailSeen = {};
-          function addEmail(e) {
-            var k = e.toLowerCase().trim();
-            if (k && !emailSeen[k] && !emailExcl.some(function(x) { return k.indexOf(x) > -1; })) {
-              emailSeen[k] = true; emailResults.push(k);
-            }
-          }
-          // mailto: links
-          var mailLinks = document.querySelectorAll('a[href^="mailto:"]');
-          for (var mi = 0; mi < mailLinks.length; mi++) {
-            var raw = mailLinks[mi].getAttribute('href').replace('mailto:', '').split('?')[0].trim();
-            if (raw) addEmail(raw);
-          }
-          // Contact sections (expanded selectors)
-          var contactSels = document.querySelectorAll('[data-pagelet="ProfileCards"],[data-pagelet="PageHeader"],[data-pagelet="ProfileSection"],[role="main"],[aria-label*="about" i],[aria-label*="contact" i]');
-          for (var ci = 0; ci < contactSels.length; ci++) {
-            var ct = contactSels[ci].textContent || '';
-            var m = ct.match(emailRe) || [];
-            for (var cj = 0; cj < m.length; cj++) addEmail(m[cj]);
-          }
-          // JSON scripts (full document)
-          var jsonScripts = document.querySelectorAll('script[type="application/json"]');
-          for (var si = 0; si < jsonScripts.length; si++) {
-            var raw = jsonScripts[si].textContent || '';
-            var m = raw.match(emailRe) || [];
-            for (var sj = 0; sj < m.length; sj++) addEmail(m[sj]);
-          }
-          // Page innerHTML (broader JSON search) \u2014 strips script tags first
-          if (emailResults.length === 0) {
-            try {
-              var allScripts = document.querySelectorAll('script');
-              for (var sk = 0; sk < allScripts.length; sk++) {
-                var skText = allScripts[sk].textContent || '';
-                var skM = skText.match(emailRe) || [];
-                for (var skj = 0; skj < skM.length; skj++) addEmail(skM[skj]);
-              }
-            } catch(e) {}
-          }
-          // meta description fallback
-          if (emailResults.length === 0) {
-            var metaDescs = document.querySelectorAll('meta[property="og:description"],meta[name="description"]');
-            for (var mi = 0; mi < metaDescs.length; mi++) {
-              var mc = metaDescs[mi].getAttribute('content') || '';
-              var mem = mc.match(emailRe) || [];
-              for (var mj = 0; mj < mem.length; mj++) addEmail(mem[mj]);
-            }
-          }
-          // Visible page text fallback (last resort)
-          if (emailResults.length === 0) {
-            try {
-              var m = fullText.match(emailRe) || [];
-              for (var fi = 0; fi < m.length; fi++) addEmail(m[fi]);
-            } catch(e) {}
-          }
-          if (emailResults.length > 0) d.email = emailResults[0];
-
-          // \u2500\u2500 Phone (extension approach: tel: + contact sections + validation) \u2500\u2500
-          function looksReal(s) {
-            if (/^0{2,}/.test(s)) return false;
-            if (/^(\\d)\\1+$/.test(s)) return false;
-            if (s.length >= 8 && s.length % 3 === 0) {
-              var part = s.slice(0, 3);
-              if (part.repeat(s.length / 3) === s) return false;
-            }
-            if (s.length >= 8 && s.length % 2 === 0) {
-              var part = s.slice(0, 2);
-              if (part.repeat(s.length / 2) === s) return false;
-            }
-            return true;
-          }
-          var phoneResults = [];
-          var phoneSeen = {};
-          function addPhone(p) {
-            var n = p.replace(/[\\s\\-\\(\\)\\.]/g, '');
-            if (!n) return;
-            if (n.indexOf('01') === 0 && n.length === 11) n = '+880' + n.slice(1);
-            else if (n.indexOf('880') === 0 && n.length === 13) n = '+' + n;
-            if (phoneSeen[n]) return;
-            var np = n.replace(/^\\+/, '');
-            if (np.length < 10) return;
-            if (/^8801[3-9]\\d{8}$/.test(np) && looksReal(np.slice(3))) {
-              phoneSeen[n] = true; phoneResults.push(n);
-            }
-          }
-          // tel: links
-          var telLinks = document.querySelectorAll('a[href^="tel:"]');
-          for (var ti = 0; ti < telLinks.length; ti++) {
-            var raw = telLinks[ti].getAttribute('href').replace('tel:', '').split(/[;,#]/)[0].trim();
-            if (raw) addPhone(raw);
-          }
-          // Contact sections
-          var contactSels2 = document.querySelectorAll('[data-pagelet="ProfileCards"],[data-pagelet="PageHeader"],[role="main"],[aria-label*="about" i]');
-          for (var ci = 0; ci < contactSels2.length; ci++) {
-            var ct = contactSels2[ci].textContent || '';
-            var clean = ct.replace(/[\\s\\-\\(\\)\\.]/g, '');
-            var m = clean.match(/(?:01[3-9]\\d{8}|\\+?8801[3-9]\\d{8})/g) || [];
-            for (var cj = 0; cj < m.length; cj++) addPhone(m[cj]);
-          }
-          // fullText fallback
-          if (phoneResults.length === 0) {
-            var cleanFt = fullText.replace(/[\\s\\-\\(\\)\\.]/g, '');
-            var m = cleanFt.match(/(?:01[3-9]\\d{8}|\\+?8801[3-9]\\d{8})/g) || [];
-            for (var fi = 0; fi < m.length; fi++) {
-              var n = m[fi];
-              if (n.indexOf('01') === 0 && n.length === 11) n = '+880' + n.slice(1);
-              var np = n.replace(/^\\+/, '');
-              if (/^8801[3-9]\\d{8}$/.test(np) && looksReal(np.slice(3))) {
-                if (!phoneSeen[n]) { phoneSeen[n] = true; phoneResults.push(n); }
-                break;  // only first valid from fullText
-              }
-            }
-          }
-          if (phoneResults.length > 0) d.phone = phoneResults.join(', ');
-
-          // \u2500\u2500 Website (extension approach: all links + JSON scripts + redirects) \u2500\u2500
-           var siteExcl = ['facebook.com','fb.com','fbcdn','instagram','twitter','youtube','whatsapp','wa.me','messenger','google','gmail','maps.google.com','google.com/maps','dms.net','m.me','mng.com','doubleclick.net','googlesyndication.com','googleadservices.com','msn.com','live.com','bing.com','yahoo.com','cnn.com','bbc.com','nypost.com','apple.com','microsoft.com','support.google','policies.google','play.google.com','developers.facebook','about.meta','news.'];
-          function isExcluded(url) {
-            try {
-              var u = new URL(url);
-              return siteExcl.some(function(e) { return u.hostname.indexOf(e) > -1; });
-            } catch(e) { return true; }
-          }
-          // All links (ProfileCards links first)
-          var profileCards = document.querySelectorAll('[data-pagelet="ProfileCards"] a[href]');
-          for (var pi = 0; pi < profileCards.length; pi++) {
-            var hf = profileCards[pi].href;
-            if (hf && hf.indexOf('http') === 0 && !isExcluded(hf)) {
-              try { var u = new URL(hf); d.website = u.origin + u.pathname; d.has_website = true; } catch(e) {}
-              if (d.website) break;
-            }
-          }
-          // All links fallback \u2014 restrict to ProfileCards/about links only (avoid grabbing random post links)
-          if (!d.website) {
-            var scopedLinks = document.querySelectorAll('[data-pagelet="ProfileCards"] a[href], [data-pagelet="PageHeader"] a[href], [aria-label*="website" i] a[href], [aria-label*="Website" i]');
-            for (var li = 0; li < scopedLinks.length; li++) {
-              var hf = scopedLinks[li].href || '';
-              if (hf && hf.indexOf('http') === 0 && !isExcluded(hf)) {
-                try { var u = new URL(hf); d.website = u.origin + u.pathname; d.has_website = true; break; } catch(e) {}
-              }
-            }
-          }
-          // Facebook redirect links (l.php?u=)
-          if (!d.website) {
-            var fbLinks = document.querySelectorAll('a[href*="l.facebook.com/l.php?u="]');
-            for (var li = 0; li < fbLinks.length; li++) {
-              var m = fbLinks[li].href.match(/[?&]u=([^&]+)/);
-              if (m) { try { var u = decodeURIComponent(m[1]); var p = new URL(u); if (!isExcluded(p.href)) { d.website = p.origin + p.pathname; d.has_website = true; break; } } catch(e) {} }
-            }
-          }
-          // JSON script fallback
-          if (!d.website) {
-            var jsonScripts = document.querySelectorAll('script[type="application/json"]');
-            for (var si = 0; si < jsonScripts.length; si++) {
-              var raw = jsonScripts[si].textContent || '';
-              var m = raw.match(/"website"\\s*:\\s*"([^"]+)"/);
-              if (m && m[1].indexOf('http') === 0 && !isExcluded(m[1])) { d.website = m[1]; d.has_website = true; break; }
-            }
-          }
-          // REMOVED fullText regex fallback for website \u2014 too noisy (grabbed random URLs like ncl.com, sky.com, msn.com from page body)
-
-          // \u2500\u2500 Address (extension approach: Google Maps links + structured patterns) \u2500\u2500
-          // Normalize: split text by separators so we never match across "Location A \u00b7 Location B"
-          function splitSegments(s) {
-            return (s || '').split(/[\u00b7\u2022|;]/).map(function(x) { return x.trim(); }).filter(function(x) { return x.length > 2; });
-          }
-          var bodySegs = splitSegments(body);
-          var ftSegs = splitSegments(fullText);
-          var ogdEl = document.querySelector('meta[property="og:description"],meta[name="description"]');
-          var ogd = ogdEl ? (ogdEl.getAttribute('content') || '') : '';
-          var ogdSegs = splitSegments(ogd);
-          // Google Maps links
-          var mapLinks = document.querySelectorAll('a[href*="maps.google.com"], a[href*="maps.app.goo.gl"], a[href*="google.com/maps"]');
-          for (var mi = 0; mi < mapLinks.length; mi++) {
-            var parent = mapLinks[mi].closest('div,[role="main"]') || mapLinks[mi].parentElement;
-            if (!parent) continue;
-            var parentText = (parent.textContent || '');
-            for (var pi = 0; pi < splitSegments(parentText).length; pi++) {
-              var seg = splitSegments(parentText)[pi];
-              if (/(Road|House|Floor|Level|Lane|Street|Block|Sector|Building|Village)/i.test(seg) && seg.length < 200) {
-                d.address = seg;
-                break;
-              }
-            }
-            if (d.address) break;
-          }
-          // Structured address pattern fallback \u2014 run on segments, never on joined text
-          if (!d.address) {
-            var addrPatterns = [
-              /(?:Road|House|Floor|Level|Lane|Street|Block|Sector|Building|Village|Thana|Upazila).{3,120}?(?:Dhaka|Chattogram|Chittagong|Sylhet|Khulna|Rajshahi|Barisal)/i,
-              /(?:Gulshan|Banani|Mirpur|Uttara|Dhanmondi|Mohammadpur|Motijheel|Khilgaon|Badda|Bashundhara|Farmgate|Shyamoli|Lalmatia|Malibagh|Rampura|Wari|Jatrabari).{3,80}?(?:Dhaka|Chattogram|Chittagong|Sylhet)/i,
-              /(?:Panthapath|Kakrail|Shahbag|Kawran Bazar|Elephant Road|New Market|Azimpur|Green Road|Nikunja|Baridhara|Bonosree|Aftab Nagar).{3,60}?(?:Dhaka|Chattogram)/i,
-            ];
-            function scanSegs(segs, patterns) {
-              for (var si2 = 0; si2 < segs.length; si2++) {
-                var seg = segs[si2];
-                for (var ai = 0; ai < patterns.length; ai++) {
-                  var m = seg.match(patterns[ai]);
-                  if (m) return m[0].trim();
+              if (emailResults.length === 0) {
+                var metaDescs = document.querySelectorAll('meta[property="og:description"],meta[name="description"]');
+                for (var mi = 0; mi < metaDescs.length; mi++) {
+                  var mc = metaDescs[mi].getAttribute('content') || '';
+                  var mem = mc.match(emailRe) || [];
+                  for (var mj = 0; mj < mem.length; mj++) addEmail(mem[mj]);
                 }
               }
-              return null;
-            }
-            d.address = scanSegs(bodySegs, addrPatterns) || scanSegs(ftSegs, addrPatterns) || scanSegs(ogdSegs, addrPatterns);
-          }
-          if (!d.address) {
-            var cityRe = /\\b(Dhaka|Chattogram|Chittagong|Sylhet|Khulna|Rajshahi|Barisal|Rangpur|Mymensingh|Comilla|Narayanganj|Gazipur)\\b/i;
-            for (var si3 = 0; si3 < bodySegs.length && !d.address; si3++) { var m = bodySegs[si3].match(cityRe); if (m) d.address = m[0].trim(); }
-            if (!d.address) for (var si4 = 0; si4 < ftSegs.length && !d.address; si4++) { var m2 = ftSegs[si4].match(cityRe); if (m2) d.address = m2[0].trim(); }
-            if (!d.address) for (var si5 = 0; si5 < ogdSegs.length && !d.address; si5++) { var m3 = ogdSegs[si5].match(cityRe); if (m3) d.address = m3[0].trim(); }
-          }
-
-          // Strategy 1: <time datetime="..."> elements (Facebook uses these \u2014 convert ISO to "X ago")
-          if (!d.last_post_date) {
-            var timeEls = document.querySelectorAll('time');
-            for (var ti = 0; ti < timeEls.length; ti++) {
-              var iso = timeEls[ti].getAttribute('datetime') || '';
-              if (iso && /\\d{4}/.test(iso)) {
-                var dt = new Date(iso);
-                var now = new Date();
-                var diffMs = now - dt;
-                if (!isNaN(dt.getTime()) && diffMs > 0 && diffMs < 730 * 24 * 3600 * 1000) {
-                  var diffMin = Math.floor(diffMs / 60000);
-                  var diffHr = Math.floor(diffMin / 60);
-                  var diffDay = Math.floor(diffHr / 24);
-                  var diffWk = Math.floor(diffDay / 7);
-                  var diffMo = Math.floor(diffDay / 30);
-                  var diffYr = Math.floor(diffDay / 365);
-                  function ago(n, unit) { return n + ' ' + unit + (n === 1 ? '' : 's') + ' ago'; }
-                  if (diffYr >= 1) d.last_post_date = ago(diffYr, 'year');
-                  else if (diffMo >= 1) d.last_post_date = ago(diffMo, 'month');
-                  else if (diffWk >= 1) d.last_post_date = ago(diffWk, 'week');
-                  else if (diffDay >= 1) d.last_post_date = ago(diffDay, 'day');
-                  else if (diffHr >= 1) d.last_post_date = ago(diffHr, 'hour');
-                  else if (diffMin >= 1) d.last_post_date = ago(diffMin, 'minute');
-                  else d.last_post_date = 'Just now';
-                  break;
-                }
-                // ISO unparseable or too old \u2014 fall through to visible text strategy
-                var visible = (timeEls[ti].textContent || '').trim();
-                if (visible && /\\d/.test(visible)) { d.last_post_date = visible; break; }
+              if (emailResults.length === 0) {
+                try {
+                  var m = fullText.match(emailRe) || [];
+                  for (var fi = 0; fi < m.length; fi++) addEmail(m[fi]);
+                } catch(e) {}
               }
-            }
-          }
-          // Strategy 1b: data-utime / data-time attributes (FB embeds post timestamps here)
-          if (!d.last_post_date) {
-            var utimeEls = document.querySelectorAll('[data-utime], [data-time], a[href*="/posts/"], a[href*="/permalink/"]');
-            var bestPost = null;
-            for (var ui = 0; ui < utimeEls.length; ui++) {
-              var u = utimeEls[ui].getAttribute('data-utime') || utimeEls[ui].getAttribute('data-time') || '';
-              if (u && /^\\d{10,13}$/.test(u)) {
-                var ts = parseInt(u.length === 10 ? u + '000' : u);
-                var dt2 = new Date(ts);
-                if (!isNaN(dt2.getTime())) {
-                  var diffMs2 = Date.now() - dt2.getTime();
-                  if (diffMs2 > 0 && diffMs2 < 730 * 24 * 3600 * 1000) {
-                    if (!bestPost || ts > bestPost) bestPost = ts;
+              if (emailResults.length > 0) d.email = emailResults[0];
+
+              function looksReal(s) {
+                if (/^0{2,}/.test(s)) return false;
+                if (/^(\\d)\\1+$/.test(s)) return false;
+                if (s.length >= 8 && s.length % 3 === 0) {
+                  var part = s.slice(0, 3);
+                  if (part.repeat(s.length / 3) === s) return false;
+                }
+                if (s.length >= 8 && s.length % 2 === 0) {
+                  var part = s.slice(0, 2);
+                  if (part.repeat(s.length / 2) === s) return false;
+                }
+                return true;
+              }
+              var phoneResults = [];
+              var phoneSeen = {};
+              function addPhone(p) {
+                var n = p.replace(/[\\s\\-\\(\\)\\.]/g, '');
+                if (!n) return;
+                if (n.indexOf('01') === 0 && n.length === 11) n = '+880' + n.slice(1);
+                else if (n.indexOf('880') === 0 && n.length === 13) n = '+' + n;
+                if (phoneSeen[n]) return;
+                var np = n.replace(/^\\+/, '');
+                if (np.length < 10) return;
+                if (/^8801[3-9]\\d{8}$/.test(np) && looksReal(np.slice(3))) {
+                  phoneSeen[n] = true; phoneResults.push(n);
+                }
+              }
+              var telLinks = document.querySelectorAll('a[href^="tel:"]');
+              for (var ti = 0; ti < telLinks.length; ti++) {
+                var raw = telLinks[ti].getAttribute('href').replace('tel:', '').split(/[;,#]/)[0].trim();
+                if (raw) addPhone(raw);
+              }
+              var contactSels2 = document.querySelectorAll('[data-pagelet="ProfileCards"],[data-pagelet="PageHeader"],[role="main"],[aria-label*="about" i]');
+              for (var ci = 0; ci < contactSels2.length; ci++) {
+                var ct = contactSels2[ci].textContent || '';
+                var clean = ct.replace(/[\\s\\-\\(\\)\\.]/g, '');
+                var m = clean.match(/(?:01[3-9]\\d{8}|\\+?8801[3-9]\\d{8})/g) || [];
+                for (var cj = 0; cj < m.length; cj++) addPhone(m[cj]);
+              }
+              if (phoneResults.length === 0) {
+                var cleanFt = fullText.replace(/[\\s\\-\\(\\)\\.]/g, '');
+                var m = cleanFt.match(/(?:01[3-9]\\d{8}|\\+?8801[3-9]\\d{8})/g) || [];
+                for (var fi = 0; fi < m.length; fi++) {
+                  var n = m[fi];
+                  if (n.indexOf('01') === 0 && n.length === 11) n = '+880' + n.slice(1);
+                  var np = n.replace(/^\\+/, '');
+                  if (/^8801[3-9]\\d{8}$/.test(np) && looksReal(np.slice(3))) {
+                    if (!phoneSeen[n]) { phoneSeen[n] = true; phoneResults.push(n); }
+                    break;
                   }
                 }
               }
-            }
-            if (bestPost) {
-              var dt3 = new Date(bestPost);
-              var diffMin2 = Math.floor((Date.now() - dt3.getTime()) / 60000);
-              var diffHr2 = Math.floor(diffMin2 / 60);
-              var diffDay2 = Math.floor(diffHr2 / 24);
-              var diffWk2 = Math.floor(diffDay2 / 7);
-              var diffMo2 = Math.floor(diffDay2 / 30);
-              function ago2(n, unit) { return n + ' ' + unit + (n === 1 ? '' : 's') + ' ago'; }
-              if (diffDay2 >= 30) d.last_post_date = ago2(Math.floor(diffDay2/30), 'month');
-              else if (diffWk2 >= 1) d.last_post_date = ago2(diffWk2, 'week');
-              else if (diffDay2 >= 1) d.last_post_date = ago2(diffDay2, 'day');
-              else if (diffHr2 >= 1) d.last_post_date = ago2(diffHr2, 'hour');
-              else if (diffMin2 >= 1) d.last_post_date = ago2(diffMin2, 'minute');
-              else d.last_post_date = 'Just now';
-            }
-          }
-          // Strategy 2: <abbr> elements with aria-label/title containing "X ago"
-          if (!d.last_post_date) {
-            var abbrs = document.querySelectorAll('abbr');
-            for (var i = 0; i < abbrs.length; i++) {
-              var t = abbrs[i].getAttribute('aria-label') || abbrs[i].getAttribute('title') || abbrs[i].textContent || '';
-              if (t && !/notification/i.test(t)) { if (/\\b(?:about\\s+)?(?:\\d+|an?)\\s+(hours?|minutes?|days?|weeks?|months?|years?)\\s+ago\\b|^just now$/i.test(t)) { d.last_post_date = t; break; } }
-            }
-          }
-          // Strategy 3: full "X hours/days ago" form in body text
-          if (!d.last_post_date) {
-            var tm = body.match(/\\b(?:about\\s+)?(?:\\d+|an?)\\s+(hours?|minutes?|days?|weeks?|months?|years?)\\s+ago\\b|^just now$/gi);
-            if (!tm) tm = fullText.match(/\\b(?:about\\s+)?(?:\\d+|an?)\\s+(hours?|minutes?|days?|weeks?|months?|years?)\\s+ago\\b|^just now$/gi);
-            if (tm) d.last_post_date = tm[0];
-          }
-          // Strategy 4: Facebook's abbreviated forms "2h", "3d", "1w", "2mo", "Just now", "Yesterday"
-          if (!d.last_post_date) {
-            var abbrRe = body.match(/\\b(?:just now|yesterday)\\b|\\b(\\d+)\\s*(s|sec|secs|second|seconds|m|min|mins|minute|minutes|h|hr|hrs|hour|hours|d|day|days|w|wk|wks|week|weeks|mo|mos|month|months|y|yr|yrs|year|years)\\b/gi);
-            if (abbrRe && abbrRe.length) d.last_post_date = abbrRe[0];
-          }
-          // Strategy 5: Bengali relative-time phrases (e.g. "\u09e8 \u0998\u09a3\u09cd\u099f\u09be \u0986\u0997\u09c7", "\u09e9 \u09a6\u09bf\u09a8 \u0986\u0997\u09c7")
-          if (!d.last_post_date) {
-            var bnRe = body.match(/\\d+\\s*(\u09b8\u09c7\u0995\u09c7\u09a8\u09cd\u09a1|\u09ae\u09bf\u09a8\u09bf\u099f|\u0998\u09a3\u09cd\u099f\u09be|\u09a6\u09bf\u09a8|\u09b8\u09aa\u09cd\u09a4\u09be\u09b9|\u09ae\u09be\u09b8|\u09ac\u099b\u09b0)\\s*(\u0986\u0997\u09c7|\u09aa\u09c2\u09b0\u09cd\u09ac\u09c7)/);
-            if (!bnRe) bnRe = fullText.match(/\\d+\\s*(\u09b8\u09c7\u0995\u09c7\u09a8\u09cd\u09a1|\u09ae\u09bf\u09a8\u09bf\u099f|\u0998\u09a3\u09cd\u099f\u09be|\u09a6\u09bf\u09a8|\u09b8\u09aa\u09cd\u09a4\u09be\u09b9|\u09ae\u09be\u09b8|\u09ac\u099b\u09b0)\\s*(\u0986\u0997\u09c7|\u09aa\u09c2\u09b0\u09cd\u09ac\u09c7)/);
-            if (bnRe) d.last_post_date = bnRe[0];
-          }
-          // Normalize abbreviated forms to readable "X hours/days ago" form
-          if (d.last_post_date) {
-            var norm = d.last_post_date.trim().toLowerCase();
-            var map = { 'just now': 'Just now', 'yesterday': 'Yesterday' };
-            if (map[norm]) { d.last_post_date = map[norm]; }
-            else {
-              var m = norm.match(/^(\\d+)\\s*([a-z]+)/);
-              if (m) {
-                var n = parseInt(m[1]);
-                var unit = m[2];
-                var unitMap = {
-                  's': 'second', 'sec': 'second', 'secs': 'second', 'second': 'second', 'seconds': 'second',
-                  'm': 'minute', 'min': 'minute', 'mins': 'minute', 'minute': 'minute', 'minutes': 'minute',
-                  'h': 'hour', 'hr': 'hour', 'hrs': 'hour', 'hour': 'hour', 'hours': 'hour',
-                  'd': 'day', 'day': 'day', 'days': 'day',
-                  'w': 'week', 'wk': 'week', 'wks': 'week', 'week': 'week', 'weeks': 'week',
-                  'mo': 'month', 'mos': 'month', 'month': 'month', 'months': 'month',
-                  'y': 'year', 'yr': 'year', 'yrs': 'year', 'year': 'year', 'years': 'year'
-                };
-                var fullUnit = unitMap[unit] || unit;
-                var plural = (n === 1) ? fullUnit : (fullUnit + 's');
-                d.last_post_date = n + ' ' + plural + ' ago';
+              if (phoneResults.length > 0) d.phone = phoneResults.join(', ');
+
+              var siteExcl = ['facebook.com','fb.com','fbcdn','instagram','twitter','youtube','whatsapp','wa.me','messenger','google','gmail','maps.google.com','google.com/maps','dms.net','m.me','mng.com','doubleclick.net','googlesyndication.com','googleadservices.com','msn.com','live.com','bing.com','yahoo.com','cnn.com','bbc.com','nypost.com','apple.com','microsoft.com','support.google','policies.google','play.google.com','developers.facebook','about.meta','news.'];
+              function isExcluded(url) {
+                try {
+                  var u = new URL(url);
+                  return siteExcl.some(function(e) { return u.hostname.indexOf(e) > -1; });
+                } catch(e) { return true; }
               }
-            }
-          }
+              var profileCards = document.querySelectorAll('[data-pagelet="ProfileCards"] a[href]');
+              for (var pi = 0; pi < profileCards.length; pi++) {
+                var hf = profileCards[pi].href;
+                if (hf && hf.indexOf('http') === 0 && !isExcluded(hf)) {
+                  try { var u = new URL(hf); d.website = u.origin + u.pathname; d.has_website = true; } catch(e) {}
+                  if (d.website) break;
+                }
+              }
+              if (!d.website) {
+                var scopedLinks = document.querySelectorAll('[data-pagelet="ProfileCards"] a[href], [data-pagelet="PageHeader"] a[href], [aria-label*="website" i] a[href], [aria-label*="Website" i]');
+                for (var li = 0; li < scopedLinks.length; li++) {
+                  var hf = scopedLinks[li].href || '';
+                  if (hf && hf.indexOf('http') === 0 && !isExcluded(hf)) {
+                    try { var u = new URL(hf); d.website = u.origin + u.pathname; d.has_website = true; break; } catch(e) {}
+                  }
+                }
+              }
+              if (!d.website) {
+                var fbLinks = document.querySelectorAll('a[href*="l.facebook.com/l.php?u="]');
+                for (var li = 0; li < fbLinks.length; li++) {
+                  var m = fbLinks[li].href.match(/[?&]u=([^&]+)/);
+                  if (m) { try { var u = decodeURIComponent(m[1]); var p = new URL(u); if (!isExcluded(p.href)) { d.website = p.origin + p.pathname; d.has_website = true; break; } } catch(e) {} }
+                }
+              }
+              if (!d.website) {
+                var jsonScripts = document.querySelectorAll('script[type="application/json"]');
+                for (var si = 0; si < jsonScripts.length; si++) {
+                  var raw = jsonScripts[si].textContent || '';
+                  var m = raw.match(/"website"\\s*:\\s*"([^"]+)"/);
+                  if (m && m[1].indexOf('http') === 0 && !isExcluded(m[1])) { d.website = m[1]; d.has_website = true; break; }
+                }
+              }
 
-          return JSON.stringify(d);
-        })();
-        '''
-        raw = page.evaluate(extract_js)
-        data = json.loads(raw)
-        result.update(data)
-        result['url'] = fb_url.rstrip('/')
+              function splitSegments(s) {
+                return (s || '').split(/[\u00b7\u2022|;]/).map(function(x) { return x.trim(); }).filter(function(x) { return x.length > 2; });
+              }
+              var bodySegs = splitSegments(body);
+              var ftSegs = splitSegments(fullText);
+              var ogdEl = document.querySelector('meta[property="og:description"],meta[name="description"]');
+              var ogd = ogdEl ? (ogdEl.getAttribute('content') || '') : '';
+              var ogdSegs = splitSegments(ogd);
+              var mapLinks = document.querySelectorAll('a[href*="maps.google.com"], a[href*="maps.app.goo.gl"], a[href*="google.com/maps"]');
+              for (var mi = 0; mi < mapLinks.length; mi++) {
+                var parent = mapLinks[mi].closest('div,[role="main"]') || mapLinks[mi].parentElement;
+                if (!parent) continue;
+                var parentText = (parent.textContent || '');
+                for (var pi = 0; pi < splitSegments(parentText).length; pi++) {
+                  var seg = splitSegments(parentText)[pi];
+                  if (/(Road|House|Floor|Level|Lane|Street|Block|Sector|Building|Village)/i.test(seg) && seg.length < 200) {
+                    d.address = seg;
+                    break;
+                  }
+                }
+                if (d.address) break;
+              }
+              if (!d.address) {
+                var addrPatterns = [
+                  /(?:Road|House|Floor|Level|Lane|Street|Block|Sector|Building|Village|Thana|Upazila).{3,120}?(?:Dhaka|Chattogram|Chittagong|Sylhet|Khulna|Rajshahi|Barisal)/i,
+                  /(?:Gulshan|Banani|Mirpur|Uttara|Dhanmondi|Mohammadpur|Motijheel|Khilgaon|Badda|Bashundhara|Farmgate|Shyamoli|Lalmatia|Malibagh|Rampura|Wari|Jatrabari).{3,80}?(?:Dhaka|Chattogram|Chittagong|Sylhet)/i,
+                  /(?:Panthapath|Kakrail|Shahbag|Kawran Bazar|Elephant Road|New Market|Azimpur|Green Road|Nikunja|Baridhara|Bonosree|Aftab Nagar).{3,60}?(?:Dhaka|Chattogram)/i,
+                ];
+                function scanSegs(segs, patterns) {
+                  for (var si2 = 0; si2 < segs.length; si2++) {
+                    var seg = segs[si2];
+                    for (var ai = 0; ai < patterns.length; ai++) {
+                      var m = seg.match(patterns[ai]);
+                      if (m) return m[0].trim();
+                    }
+                  }
+                  return null;
+                }
+                d.address = scanSegs(bodySegs, addrPatterns) || scanSegs(ftSegs, addrPatterns) || scanSegs(ogdSegs, addrPatterns);
+              }
+              if (!d.address) {
+                var cityRe = /\\b(Dhaka|Chattogram|Chittagong|Sylhet|Khulna|Rajshahi|Barisal|Rangpur|Mymensingh|Comilla|Narayanganj|Gazipur)\\b/i;
+                for (var si3 = 0; si3 < bodySegs.length && !d.address; si3++) { var m = bodySegs[si3].match(cityRe); if (m) d.address = m[0].trim(); }
+                if (!d.address) for (var si4 = 0; si4 < ftSegs.length && !d.address; si4++) { var m2 = ftSegs[si4].match(cityRe); if (m2) d.address = m2[0].trim(); }
+                if (!d.address) for (var si5 = 0; si5 < ogdSegs.length && !d.address; si5++) { var m3 = ogdSegs[si5].match(cityRe); if (m3) d.address = m3[0].trim(); }
+              }
 
-        # Extract from raw HTML source (Facebook embeds business data in script JSON)
-        try:
-            html_src = page.content()
-            fb_data = _extract_fb_json_data(html_src)
-            if not result.get('phone') and fb_data.get('phone'):
-                p = re.sub(r'[\s\-\(\)\.]', '', fb_data['phone'])
-                if p.startswith('01') and len(p) == 11: p = '+880' + p[1:]
-                elif p.startswith('1') and len(p) == 10: p = '+880' + p
-                elif p.startswith('880') and not p.startswith('+'): p = '+' + p
-                if re.match(r'^\+?8801[3-9]\d{8}$', p): result['phone'] = p
-            if not result.get('email') and fb_data.get('email'):
-                if re.search(r'[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}', fb_data['email']):
-                    result['email'] = fb_data['email']
-            if not result.get('website') and fb_data.get('website'):
-                result['website'] = fb_data['website']
-                result['has_website'] = True
-            if not result.get('address') and fb_data.get('address'):
-                result['address'] = fb_data['address']
-            if not result.get('category') and fb_data.get('category'):
-                result['category'] = fb_data['category']
-        except Exception:
-            pass  # HTML extraction is best-effort
+              var timeEls = document.querySelectorAll('time');
+              for (var ti = 0; ti < timeEls.length; ti++) {
+                var iso = timeEls[ti].getAttribute('datetime') || '';
+                if (iso && /\\d{4}/.test(iso)) {
+                  var dt = new Date(iso);
+                  var now = new Date();
+                  var diffMs = now - dt;
+                  if (!isNaN(dt.getTime()) && diffMs > 0 && diffMs < 730 * 24 * 3600 * 1000) {
+                    var diffMin = Math.floor(diffMs / 60000);
+                    var diffHr = Math.floor(diffMin / 60);
+                    var diffDay = Math.floor(diffHr / 24);
+                    var diffWk = Math.floor(diffDay / 7);
+                    var diffMo = Math.floor(diffDay / 30);
+                    var diffYr = Math.floor(diffDay / 365);
+                    function ago(n, unit) { return n + ' ' + unit + (n === 1 ? '' : 's') + ' ago'; }
+                    if (diffYr >= 1) d.last_post_date = ago(diffYr, 'year');
+                    else if (diffMo >= 1) d.last_post_date = ago(diffMo, 'month');
+                    else if (diffWk >= 1) d.last_post_date = ago(diffWk, 'week');
+                    else if (diffDay >= 1) d.last_post_date = ago(diffDay, 'day');
+                    else if (diffHr >= 1) d.last_post_date = ago(diffHr, 'hour');
+                    else if (diffMin >= 1) d.last_post_date = ago(diffMin, 'minute');
+                    else d.last_post_date = 'Just now';
+                    break;
+                  }
+                  var visible = (timeEls[ti].textContent || '').trim();
+                  if (visible && /\\d/.test(visible)) { d.last_post_date = visible; break; }
+                }
+              }
+              if (!d.last_post_date) {
+                var utimeEls = document.querySelectorAll('[data-utime], [data-time], a[href*="/posts/"], a[href*="/permalink/"]');
+                var bestPost = null;
+                for (var ui = 0; ui < utimeEls.length; ui++) {
+                  var u = utimeEls[ui].getAttribute('data-utime') || utimeEls[ui].getAttribute('data-time') || '';
+                  if (u && /^\\d{10,13}$/.test(u)) {
+                    var ts = parseInt(u.length === 10 ? u + '000' : u);
+                    var dt2 = new Date(ts);
+                    if (!isNaN(dt2.getTime())) {
+                      var diffMs2 = Date.now() - dt2.getTime();
+                      if (diffMs2 > 0 && diffMs2 < 730 * 24 * 3600 * 1000) {
+                        if (!bestPost || ts > bestPost) bestPost = ts;
+                      }
+                    }
+                  }
+                }
+                if (bestPost) {
+                  var dt3 = new Date(bestPost);
+                  var diffMin2 = Math.floor((Date.now() - dt3.getTime()) / 60000);
+                  var diffHr2 = Math.floor(diffMin2 / 60);
+                  var diffDay2 = Math.floor(diffHr2 / 24);
+                  var diffWk2 = Math.floor(diffDay2 / 7);
+                  var diffMo2 = Math.floor(diffDay2 / 30);
+                  function ago2(n, unit) { return n + ' ' + unit + (n === 1 ? '' : 's') + ' ago'; }
+                  if (diffDay2 >= 30) d.last_post_date = ago2(Math.floor(diffDay2/30), 'month');
+                  else if (diffWk2 >= 1) d.last_post_date = ago2(diffWk2, 'week');
+                  else if (diffDay2 >= 1) d.last_post_date = ago2(diffDay2, 'day');
+                  else if (diffHr2 >= 1) d.last_post_date = ago2(diffHr2, 'hour');
+                  else if (diffMin2 >= 1) d.last_post_date = ago2(diffMin2, 'minute');
+                  else d.last_post_date = 'Just now';
+                }
+              }
+              if (!d.last_post_date) {
+                var abbrs = document.querySelectorAll('abbr');
+                for (var i = 0; i < abbrs.length; i++) {
+                  var t = abbrs[i].getAttribute('aria-label') || abbrs[i].getAttribute('title') || abbrs[i].textContent || '';
+                  if (t && !/notification/i.test(t)) { if (/\\b(?:about\\s+)?(?:\\d+|an?)\\s+(hours?|minutes?|days?|weeks?|months?|years?)\\s+ago\\b|^just now$/i.test(t)) { d.last_post_date = t; break; } }
+                }
+              }
+              if (!d.last_post_date) {
+                var tm = body.match(/\\b(?:about\\s+)?(?:\\d+|an?)\\s+(hours?|minutes?|days?|weeks?|months?|years?)\\s+ago\\b|^just now$/gi);
+                if (!tm) tm = fullText.match(/\\b(?:about\\s+)?(?:\\d+|an?)\\s+(hours?|minutes?|days?|weeks?|months?|years?)\\s+ago\\b|^just now$/gi);
+                if (tm) d.last_post_date = tm[0];
+              }
+              if (!d.last_post_date) {
+                var abbrRe = body.match(/\\b(?:just now|yesterday)\\b|\\b(\\d+)\\s*(s|sec|secs|second|seconds|m|min|mins|minute|minutes|h|hr|hrs|hour|hours|d|day|days|w|wk|wks|week|weeks|mo|mos|month|months|y|yr|yrs|year|years)\\b/gi);
+                if (abbrRe && abbrRe.length) d.last_post_date = abbrRe[0];
+              }
+              if (!d.last_post_date) {
+                var bnRe = body.match(/\\d+\\s*(\u09b8\u09c7\u0995\u09c7\u09a8\u09cd\u09a1|\u09ae\u09bf\u09a8\u09bf\u099f|\u0998\u09a3\u09cd\u099f\u09be|\u09a6\u09bf\u09a8|\u09b8\u09aa\u09cd\u09a4\u09be\u09b9|\u09ae\u09be\u09b8|\u09ac\u099b\u09b0)\\s*(\u0986\u0997\u09c7|\u09aa\u09c2\u09b0\u09cd\u09ac\u09c7)/);
+                if (!bnRe) bnRe = fullText.match(/\\d+\\s*(\u09b8\u09c7\u0995\u09c7\u09a8\u09cd\u09a1|\u09ae\u09bf\u09a8\u09bf\u099f|\u0998\u09a3\u09cd\u099f\u09be|\u09a6\u09bf\u09a8|\u09b8\u09aa\u09cd\u09a4\u09be\u09b9|\u09ae\u09be\u09b8|\u09ac\u099b\u09b0)\\s*(\u0986\u0997\u09c7|\u09aa\u09c2\u09b0\u09cd\u09ac\u09c7)/);
+                if (bnRe) d.last_post_date = bnRe[0];
+              }
+              if (d.last_post_date) {
+                var norm = d.last_post_date.trim().toLowerCase();
+                var map = { 'just now': 'Just now', 'yesterday': 'Yesterday' };
+                if (map[norm]) { d.last_post_date = map[norm]; }
+                else {
+                  var m = norm.match(/^(\\d+)\\s*([a-z]+)/);
+                  if (m) {
+                    var n = parseInt(m[1]);
+                    var unit = m[2];
+                    var unitMap = {
+                      's': 'second', 'sec': 'second', 'secs': 'second', 'second': 'second', 'seconds': 'second',
+                      'm': 'minute', 'min': 'minute', 'mins': 'minute', 'minute': 'minute', 'minutes': 'minute',
+                      'h': 'hour', 'hr': 'hour', 'hrs': 'hour', 'hour': 'hour', 'hours': 'hour',
+                      'd': 'day', 'day': 'day', 'days': 'day',
+                      'w': 'week', 'wk': 'week', 'wks': 'week', 'week': 'week', 'weeks': 'week',
+                      'mo': 'month', 'mos': 'month', 'month': 'month', 'months': 'month',
+                      'y': 'year', 'yr': 'year', 'yrs': 'year', 'year': 'year', 'years': 'year'
+                    };
+                    var fullUnit = unitMap[unit] || unit;
+                    var plural = (n === 1) ? fullUnit : (fullUnit + 's');
+                    d.last_post_date = n + ' ' + plural + ' ago';
+                  }
+                }
+              }
 
-        # Visit /directory_contact_info FIRST \u2014 FB embeds WhatsApp phone link here (most reliable source)
-        if not result.get('phone') or not result.get('email'):
-            contact_info_url = fb_url.rstrip('/') + '/directory_contact_info'
+              return JSON.stringify(d);
+            })();
+            '''
+            raw = page.evaluate(extract_js)
+            data = json.loads(raw)
+            result.update(data)
+            result['url'] = fb_url.rstrip('/')
+
             try:
-                page.goto(contact_info_url, timeout=10000, wait_until='domcontentloaded')
-                page.wait_for_timeout(3000)
-                html_ci = page.content()
-                fb_ci = _extract_fb_json_data(html_ci)
-                if not result.get('phone') and fb_ci.get('phone'):
-                    p = re.sub(r'[\s\-\(\)\.]', '', fb_ci['phone'])
+                html_src = page.content()
+                fb_data = _extract_fb_json_data(html_src)
+                if not result.get('phone') and fb_data.get('phone'):
+                    p = re.sub(r'[\s\-\(\)\.]', '', fb_data['phone'])
                     if p.startswith('01') and len(p) == 11: p = '+880' + p[1:]
+                    elif p.startswith('1') and len(p) == 10: p = '+880' + p
                     elif p.startswith('880') and not p.startswith('+'): p = '+' + p
                     if re.match(r'^\+?8801[3-9]\d{8}$', p): result['phone'] = p
-                if not result.get('email') and fb_ci.get('email'):
-                    if re.search(r'[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}', fb_ci['email']):
-                        result['email'] = fb_ci['email']
-                # Phone: prefer WhatsApp link from contact_info; fallback to phone scan of that page only
-                if not result.get('phone') and fb_ci.get('phone'):
-                    p = re.sub(r'[\s\-\(\)\.]', '', fb_ci['phone'])
-                    if p.startswith('01') and len(p) == 11: p = '+880' + p[1:]
-                    elif p.startswith('880') and not p.startswith('+'): p = '+' + p
-                    if re.match(r'^\+?8801[3-9]\d{8}$', p): result['phone'] = p
+                if not result.get('email') and fb_data.get('email'):
+                    if re.search(r'[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}', fb_data['email']):
+                        result['email'] = fb_data['email']
+                if not result.get('website') and fb_data.get('website'):
+                    result['website'] = fb_data['website']
+                    result['has_website'] = True
+                if not result.get('address') and fb_data.get('address'):
+                    result['address'] = fb_data['address']
+                if not result.get('category') and fb_data.get('category'):
+                    result['category'] = fb_data['category']
             except Exception:
-                pass  # Contact info may not exist \u2014 best-effort
-        # Visit About page for contact info (works for public pages)
-        if not result.get('email') or not result.get('phone') or not result.get('address') or not result.get('website'):
-            about_url = fb_url.rstrip('/') + '/about'
-            try:
-                page.goto(about_url, timeout=10000, wait_until='domcontentloaded')
-                page.wait_for_timeout(2000)
-                # Click "Contact info" tab if present \u2014 many pages hide phone/email behind this
+                pass
+
+            if not result.get('phone') or not result.get('email'):
+                contact_info_url = fb_url.rstrip('/') + '/directory_contact_info'
                 try:
-                    clicked = page.evaluate('''() => {
-                        for (const el of document.querySelectorAll('span, a, div, [role="tab"]')) {
-                            const txt = (el.innerText || '').trim();
-                            if (/^Contact\s*info$/i.test(txt) && txt.length < 30 && el.offsetParent !== null) {
-                                try { el.click(); return true; } catch(e) {}
-                            }
-                        }
-                        return false;
-                    }''')
-                    if clicked:
-                        page.wait_for_timeout(2000)
-                        page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
-                        page.wait_for_timeout(800)
+                    page.goto(contact_info_url, timeout=10000, wait_until='domcontentloaded')
+                    page.wait_for_timeout(3000)
+                    html_ci = page.content()
+                    fb_ci = _extract_fb_json_data(html_ci)
+                    if not result.get('phone') and fb_ci.get('phone'):
+                        p = re.sub(r'[\s\-\(\)\.]', '', fb_ci['phone'])
+                        if p.startswith('01') and len(p) == 11: p = '+880' + p[1:]
+                        elif p.startswith('880') and not p.startswith('+'): p = '+' + p
+                        if re.match(r'^\+?8801[3-9]\d{8}$', p): result['phone'] = p
+                    if not result.get('email') and fb_ci.get('email'):
+                        if re.search(r'[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}', fb_ci['email']):
+                            result['email'] = fb_ci['email']
+                    if not result.get('phone') and fb_ci.get('phone'):
+                        p = re.sub(r'[\s\-\(\)\.]', '', fb_ci['phone'])
+                        if p.startswith('01') and len(p) == 11: p = '+880' + p[1:]
+                        elif p.startswith('880') and not p.startswith('+'): p = '+' + p
+                        if re.match(r'^\+?8801[3-9]\d{8}$', p): result['phone'] = p
                 except Exception:
                     pass
-                about_js = '''() => {
-                  var d = {};
-                  var body = (document.body ? document.body.textContent : document.documentElement.textContent) || '';
-                  var em = body.match(/[a-zA-Z0-9._%+\\-]+@[a-zA-Z0-9.\\-]+\\.[a-zA-Z]{2,}/g);
-                  if (em) { for (var i = 0; i < em.length; i++) { if (!/(facebook|fb\\.com|sentry|example)/i.test(em[i])) { d.email = em[i]; break; } } }
-                  // Phone from VISIBLE elements only (avoid FB internal JSON noise)
-                  try {
-                    var visEls = document.querySelectorAll('div, span, a, p, td, li');
-                    for (var vi = 0; vi < visEls.length; vi++) {
-                      var el = visEls[vi];
-                      if (el.offsetParent === null) continue;
-                      var txt = (el.innerText || '').trim();
-                      var clean = txt.replace(/[\\s\\-\\(\\)\\.]/g, '');
-                      var pm = clean.match(/(?:01[3-9]\\d{8}|\\+?8801[3-9]\\d{8})/);
-                      if (pm) { d.phone = pm[0]; break; }
-                    }
-                    // Also try tel: links
-                    if (!d.phone) {
-                      var tels = document.querySelectorAll('a[href^="tel:"]');
-                      if (tels.length) d.phone = tels[0].href.replace('tel:', '').split(/[;,#]/)[0].trim();
-                    }
-                  } catch(e) {}
-                  if (!d.email) {
-                    var metaDescs = document.querySelectorAll('meta[property="og:description"],meta[name="description"]');
-                    for (var mi = 0; mi < metaDescs.length; mi++) {
-                      var mc = metaDescs[mi].getAttribute('content') || '';
-                      var mem = mc.match(/[a-zA-Z0-9._%+\\-]+@[a-zA-Z0-9.\\-]+\\.[a-zA-Z]{2,}/g);
-                      if (mem) { for (var mj = 0; mj < mem.length; mj++) { if (!/(facebook|fb\\.com|sentry|example)/i.test(mem[mj])) { d.email = mem[mj]; break; } } }
-                      if (d.email) break;
-                    }
-                  }
 
-           var exc = ['facebook','fb.com','fbcdn','instagram','twitter','youtube','whatsapp','wa.me','messenger','google','gmail','maps.google.com','google.com/maps','dms.net','m.me','mng.com','doubleclick.net','googlesyndication.com','googleadservices.com','msn.com','live.com','bing.com','yahoo.com','cnn.com','bbc.com','nypost.com','apple.com','microsoft.com','support.google','policies.google','play.google.com','developers.facebook','about.meta','news.','sky.com','sky.','skynews','nytimes.com','washingtonpost.com','foxnews.com','reuters.com','apnews.com','theguardian.com','huffpost.com','buzzfeed.com','dailymail.co.uk','usatoday.com','forbes.com','businessinsider.com','techcrunch.com','theverge.com','engadget.com','wired.com','mashable.com','cnet.com','zdnet.com','news.yahoo.com','akamaihd.net','cloudfront.net','amazonaws.com','googleusercontent.com','fbcdn.net','fbsbx.com','staticxx.com'];
-                  // Scope to official page info containers only \u2014 avoid grabbing random post links
-                  var profileAnchors = document.querySelectorAll('[data-pagelet="ProfileCards"] a[href], [data-pagelet="PageHeader"] a[href], [aria-label*="website" i] a[href], [aria-label*="Website" i]');
-                  for (var i = 0; i < profileAnchors.length; i++) {
-                    var hf = profileAnchors[i].href;
-                    if (hf.indexOf('l.facebook.com/l.php?u=') > -1) {
-                      var m = hf.match(/[?&]u=([^&]+)/);
-                      if (m) { try { var u = decodeURIComponent(m[1]); var p = new URL(u); if (!exc.some(function(e) { return p.hostname.indexOf(e) > -1; })) { d.website = u; d.has_website = true; break; } } catch(e) {} }
-                    } else if (hf.indexOf('http') === 0) {
-                      try { var p2 = new URL(hf); if (!exc.some(function(e) { return p2.hostname.indexOf(e) > -1; })) { d.website = p2.origin + p2.pathname; d.has_website = true; break; } } catch(e) {}
-                    }
-                  }
-                  // REMOVED body-text regex fallback for website on About page \u2014 too noisy (grabbed random URLs like ncl.com, sky.com, msn.com). Now only ProfileCards anchors above.
-                  var am = body.match(/(?:Road|House|Floor|Level|Lane|Street|Block|Sector|Building|Village|Thana|Upazila).{5,120}(?:Dhaka|Chattogram|Chittagong|Sylhet|Khulna|Rajshahi|Barisal)/i);
-                  if (!am) am = body.match(/(?:Gulshan|Banani|Mirpur|Uttara|Dhanmondi|Mohammadpur|Motijheel|Khilgaon|Badda|Bashundhara|Farmgate|Shyamoli|Lalmatia|Malibagh|Rampura|Wari|Jatrabari).{5,80}(?:Dhaka|Chattogram|Chittagong|Sylhet)/i);
-                  if (!am) am = body.match(/(?:Panthapath|Kakrail|Shahbag|Kawran Bazar|Elephant Road|New Market|Azimpur|Green Road|Nikunja|Baridhara|Bonosree|Aftab Nagar).{5,60}(?:Dhaka|Chattogram)/i);
-                  if (!am) am = body.match(/\\b(Dhaka|Chattogram|Chittagong|Sylhet|Khulna|Rajshahi|Barisal|Rangpur|Mymensingh|Comilla|Narayanganj|Gazipur)\\b/i);
-          if (am) d.address = decodeURIComponent(am[0].trim());
-                  var cats = ['Beauty Salon','Boutique','Clothing','Store','Shop','Restaurant','Cafe','Bakery','Jewelry','Skincare','Cosmetics','Fashion','Grocery','Pharmacy','Clinic','Fitness','Gym','Salon','Spa','Tailor','Studio'];
-                  if (!d.category) { for (var i = 0; i < cats.length; i++) { if (new RegExp('\\\\b' + cats[i] + '\\\\b', 'i').test(body)) { d.category = cats[i]; break; } } }
-                  return JSON.stringify(d);
-                }'''
-                about_raw = page.evaluate(about_js)
-                about_data = json.loads(about_raw)
-                if about_data.get('email') and not result.get('email'): result['email'] = about_data['email']
-                if about_data.get('phone') and not result.get('phone'): result['phone'] = about_data['phone']
-                if about_data.get('website') and not result.get('website'): result['website'] = about_data['website']; result['has_website'] = True
-                if about_data.get('address') and not result.get('address'): result['address'] = about_data['address']
-                if about_data.get('category') and not result.get('category'): result['category'] = about_data['category']
-            except Exception:
-                pass  # About page may be behind login — best-effort
-    except Exception as e:
-        raise Exception(f'Extraction failed: {e}')
-    finally:
-        ctx.close()
-        browser.close()
-        _p.stop()
+            if not result.get('phone') or not result.get('email') or not result.get('address') or not result.get('website'):
+                about_url = fb_url.rstrip('/') + '/about'
+                try:
+                    page.goto(about_url, timeout=10000, wait_until='domcontentloaded')
+                    page.wait_for_timeout(2000)
+                    try:
+                        clicked = page.evaluate('''() => {
+                            for (const el of document.querySelectorAll('span, a, div, [role="tab"]')) {
+                                const txt = (el.innerText || '').trim();
+                                if (/^Contact\s*info$/i.test(txt) && txt.length < 30 && el.offsetParent !== null) {
+                                    try { el.click(); return true; } catch(e) {}
+                                }
+                            }
+                            return false;
+                        }''')
+                        if clicked:
+                            page.wait_for_timeout(2000)
+                            page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
+                            page.wait_for_timeout(800)
+                    except Exception:
+                        pass
+                    about_js = '''() => {
+                      var d = {};
+                      var body = (document.body ? document.body.textContent : document.documentElement.textContent) || '';
+                      var em = body.match(/[a-zA-Z0-9._%+\\-]+@[a-zA-Z0-9.\\-]+\\.[a-zA-Z]{2,}/g);
+                      if (em) { for (var i = 0; i < em.length; i++) { if (!/(facebook|fb\\.com|sentry|example)/i.test(em[i])) { d.email = em[i]; break; } } }
+                      try {
+                        var visEls = document.querySelectorAll('div, span, a, p, td, li');
+                        for (var vi = 0; vi < visEls.length; vi++) {
+                          var el = visEls[vi];
+                          if (el.offsetParent === null) continue;
+                          var txt = (el.innerText || '').trim();
+                          var clean = txt.replace(/[\\s\\-\\(\\)\\.]/g, '');
+                          var pm = clean.match(/(?:01[3-9]\\d{8}|\\+?8801[3-9]\\d{8})/);
+                          if (pm) { d.phone = pm[0]; break; }
+                        }
+                        if (!d.phone) {
+                          var tels = document.querySelectorAll('a[href^="tel:"]');
+                          if (tels.length) d.phone = tels[0].href.replace('tel:', '').split(/[;,#]/)[0].trim();
+                        }
+                      } catch(e) {}
+                      if (!d.email) {
+                        var metaDescs = document.querySelectorAll('meta[property="og:description"],meta[name="description"]');
+                        for (var mi = 0; mi < metaDescs.length; mi++) {
+                          var mc = metaDescs[mi].getAttribute('content') || '';
+                          var mem = mc.match(/[a-zA-Z0-9._%+\\-]+@[a-zA-Z0-9.\\-]+\\.[a-zA-Z]{2,}/g);
+                          if (mem) { for (var mj = 0; mj < mem.length; mj++) { if (!/(facebook|fb\\.com|sentry|example)/i.test(mem[mj])) { d.email = mem[mj]; break; } } }
+                          if (d.email) break;
+                        }
+                      }
+                      var exc = ['facebook','fb.com','fbcdn','instagram','twitter','youtube','whatsapp','wa.me','messenger','google','gmail','maps.google.com','google.com/maps','dms.net','m.me','mng.com','doubleclick.net','googlesyndication.com','googleadservices.com','msn.com','live.com','bing.com','yahoo.com','cnn.com','bbc.com','nypost.com','apple.com','microsoft.com','support.google','policies.google','play.google.com','developers.facebook','about.meta','news.','sky.com','sky.','skynews','nytimes.com','washingtonpost.com','foxnews.com','reuters.com','apnews.com','theguardian.com','huffpost.com','buzzfeed.com','dailymail.co.uk','usatoday.com','forbes.com','businessinsider.com','techcrunch.com','theverge.com','engadget.com','wired.com','mashable.com','cnet.com','zdnet.com','news.yahoo.com','akamaihd.net','cloudfront.net','amazonaws.com','googleusercontent.com','fbcdn.net','fbsbx.com','staticxx.com'];
+                      var profileAnchors = document.querySelectorAll('[data-pagelet="ProfileCards"] a[href], [data-pagelet="PageHeader"] a[href], [aria-label*="website" i] a[href], [aria-label*="Website" i]');
+                      for (var i = 0; i < profileAnchors.length; i++) {
+                        var hf = profileAnchors[i].href;
+                        if (hf.indexOf('l.facebook.com/l.php?u=') > -1) {
+                          var m = hf.match(/[?&]u=([^&]+)/);
+                          if (m) { try { var u = decodeURIComponent(m[1]); var p = new URL(u); if (!exc.some(function(e) { return p.hostname.indexOf(e) > -1; })) { d.website = u; d.has_website = true; break; } } catch(e) {} }
+                        } else if (hf.indexOf('http') === 0) {
+                          try { var p2 = new URL(hf); if (!exc.some(function(e) { return p2.hostname.indexOf(e) > -1; })) { d.website = p2.origin + p2.pathname; d.has_website = true; break; } } catch(e) {}
+                        }
+                      }
+                      var am = body.match(/(?:Road|House|Floor|Level|Lane|Street|Block|Sector|Building|Village|Thana|Upazila).{5,120}(?:Dhaka|Chattogram|Chittagong|Sylhet|Khulna|Rajshahi|Barisal)/i);
+                      if (!am) am = body.match(/(?:Gulshan|Banani|Mirpur|Uttara|Dhanmondi|Mohammadpur|Motijheel|Khilgaon|Badda|Bashundhara|Farmgate|Shyamoli|Lalmatia|Malibagh|Rampura|Wari|Jatrabari).{5,80}(?:Dhaka|Chattogram|Chittagong|Sylhet)/i);
+                      if (!am) am = body.match(/(?:Panthapath|Kakrail|Shahbag|Kawran Bazar|Elephant Road|New Market|Azimpur|Green Road|Nikunja|Baridhara|Bonosree|Aftab Nagar).{5,60}(?:Dhaka|Chattogram)/i);
+                      if (!am) am = body.match(/\\b(Dhaka|Chattogram|Chittagong|Sylhet|Khulna|Rajshahi|Barisal|Rangpur|Mymensingh|Comilla|Narayanganj|Gazipur)\\b/i);
+                      if (am) d.address = decodeURIComponent(am[0].trim());
+                      var cats = ['Beauty Salon','Boutique','Clothing','Store','Shop','Restaurant','Cafe','Bakery','Jewelry','Skincare','Cosmetics','Fashion','Grocery','Pharmacy','Clinic','Fitness','Gym','Salon','Spa','Tailor','Studio'];
+                      if (!d.category) { for (var i = 0; i < cats.length; i++) { if (new RegExp('\\\\b' + cats[i] + '\\\\b', 'i').test(body)) { d.category = cats[i]; break; } } }
+                      return JSON.stringify(d);
+                    }'''
+                    about_raw = page.evaluate(about_js)
+                    about_data = json.loads(about_raw)
+                    if about_data.get('email') and not result.get('email'): result['email'] = about_data['email']
+                    if about_data.get('phone') and not result.get('phone'): result['phone'] = about_data['phone']
+                    if about_data.get('website') and not result.get('website'): result['website'] = about_data['website']; result['has_website'] = True
+                    if about_data.get('address') and not result.get('address'): result['address'] = about_data['address']
+                    if about_data.get('category') and not result.get('category'): result['category'] = about_data['category']
+                except Exception:
+                    pass
 
-    # Score calculation
+            # Fallback: try mbasic.facebook.com (text-only, harder to block)
+            if not result.get('phone') or not result.get('website'):
+                try:
+                    mbasic_url = fb_url.replace('www.facebook.com', 'mbasic.facebook.com').replace('facebook.com', 'mbasic.facebook.com')
+                    page.goto(mbasic_url, timeout=15000, wait_until='domcontentloaded')
+                    page.wait_for_timeout(2000)
+                    mbasic_text = page.evaluate('() => document.body ? document.body.innerText : ""')
+                    phone_match = re.search(r'(?:01[3-9]\d{8}|\+?8801[3-9]\d{8})', re.sub(r'\s', '', mbasic_text))
+                    if phone_match and not result.get('phone'):
+                        p = phone_match.group(0)
+                        if p.startswith('01') and len(p) == 11: p = '+880' + p[1:]
+                        elif p.startswith('880') and not p.startswith('+'): p = '+' + p
+                        if re.match(r'^\+?8801[3-9]\d{8}$', p): result['phone'] = p
+                    site_match = re.search(r'(?:https?://)(?!(?:www\.)?(?:facebook|fb|instagram|twitter|youtube|whatsapp|messenger|google|gmail|maps)\.)[a-zA-Z0-9\-]+(?:\.[a-zA-Z0-9\-]+)+(?:/[^\s<>"]*)?', mbasic_text)
+                    if site_match and not result.get('website'):
+                        u = site_match.group(0)
+                        if not any(x in u for x in ['facebook', 'fb.com', 'instagram', 'twitter', 'youtube']):
+                            result['website'] = u.rstrip('/')
+                            result['has_website'] = True
+                except Exception:
+                    pass
+        except Exception as e:
+            raise Exception(f'Extraction failed: {e}')
+        finally:
+            ctx.close()
+            browser.close()
+
     score = 5
     if not result.get('has_website'):
         score += 1
@@ -1936,12 +1933,13 @@ def _extract_instagram_page(ig_url):
     }
     from playwright.sync_api import sync_playwright
     _p = sync_playwright().start()
-    browser = _p.chromium.launch(headless=True)
+    browser = _p.chromium.launch(headless=True, args=['--disable-blink-features=AutomationControlled'])
     ctx = browser.new_context(
         user_agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36',
+        viewport={'width': 1920, 'height': 1080},
         locale='en_US',
-        viewport={'width': 1280, 'height': 720},
     )
+    ctx.add_init_script(_stealth_init_script())
     page = ctx.new_page()
     try:
         page.goto(ig_url, timeout=30000, wait_until='domcontentloaded')
@@ -3225,17 +3223,13 @@ class Handler(BaseHTTPRequestHandler):
                 return
             _login_attempts.pop(client_ip, None)
             print(f"[auth] LOGIN success: user={row[0]} email={email}", flush=True)
-            print(f"[auth] Calling create_session with conn={conn}", flush=True)
             token = create_session(row[0], conn)
-            print(f"[auth] create_session returned token={'...' if token else 'None'}", flush=True)
             if not token:
                 conn.close()
                 print(f"[auth] Login FAILED: session creation returned None", flush=True)
                 self._json(500, {'error': 'Failed to create session'})
                 return
-            print(f"[auth] About to conn.commit()", flush=True)
             conn.commit()
-            print(f"[auth] conn.commit() done", flush=True)
             conn.close()
             print(f"[auth] Login response: token={token[:20]}... user={row[1]}", flush=True)
             self._json(200, {'token': token, 'user': {'id': row[0], 'name': row[1], 'email': row[2], 'role': row[3], 'email_verified': bool(row[6]), 'leads_used': row[7], 'subscription_tier': row[8]}})
