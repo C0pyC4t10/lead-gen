@@ -1,4 +1,4 @@
-import csv, html, io, json, os, sys, re, subprocess, threading, time, signal
+import csv, html, io, json, os, sys, re, subprocess, threading, time, signal, sqlite3
 import hashlib, secrets, smtplib, string
 from email.mime.text import MIMEText
 from datetime import datetime, timedelta
