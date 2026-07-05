@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""smart_hunt.py — High-engagement Bangladesh F-Commerce lead finder.
+"""smart_hunt.py \u2014 High-engagement Bangladesh F-Commerce lead finder.
 
 Finds Facebook businesses selling physical products via inbox/WhatsApp
 without proper e-commerce websites. Uses Serper.dev for discovery,
@@ -38,203 +38,203 @@ TELEGRAM_THREAD_ID = 354
 
 LEAD_GEN_API = 'http://localhost:8800/api/lead'
 
-# ── Category Search Queries ─────────────────────────────────────────
+# \u2500\u2500 Category Search Queries \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 CATEGORY_QUERIES = {
     "skincare": [
         "skincare bd inbox order site:facebook.com",
-        "স্কিনকেয়ার বাংলাদেশ site:facebook.com",
+        "\u09b8\u09cd\u0995\u09bf\u09a8\u0995\u09c7\u09af\u09bc\u09be\u09b0 \u09ac\u09be\u0982\u09b2\u09be\u09a6\u09c7\u09b6 site:facebook.com",
         "face serum bangladesh whatsapp order site:facebook.com",
         "glow skincare dhaka inbox site:facebook.com",
         "skincare products cash on delivery bangladesh site:facebook.com",
     ],
     "cosmetics": [
         "cosmetics bd inbox order site:facebook.com",
-        "প্রসাধনী বাংলাদেশ site:facebook.com",
+        "\u09aa\u09cd\u09b0\u09b8\u09be\u09a7\u09a8\u09c0 \u09ac\u09be\u0982\u09b2\u09be\u09a6\u09c7\u09b6 site:facebook.com",
         "makeup products bd whatsapp site:facebook.com",
         "cosmetics shop dhaka cash on delivery site:facebook.com",
         "beauty cosmetics bangladesh inbox site:facebook.com",
     ],
     "fashion": [
         "fashion house bd inbox order site:facebook.com",
-        "ফ্যাশন হাউস বাংলাদেশ site:facebook.com",
+        "\u09ab\u09cd\u09af\u09be\u09b6\u09a8 \u09b9\u09be\u0989\u09b8 \u09ac\u09be\u0982\u09b2\u09be\u09a6\u09c7\u09b6 site:facebook.com",
         "dress collection bd whatsapp order site:facebook.com",
         "ladies fashion dhaka inbox site:facebook.com",
         "fashion collection cash on delivery bd site:facebook.com",
     ],
     "boutique": [
         "boutique dhaka inbox order site:facebook.com",
-        "বুটিক বাংলাদেশ site:facebook.com",
+        "\u09ac\u09c1\u099f\u09bf\u0995 \u09ac\u09be\u0982\u09b2\u09be\u09a6\u09c7\u09b6 site:facebook.com",
         "boutique house bd whatsapp site:facebook.com",
         "boutique collection dhaka cash on delivery site:facebook.com",
-        "বুটিক শপ ঢাকা inbox site:facebook.com",
+        "\u09ac\u09c1\u099f\u09bf\u0995 \u09b6\u09aa \u09a2\u09be\u0995\u09be inbox site:facebook.com",
     ],
     "jewelry": [
         "jewelry shop bd inbox order site:facebook.com",
-        "জুয়েলারি বাংলাদেশ site:facebook.com",
+        "\u099c\u09c1\u09af\u09bc\u09c7\u09b2\u09be\u09b0\u09bf \u09ac\u09be\u0982\u09b2\u09be\u09a6\u09c7\u09b6 site:facebook.com",
         "gold jewelry dhaka whatsapp order site:facebook.com",
-        "গহনা বাংলাদেশ inbox site:facebook.com",
+        "\u0997\u09b9\u09a8\u09be \u09ac\u09be\u0982\u09b2\u09be\u09a6\u09c7\u09b6 inbox site:facebook.com",
         "jewelry collection bd cash on delivery site:facebook.com",
     ],
     "perfume": [
         "perfume bd inbox order site:facebook.com",
-        "আতর বাংলাদেশ site:facebook.com",
+        "\u0986\u09a4\u09b0 \u09ac\u09be\u0982\u09b2\u09be\u09a6\u09c7\u09b6 site:facebook.com",
         "perfume shop dhaka whatsapp site:facebook.com",
-        "সুগন্ধি বাংলাদেশ inbox site:facebook.com",
+        "\u09b8\u09c1\u0997\u09a8\u09cd\u09a7\u09bf \u09ac\u09be\u0982\u09b2\u09be\u09a6\u09c7\u09b6 inbox site:facebook.com",
         "fragrance bd cash on delivery site:facebook.com",
     ],
     "baby": [
         "baby products bd inbox order site:facebook.com",
-        "শিশু পণ্য বাংলাদেশ site:facebook.com",
+        "\u09b6\u09bf\u09b6\u09c1 \u09aa\u09a3\u09cd\u09af \u09ac\u09be\u0982\u09b2\u09be\u09a6\u09c7\u09b6 site:facebook.com",
         "baby shop dhaka whatsapp order site:facebook.com",
         "baby items bangladesh cash on delivery site:facebook.com",
-        "শিশু পণ্য ঢাকা inbox site:facebook.com",
+        "\u09b6\u09bf\u09b6\u09c1 \u09aa\u09a3\u09cd\u09af \u09a2\u09be\u0995\u09be inbox site:facebook.com",
     ],
     "bags": [
         "bags collection bd inbox order site:facebook.com",
-        "ব্যাগ বাংলাদেশ site:facebook.com",
+        "\u09ac\u09cd\u09af\u09be\u0997 \u09ac\u09be\u0982\u09b2\u09be\u09a6\u09c7\u09b6 site:facebook.com",
         "handbag shop dhaka whatsapp site:facebook.com",
         "ladies bag bd cash on delivery site:facebook.com",
         "purse collection bangladesh inbox site:facebook.com",
     ],
     "home": [
         "home decor bd inbox order site:facebook.com",
-        "গৃহসজ্জা বাংলাদেশ site:facebook.com",
+        "\u0997\u09c3\u09b9\u09b8\u099c\u09cd\u099c\u09be \u09ac\u09be\u0982\u09b2\u09be\u09a6\u09c7\u09b6 site:facebook.com",
         "home products dhaka whatsapp order site:facebook.com",
         "household items bd cash on delivery site:facebook.com",
         "home accessories bangladesh inbox site:facebook.com",
     ],
     "food": [
         "homemade food bd inbox order site:facebook.com",
-        "ঘরে তৈরি খাবার বাংলাদেশ site:facebook.com",
+        "\u0998\u09b0\u09c7 \u09a4\u09c8\u09b0\u09bf \u0996\u09be\u09ac\u09be\u09b0 \u09ac\u09be\u0982\u09b2\u09be\u09a6\u09c7\u09b6 site:facebook.com",
         "food delivery dhaka whatsapp order site:facebook.com",
-        "খাবার ডেলিভারি ঢাকা inbox site:facebook.com",
+        "\u0996\u09be\u09ac\u09be\u09b0 \u09a1\u09c7\u09b2\u09bf\u09ad\u09be\u09b0\u09bf \u09a2\u09be\u0995\u09be inbox site:facebook.com",
         "homemade food cash on delivery bd site:facebook.com",
     ],
     "fruit": [
         "fresh fruit bd inbox order site:facebook.com",
-        "তাজা ফল বাংলাদেশ site:facebook.com",
+        "\u09a4\u09be\u099c\u09be \u09ab\u09b2 \u09ac\u09be\u0982\u09b2\u09be\u09a6\u09c7\u09b6 site:facebook.com",
         "fruit delivery dhaka whatsapp site:facebook.com",
         "organic fruit bangladesh inbox site:facebook.com",
-        "ফল ডেলিভারি ঢাকা site:facebook.com",
+        "\u09ab\u09b2 \u09a1\u09c7\u09b2\u09bf\u09ad\u09be\u09b0\u09bf \u09a2\u09be\u0995\u09be site:facebook.com",
     ],
     "nursery": [
         "plant nursery bd inbox order site:facebook.com",
-        "গাছপালা বাংলাদেশ site:facebook.com",
+        "\u0997\u09be\u099b\u09aa\u09be\u09b2\u09be \u09ac\u09be\u0982\u09b2\u09be\u09a6\u09c7\u09b6 site:facebook.com",
         "nursery dhaka whatsapp order site:facebook.com",
         "indoor plants bangladesh inbox site:facebook.com",
-        "গাছ বিক্রি ঢাকা site:facebook.com",
+        "\u0997\u09be\u099b \u09ac\u09bf\u0995\u09cd\u09b0\u09bf \u09a2\u09be\u0995\u09be site:facebook.com",
     ],
     "clothing_brand": [
         "clothing brand bd inbox order site:facebook.com",
-        "পোশাক ব্র্যান্ড বাংলাদেশ site:facebook.com",
+        "\u09aa\u09cb\u09b6\u09be\u0995 \u09ac\u09cd\u09b0\u09cd\u09af\u09be\u09a8\u09cd\u09a1 \u09ac\u09be\u0982\u09b2\u09be\u09a6\u09c7\u09b6 site:facebook.com",
         "t-shirt brand dhaka whatsapp site:facebook.com",
-        "পোশাক কালেকশন inbox order site:facebook.com",
+        "\u09aa\u09cb\u09b6\u09be\u0995 \u0995\u09be\u09b2\u09c7\u0995\u09b6\u09a8 inbox order site:facebook.com",
         "clothing brand cash on delivery bd site:facebook.com",
     ],
     "jewelry_watches": [
         "watch shop bd inbox order site:facebook.com",
-        "ঘড়ি বাংলাদেশ site:facebook.com",
+        "\u0998\u09a1\u09bc\u09bf \u09ac\u09be\u0982\u09b2\u09be\u09a6\u09c7\u09b6 site:facebook.com",
         "jewelry watches dhaka whatsapp site:facebook.com",
-        "ঘড়ি ও গহনা bangladesh inbox site:facebook.com",
+        "\u0998\u09a1\u09bc\u09bf \u0993 \u0997\u09b9\u09a8\u09be bangladesh inbox site:facebook.com",
         "watches collection bd cash on delivery site:facebook.com",
     ],
     "bags_luggage": [
         "luggage shop bd inbox order site:facebook.com",
-        "লাগেজ বাংলাদেশ site:facebook.com",
+        "\u09b2\u09be\u0997\u09c7\u099c \u09ac\u09be\u0982\u09b2\u09be\u09a6\u09c7\u09b6 site:facebook.com",
         "travel bag dhaka whatsapp order site:facebook.com",
-        "ট্রাভেল ব্যাগ bangladesh inbox site:facebook.com",
+        "\u099f\u09cd\u09b0\u09be\u09ad\u09c7\u09b2 \u09ac\u09cd\u09af\u09be\u0997 bangladesh inbox site:facebook.com",
         "luggage collection bd cash on delivery site:facebook.com",
     ],
     "health_beauty": [
         "health beauty bd inbox order site:facebook.com",
-        "স্বাস্থ্য ও সৌন্দর্য বাংলাদেশ site:facebook.com",
+        "\u09b8\u09cd\u09ac\u09be\u09b8\u09cd\u09a5\u09cd\u09af \u0993 \u09b8\u09cc\u09a8\u09cd\u09a6\u09b0\u09cd\u09af \u09ac\u09be\u0982\u09b2\u09be\u09a6\u09c7\u09b6 site:facebook.com",
         "health products dhaka whatsapp site:facebook.com",
         "beauty health bangladesh inbox site:facebook.com",
-        "স্বাস্থ্য পণ্য bd cash on delivery site:facebook.com",
+        "\u09b8\u09cd\u09ac\u09be\u09b8\u09cd\u09a5\u09cd\u09af \u09aa\u09a3\u09cd\u09af bd cash on delivery site:facebook.com",
     ],
     "cosmetics_store": [
         "cosmetics store bd inbox site:facebook.com",
-        "কসমেটিক্স শপ বাংলাদেশ site:facebook.com",
+        "\u0995\u09b8\u09ae\u09c7\u099f\u09bf\u0995\u09cd\u09b8 \u09b6\u09aa \u09ac\u09be\u0982\u09b2\u09be\u09a6\u09c7\u09b6 site:facebook.com",
         "beauty store dhaka whatsapp order site:facebook.com",
-        "কসমেটিক্স ডেলিভারি bangladesh inbox site:facebook.com",
+        "\u0995\u09b8\u09ae\u09c7\u099f\u09bf\u0995\u09cd\u09b8 \u09a1\u09c7\u09b2\u09bf\u09ad\u09be\u09b0\u09bf bangladesh inbox site:facebook.com",
         "makeup store bd cash on delivery site:facebook.com",
     ],
     "personal_care": [
         "personal care products bd inbox site:facebook.com",
-        "ব্যক্তিগত যত্ন পণ্য বাংলাদেশ site:facebook.com",
+        "\u09ac\u09cd\u09af\u0995\u09cd\u09a4\u09bf\u0997\u09a4 \u09af\u09a4\u09cd\u09a8 \u09aa\u09a3\u09cd\u09af \u09ac\u09be\u0982\u09b2\u09be\u09a6\u09c7\u09b6 site:facebook.com",
         "personal care dhaka whatsapp order site:facebook.com",
         "hygiene products bangladesh inbox site:facebook.com",
         "personal care bd cash on delivery site:facebook.com",
     ],
     "home_decor": [
         "home decor shop bd inbox site:facebook.com",
-        "হোম ডেকোর বাংলাদেশ site:facebook.com",
+        "\u09b9\u09cb\u09ae \u09a1\u09c7\u0995\u09cb\u09b0 \u09ac\u09be\u0982\u09b2\u09be\u09a6\u09c7\u09b6 site:facebook.com",
         "interior decor dhaka whatsapp order site:facebook.com",
-        "ঘর সাজানো পণ্য bangladesh inbox site:facebook.com",
+        "\u0998\u09b0 \u09b8\u09be\u099c\u09be\u09a8\u09cb \u09aa\u09a3\u09cd\u09af bangladesh inbox site:facebook.com",
         "home decoration bd cash on delivery site:facebook.com",
     ],
     "kitchen_cooking": [
         "kitchen products bd inbox order site:facebook.com",
-        "রান্নাঘর পণ্য বাংলাদেশ site:facebook.com",
+        "\u09b0\u09be\u09a8\u09cd\u09a8\u09be\u0998\u09b0 \u09aa\u09a3\u09cd\u09af \u09ac\u09be\u0982\u09b2\u09be\u09a6\u09c7\u09b6 site:facebook.com",
         "cookware dhaka whatsapp order site:facebook.com",
-        "রান্নার সরঞ্জাম bangladesh inbox site:facebook.com",
+        "\u09b0\u09be\u09a8\u09cd\u09a8\u09be\u09b0 \u09b8\u09b0\u099e\u09cd\u099c\u09be\u09ae bangladesh inbox site:facebook.com",
         "kitchen items bd cash on delivery site:facebook.com",
     ],
     "furniture_store": [
         "furniture shop bd inbox order site:facebook.com",
-        "আসবাবপত্র বাংলাদেশ site:facebook.com",
+        "\u0986\u09b8\u09ac\u09be\u09ac\u09aa\u09a4\u09cd\u09b0 \u09ac\u09be\u0982\u09b2\u09be\u09a6\u09c7\u09b6 site:facebook.com",
         "furniture dhaka whatsapp order site:facebook.com",
-        "আসবাব ঢাকা inbox site:facebook.com",
+        "\u0986\u09b8\u09ac\u09be\u09ac \u09a2\u09be\u0995\u09be inbox site:facebook.com",
         "furniture bd cash on delivery site:facebook.com",
     ],
     "patio_garden": [
         "garden products bd inbox site:facebook.com",
-        "বাগান পণ্য বাংলাদেশ site:facebook.com",
+        "\u09ac\u09be\u0997\u09be\u09a8 \u09aa\u09a3\u09cd\u09af \u09ac\u09be\u0982\u09b2\u09be\u09a6\u09c7\u09b6 site:facebook.com",
         "outdoor garden dhaka whatsapp site:facebook.com",
-        "গার্ডেনিং bangladesh inbox site:facebook.com",
+        "\u0997\u09be\u09b0\u09cd\u09a1\u09c7\u09a8\u09bf\u0982 bangladesh inbox site:facebook.com",
         "garden tools bd cash on delivery site:facebook.com",
     ],
     "electronics": [
         "electronics shop bd inbox order site:facebook.com",
-        "ইলেকট্রনিক্স বাংলাদেশ site:facebook.com",
+        "\u0987\u09b2\u09c7\u0995\u099f\u09cd\u09b0\u09a8\u09bf\u0995\u09cd\u09b8 \u09ac\u09be\u0982\u09b2\u09be\u09a6\u09c7\u09b6 site:facebook.com",
         "gadgets dhaka whatsapp order site:facebook.com",
-        "ইলেকট্রনিক্স পণ্য bd inbox site:facebook.com",
+        "\u0987\u09b2\u09c7\u0995\u099f\u09cd\u09b0\u09a8\u09bf\u0995\u09cd\u09b8 \u09aa\u09a3\u09cd\u09af bd inbox site:facebook.com",
         "electronics cash on delivery bangladesh site:facebook.com",
     ],
     "games_toys": [
         "toys shop bd inbox order site:facebook.com",
-        "খেলনা বাংলাদেশ site:facebook.com",
+        "\u0996\u09c7\u09b2\u09a8\u09be \u09ac\u09be\u0982\u09b2\u09be\u09a6\u09c7\u09b6 site:facebook.com",
         "games toys dhaka whatsapp order site:facebook.com",
-        "শিশুদের খেলনা bangladesh inbox site:facebook.com",
+        "\u09b6\u09bf\u09b6\u09c1\u09a6\u09c7\u09b0 \u0996\u09c7\u09b2\u09a8\u09be bangladesh inbox site:facebook.com",
         "toys cash on delivery bd site:facebook.com",
     ],
     "outdoor_sporting": [
         "sports products bd inbox order site:facebook.com",
-        "ক্রীড়া সরঞ্জাম বাংলাদেশ site:facebook.com",
+        "\u0995\u09cd\u09b0\u09c0\u09a1\u09bc\u09be \u09b8\u09b0\u099e\u09cd\u099c\u09be\u09ae \u09ac\u09be\u0982\u09b2\u09be\u09a6\u09c7\u09b6 site:facebook.com",
         "outdoor gear dhaka whatsapp order site:facebook.com",
         "sporting goods bangladesh inbox site:facebook.com",
         "sports equipment bd cash on delivery site:facebook.com",
     ],
     "food_beverage": [
         "food beverage bd inbox order site:facebook.com",
-        "খাদ্য ও পানীয় বাংলাদেশ site:facebook.com",
+        "\u0996\u09be\u09a6\u09cd\u09af \u0993 \u09aa\u09be\u09a8\u09c0\u09af\u09bc \u09ac\u09be\u0982\u09b2\u09be\u09a6\u09c7\u09b6 site:facebook.com",
         "food products dhaka whatsapp order site:facebook.com",
-        "বেভারেজ bangladesh inbox site:facebook.com",
+        "\u09ac\u09c7\u09ad\u09be\u09b0\u09c7\u099c bangladesh inbox site:facebook.com",
         "food delivery bd cash on delivery site:facebook.com",
     ],
     "bakery": [
         "bakery bd inbox order site:facebook.com",
-        "বেকারি বাংলাদেশ site:facebook.com",
+        "\u09ac\u09c7\u0995\u09be\u09b0\u09bf \u09ac\u09be\u0982\u09b2\u09be\u09a6\u09c7\u09b6 site:facebook.com",
         "cake shop dhaka whatsapp order site:facebook.com",
-        "কেক ও পেস্ট্রি bangladesh inbox site:facebook.com",
+        "\u0995\u09c7\u0995 \u0993 \u09aa\u09c7\u09b8\u09cd\u099f\u09cd\u09b0\u09bf bangladesh inbox site:facebook.com",
         "homemade cake bd cash on delivery site:facebook.com",
     ],
     "specialty_grocery": [
         "specialty grocery bd inbox order site:facebook.com",
-        "বিশেষ মুদিখানা বাংলাদেশ site:facebook.com",
+        "\u09ac\u09bf\u09b6\u09c7\u09b7 \u09ae\u09c1\u09a6\u09bf\u0996\u09be\u09a8\u09be \u09ac\u09be\u0982\u09b2\u09be\u09a6\u09c7\u09b6 site:facebook.com",
         "organic grocery dhaka whatsapp site:facebook.com",
-        "দেশি পণ্য bangladesh inbox site:facebook.com",
+        "\u09a6\u09c7\u09b6\u09bf \u09aa\u09a3\u09cd\u09af bangladesh inbox site:facebook.com",
         "specialty food bd cash on delivery site:facebook.com",
     ],
 }
@@ -252,7 +252,7 @@ CATEGORY_ALIASES = {
     'electronics': ['electronics', 'games_toys'],
 }
 
-# ── URL helpers ──────────────────────────────────────────────────────
+# \u2500\u2500 URL helpers \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 BANNED_PATTERNS = [
     '/groups/', '/profile.php', '/people/', '/watch/',
@@ -306,11 +306,11 @@ def is_valid_page(url):
     return True
 
 
-# ── Step 1: Serper.dev Search ────────────────────────────────────────
+# \u2500\u2500 Step 1: Serper.dev Search \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 INBOX_KEYWORDS = [
-    'inbox', 'whatsapp', 'মেসেজ', 'অর্ডার করুন',
-    'cash on delivery', 'ক্যাশ অন ডেলিভারি', 'ইনবক্স',
+    'inbox', 'whatsapp', '\u09ae\u09c7\u09b8\u09c7\u099c', '\u0985\u09b0\u09cd\u09a1\u09be\u09b0 \u0995\u09b0\u09c1\u09a8',
+    'cash on delivery', '\u0995\u09cd\u09af\u09be\u09b6 \u0985\u09a8 \u09a1\u09c7\u09b2\u09bf\u09ad\u09be\u09b0\u09bf', '\u0987\u09a8\u09ac\u0995\u09cd\u09b8',
     'delivery all over bangladesh', 'home delivery available',
     'message to order', 'dm for price',
 ]
@@ -387,7 +387,7 @@ def serper_search(query):
     return results
 
 
-# ── Step 2: Apify Facebook Pages Scraper ─────────────────────────────
+# \u2500\u2500 Step 2: Apify Facebook Pages Scraper \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 APIFY_BASE = 'https://api.apify.com/v2'
 ACTOR_ID = 'apify~facebook-pages-scraper'
@@ -498,7 +498,7 @@ def extract_apify_page(item):
     }
 
 
-# ── Step 3: Scoring ──────────────────────────────────────────────────
+# \u2500\u2500 Step 3: Scoring \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 WEAK_WEBSITE_DOMAINS = [
     'blogspot.com', 'wordpress.com', 'wix.com', 'weebly.com',
@@ -669,7 +669,7 @@ def classify_priority(score):
     return "LOW"
 
 
-# ── Step 4: Save via server.py API ───────────────────────────────────
+# \u2500\u2500 Step 4: Save via server.py API \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 LEAD_COLUMNS = [
     'date', 'platform', 'business_name', 'page_url', 'category', 'followers',
@@ -710,10 +710,10 @@ def flush_lead_cache(verbose=True):
     cached = _load_lead_cache()
     if not cached:
         if verbose:
-            print("  📭 No cached leads to flush.")
+            print("  \u1f4ed No cached leads to flush.")
         return 0
     if verbose:
-        print(f"  📤 Flushing {len(cached)} cached leads to server...")
+        print(f"  \u1f4e4 Flushing {len(cached)} cached leads to server...")
     flushed = 0
     remaining = []
     for lead in cached:
@@ -730,7 +730,7 @@ def flush_lead_cache(verbose=True):
         if os.path.exists(_CACHE_FILE):
             os.remove(_CACHE_FILE)
     if verbose:
-        print(f"  ✅ Flushed {flushed} leads ({len(remaining)} still cached)")
+        print(f"  \u2705 Flushed {flushed} leads ({len(remaining)} still cached)")
     return flushed
 
 
@@ -794,7 +794,7 @@ def build_lead(page, category_name, score, priority, serper_entry, notes_extra='
     }
 
 
-# ── Telegram Summary ─────────────────────────────────────────────────
+# \u2500\u2500 Telegram Summary \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 def send_telegram_summary(summary_text):
     if not TELEGRAM_TOKEN:
@@ -815,7 +815,7 @@ def send_telegram_summary(summary_text):
         pass
 
 
-# ── Progress helper ──────────────────────────────────────────────────
+# \u2500\u2500 Progress helper \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 def _progress(desc, total):
     if tqdm:
@@ -833,7 +833,7 @@ def _progress(desc, total):
     return _Dummy()
 
 
-# ── Main Pipeline ────────────────────────────────────────────────────
+# \u2500\u2500 Main Pipeline \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 def run_category(category_name, queries, min_score, dry_run, no_apify, count, stop_event):
     all_urls = []
@@ -860,7 +860,7 @@ def run_category(category_name, queries, min_score, dry_run, no_apify, count, st
         for batch in url_batches:
             if stop_event and stop_event():
                 break
-            print(f"\n    📤 Sending {len(batch)} URLs to Apify...")
+            print(f"\n    \u1f4e4 Sending {len(batch)} URLs to Apify...")
             run_id = start_apify_run(batch)
             if run_id and poll_apify_run(run_id):
                 items = get_apify_results(run_id)
@@ -914,7 +914,7 @@ def run_category(category_name, queries, min_score, dry_run, no_apify, count, st
 
 def main():
     parser = argparse.ArgumentParser(
-        description='Smart Hunt — High-engagement Bangladesh F-Commerce lead finder'
+        description='Smart Hunt \u2014 High-engagement Bangladesh F-Commerce lead finder'
     )
     parser.add_argument('--category', '-c', default='all',
                         help='Category or comma-separated list (default: all)')
@@ -941,7 +941,7 @@ def main():
     # Auto-flush any cached leads before starting new hunt
     cached = _load_lead_cache()
     if cached:
-        print(f"📤 Found {len(cached)} cached leads — flushing to server...")
+        print(f"\u1f4e4 Found {len(cached)} cached leads \u2014 flushing to server...")
         flush_lead_cache(verbose=True)
     if not SERPER_API_KEY:
         print("ERROR: SERPER_API_KEY not set in .env")
@@ -968,7 +968,7 @@ def main():
         print("No valid categories selected.")
         sys.exit(1)
     print(f"\n{'='*60}")
-    print(f"🎯 SMART HUNT STARTING")
+    print(f"\u1f3af SMART HUNT STARTING")
     print(f"   Categories: {', '.join(categories)}")
     print(f"   Min score:  {args.min_score}/22")
     print(f"   Dry run:    {args.dry_run}")
@@ -984,7 +984,7 @@ def main():
         if stop:
             break
         queries = CATEGORY_QUERIES.get(cat, [])
-        print(f"\n📂 Category: {cat} ({len(queries)} queries)")
+        print(f"\n\u1f4c2 Category: {cat} ({len(queries)} queries)")
         results = run_category(cat, queries, args.min_score, args.dry_run, args.no_apify, args.count, stop_event)
         all_results.extend(results)
         all_results.sort(key=lambda x: -x[0])
@@ -1000,10 +1000,10 @@ def main():
     saved_leads = []
     if args.dry_run:
         print(f"\n{'='*60}")
-        print(f"🔍 DRY RUN — Would save {len(all_results)} leads")
+        print(f"\u1f50d DRY RUN \u2014 Would save {len(all_results)} leads")
     else:
         print(f"\n{'='*60}")
-        print(f"💾 SAVING to Lead Gen Dashboard...")
+        print(f"\u1f4be SAVING to Lead Gen Dashboard...")
         print(f"{'='*60}\n")
         save_iter = tqdm(all_results, desc="  Saving") if tqdm else all_results
         for score, priority, lead in save_iter:
@@ -1022,7 +1022,7 @@ def main():
             elif result == 'duplicate':
                 skip_dup_count += 1
             elif result == 'server_offline':
-                print("\n  ⚠️ Lead gen server offline — caching leads locally...")
+                print("\n  \u26a0\ufe0f Lead gen server offline \u2014 caching leads locally...")
                 cached_count = 0
                 for s, p, l in save_iter:
                     if saved_count >= args.count:
@@ -1030,7 +1030,7 @@ def main():
                     cr = cache_lead(l)
                     if cr == 'cached':
                         cached_count += 1
-                print(f"  📦 Cached {cached_count} leads locally (will auto-flush when server is back)")
+                print(f"  \u1f4e6 Cached {cached_count} leads locally (will auto-flush when server is back)")
                 saved_count = cached_count
                 break
     duration = time.time() - start_time
@@ -1038,36 +1038,36 @@ def main():
     total_found = len(all_results)
     enriched = sum(1 for r in all_results if 'serper_only' not in r[2].get('notes', ''))
     print(f"\n{'='*60}")
-    print(f"🎯 Smart Hunt Complete")
-    print(f"   📂 Categories: {', '.join(categories)}")
-    print(f"   🔍 URLs found: {total_found}")
-    print(f"   📊 Enriched via Apify: {enriched}")
+    print(f"\u1f3af Smart Hunt Complete")
+    print(f"   \u1f4c2 Categories: {', '.join(categories)}")
+    print(f"   \u1f50d URLs found: {total_found}")
+    print(f"   \u1f4ca Enriched via Apify: {enriched}")
     if skip_dup_count:
-        print(f"   ⏭ Skipped (already in DB): {skip_dup_count}")
+        print(f"   \u23ed Skipped (already in DB): {skip_dup_count}")
     if saved_count >= 0:
-        print(f"   ✅ Saved leads: {saved_count}")
-        print(f"   🔥 PREMIUM: {premium_count}")
-        print(f"   ⭐ HIGH: {high_count}")
-        print(f"   🟡 MEDIUM: {medium_count}")
+        print(f"   \u2705 Saved leads: {saved_count}")
+        print(f"   \u1f525 PREMIUM: {premium_count}")
+        print(f"   \u2b50 HIGH: {high_count}")
+        print(f"   \u1f7e1 MEDIUM: {medium_count}")
     else:
-        print(f"   ❌ Saved leads: 0 (server offline)")
-    print(f"   ⏱ Time: {dur_str}")
+        print(f"   \u274c Saved leads: 0 (server offline)")
+    print(f"   \u23f1 Time: {dur_str}")
     print(f"{'='*60}\n")
     for score, priority, lead in saved_leads[:saved_count if saved_count > 0 else 10]:
         print(f"  [{score:2d}/22] {priority:7s} | {lead['business_name'][:40]:40s} | {lead['page_url']}")
     summary = (
-        f"🎯 Smart Hunt Complete\n"
-        f"📂 Categories: {', '.join(categories)}\n"
-        f"🔍 URLs found: {total_found}\n"
-        f"📊 Enriched via Apify: {enriched}\n"
-        f"✅ Saved leads: {saved_count if saved_count >= 0 else 0}\n"
-        f"🔥 PREMIUM: {premium_count}\n"
-        f"⭐ HIGH: {high_count}\n"
-        f"🟡 MEDIUM: {medium_count}\n"
-        f"⏱ Time: {dur_str}"
+        f"\u1f3af Smart Hunt Complete\n"
+        f"\u1f4c2 Categories: {', '.join(categories)}\n"
+        f"\u1f50d URLs found: {total_found}\n"
+        f"\u1f4ca Enriched via Apify: {enriched}\n"
+        f"\u2705 Saved leads: {saved_count if saved_count >= 0 else 0}\n"
+        f"\u1f525 PREMIUM: {premium_count}\n"
+        f"\u2b50 HIGH: {high_count}\n"
+        f"\u1f7e1 MEDIUM: {medium_count}\n"
+        f"\u23f1 Time: {dur_str}"
     )
     if skip_dup_count:
-        summary += f"\n⏭ Skipped existing: {skip_dup_count}"
+        summary += f"\n\u23ed Skipped existing: {skip_dup_count}"
     send_telegram_summary(summary)
 
 
