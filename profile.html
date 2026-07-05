@@ -294,6 +294,17 @@
       <div id="telegramBotStatus" style="font-size:11px; color:#94A3B8; min-height:14px; margin-top:8px;"></div>
     </div>
 
+    <div class="card" id="fbCookiesCard">
+      <div class="card-header">Facebook Cookies</div>
+      <p style="font-size:12px; color:#94A3B8; margin:0 0 12px 0;">Export cookies from your Facebook session (use a browser extension like "Cookie-Editor" or "EditThisCookie") and paste them below. This lets the extractor see phone/website data that's only visible to logged-in users.</p>
+      <div class="form-group">
+        <label for="fbCookieInput">Paste Cookies JSON</label>
+        <textarea id="fbCookieInput" rows="6" placeholder='[{"name":"c_user","value":"...","domain":".facebook.com","path":"/","httpOnly":false,"secure":true}]' style="width:100%;background:#0F172A;border:1px solid #1E293B;border-radius:6px;color:#E2E8F0;padding:10px;font-size:12px;font-family:monospace;resize:vertical;"></textarea>
+      </div>
+      <button id="btnSaveFbCookies" class="btn-primary" style="width:100%">Save Cookies</button>
+      <div id="fbCookiesStatus" style="font-size:11px; color:#94A3B8; min-height:14px; margin-top:8px;"></div>
+    </div>
+
     <div class="card">
       <div class="card-header">Session</div>
       <div class="flex-row">
@@ -623,6 +634,30 @@
             localStorage.removeItem('skarbol_user');
             location.reload();
           });
+
+          // FB Cookies
+          document.getElementById('btnSaveFbCookies').addEventListener('click', function(){
+            var input = document.getElementById('fbCookieInput').value.trim();
+            var status = document.getElementById('fbCookiesStatus');
+            if (!input) { status.textContent = 'Paste cookies JSON first'; return; }
+            try { JSON.parse(input); } catch(e) { status.textContent = 'Invalid JSON: ' + e.message; return; }
+            status.textContent = 'Saving...';
+            fetch(window.location.origin + '/api/cookies/facebook', {
+              method: 'POST',
+              headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token},
+              body: JSON.stringify({cookies: JSON.parse(input)})
+            }).then(function(r){return r.json()}).then(function(d){
+              status.textContent = d.status === 'saved' ? d.count + ' cookies saved!' : 'Error: ' + (d.error || 'unknown');
+            }).catch(function(e){ status.textContent = 'Network error: ' + e.message; });
+          });
+
+          // Load cookie status
+          fetch(window.location.origin + '/api/cookies/status', {
+            headers: {'Authorization': 'Bearer ' + token}
+          }).then(function(r){return r.json()}).then(function(d){
+            var s = document.getElementById('fbCookiesStatus');
+            s.textContent = d.cookies_exists ? d.cookies_count + ' cookies loaded' : 'No cookies set — extraction may miss phone/website';
+          }).catch(function(){});
         }
       }
     })();

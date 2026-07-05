@@ -2508,6 +2508,17 @@ class Handler(BaseHTTPRequestHandler):
                 'telegram_bot_token': config.get('bot_token') or '',
                 'telegram_chat_id': config.get('chat_id') or '',
             })
+        elif parsed.path == '/api/cookies/status':
+            path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'fb_cookies.json')
+            exists = os.path.exists(path)
+            count = 0
+            if exists:
+                try:
+                    with open(path) as f:
+                        count = len(json.load(f))
+                except Exception:
+                    pass
+            self._json(200, {'cookies_exists': exists, 'cookies_count': count})
         elif parsed.path.startswith('/api/avatars/'):
             fname = os.path.basename(parsed.path)
             if USE_MONGO and cloudinary_storage and cloudinary_storage.is_configured():
@@ -3323,15 +3334,24 @@ class Handler(BaseHTTPRequestHandler):
             chat_id = (data.get('chat_id') or '').strip()
             leads_db.update_telegram_config(user['id'], bot_token, chat_id)
             self._json(200, {'status': 'saved'})
+        elif parsed.path == '/api/cookies/facebook':
+            user = require_auth(self)
+            if not user: return
+            if data is None:
+                self._json(400, {'error': 'Invalid JSON'})
+                return
+            cookies = data.get('cookies', [])
+            if not isinstance(cookies, list) or len(cookies) == 0:
+                self._json(400, {'error': 'cookies must be a non-empty array'})
+                return
+            path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'fb_cookies.json')
+            with open(path, 'w') as f:
+                json.dump(cookies, f)
+            global _FB_COOKIES_CACHE
+            _FB_COOKIES_CACHE = None
+            print(f"[cookies] saved {len(cookies)} cookies", flush=True)
+            self._json(200, {'status': 'saved', 'count': len(cookies)})
         elif parsed.path == '/api/auth/logout':
-            auth = self.headers.get('Authorization', '')
-            if auth.startswith('Bearer '):
-                token = auth[7:]
-                conn = sqlite3.connect(AUTH_DB_PATH, timeout=30)
-                c = conn.cursor()
-                c.execute('DELETE FROM sessions WHERE token = ?', (token,))
-                conn.commit()
-                conn.close()
             self._json(200, {'status': 'logged_out'})
         elif parsed.path == '/api/auth/profile':
             user = require_auth(self)
