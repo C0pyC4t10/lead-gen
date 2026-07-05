@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""extract_facebook_brand.py — Scrape a Facebook page for brand info.
+"""extract_facebook_brand.py \u2014 Scrape a Facebook page for brand info.
 
 Extracts: business name, logo URL, cover photo URL, brand category,
 about text, email, phone, website, and dominant brand colors from
@@ -138,7 +138,7 @@ class FacebookBrandExtractor:
 
         self.soup = BeautifulSoup(self.html, "html.parser")
 
-        # Business name — try og:title, then title tag
+        # Business name \u2014 try og:title, then title tag
         self.result["name"] = extract_meta(self.soup, "og:title") or ""
         if not self.result["name"]:
             title_tag = self.soup.find("title")
@@ -146,7 +146,7 @@ class FacebookBrandExtractor:
                 self.result["name"] = title_tag.get_text(strip=True)
         # Clean up Facebook suffix
         self.result["name"] = re.sub(
-            r"\s*[|–-]\s*(Facebook|Home|Posts|Photos).*$", "", self.result["name"]
+            r"\s*[|\u2013-]\s*(Facebook|Home|Posts|Photos).*$", "", self.result["name"]
         ).strip()
 
         # Logo / profile picture
