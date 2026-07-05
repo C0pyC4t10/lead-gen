@@ -1851,6 +1851,39 @@ def _extract_facebook_page(fb_url):
             if result.get('phone') and result.get('email') and result.get('website'):
                 return result
 
+        if not result.get('phone') or not result.get('email') or not result.get('website'):
+            # Try /info (newer FB layout) — sometimes shows contact details
+            info_url = fb_url.rstrip('/') + '/info'
+            try:
+                page.goto(info_url, timeout=8000, wait_until='domcontentloaded')
+                page.wait_for_timeout(2000)
+                info_data = page.evaluate('''() => {
+                  var d = {};
+                  var body = (document.body ? document.body.textContent : '') || '';
+                  var em = body.match(/[a-zA-Z0-9._%+\\-]+@[a-zA-Z0-9.\\-\\.]+\\.[a-zA-Z]{2,}/g);
+                  if (em) { for (var i = 0; i < em.length; i++) { if (!/(facebook|fb\\.com|sentry|example|meta)/i.test(em[i])) { d.email = em[i]; break; } } }
+                  var tels = document.querySelectorAll('a[href^="tel:"]');
+                  if (tels.length) d.phone = tels[0].href.replace('tel:', '').split(/[;,#]/)[0].trim();
+                  if (!d.phone) {
+                    var clean = body.replace(/[\\s\\-\\(\\)\\.]/g, '');
+                    var pm = clean.match(/(?:01[3-9]\\d{8}|\\+?8801[3-9]\\d{8})/);
+                    if (pm) d.phone = pm[0];
+                  }
+                  return JSON.stringify(d);
+                }''')
+                if info_data:
+                    try:
+                        info_obj = json.loads(info_data)
+                        if info_obj.get('email') and not result.get('email'): result['email'] = info_obj['email']
+                        if info_obj.get('phone') and not result.get('phone'):
+                            p = re.sub(r'[\s\-\(\)\.]', '', info_obj['phone'])
+                            if p.startswith('01') and len(p) == 11: p = '+880' + p[1:]
+                            elif p.startswith('880') and not p.startswith('+'): p = '+' + p
+                            if re.match(r'^\+?8801[3-9]\d{8}$', p): result['phone'] = p
+                    except Exception: pass
+            except Exception:
+                pass
+
         if not result.get('phone') or not result.get('email') or not result.get('address') or not result.get('website'):
             about_url = fb_url.rstrip('/') + '/about'
             try:
