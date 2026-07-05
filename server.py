@@ -153,7 +153,7 @@ TELEGRAM_THREAD_ID = 354
 DEMO_DIR = os.path.join(os.path.dirname(__file__), 'demo')
 MAPS_CSV_PATH = os.path.join(os.path.dirname(__file__), 'collected_leads', 'maps_leads.csv')
 
-# ── F-Commerce Configuration ──────────────────────────────────────────
+# \u2500\u2500 F-Commerce Configuration \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 FCOMMERCE_CSV_PATH = os.path.join(os.path.dirname(__file__), 'collected_leads', 'fcommerce_leads.csv')
 
 LINKEDIN_CSV_PATH = os.path.join(os.path.dirname(__file__), 'collected_leads', 'linkedin_leads.csv')
@@ -254,12 +254,12 @@ def ensure_qualified_csv():
 AUTH_DB_PATH = os.path.join(os.path.dirname(__file__), 'auth.db')
 AVATAR_DIR = os.path.join(os.path.dirname(__file__), 'avatars')
 
-# ── Rate limiting ─────────────────────────────────────────────
+# \u2500\u2500 Rate limiting \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 _login_attempts = {}  # ip -> [attempt_count, first_attempt_time]
 LOGIN_RATE_LIMIT = 5       # max attempts
 LOGIN_RATE_WINDOW = 900    # window in seconds (15 min)
 
-# ── Session config ────────────────────────────────────────────
+# \u2500\u2500 Session config \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 SESSION_EXPIRY_DAYS = 30
 
 def init_auth_db():
@@ -439,18 +439,18 @@ def send_telegram_notification(lead, action='saved'):
         score = int(lead.get('qualification_score', 0))
     except (ValueError, TypeError):
         score = 0
-    if score >= 8: star = "⭐⭐⭐"
-    elif score >= 6: star = "⭐⭐"
-    else: star = "⭐"
+    if score >= 8: star = "\u2b50\u2b50\u2b50"
+    elif score >= 6: star = "\u2b50\u2b50"
+    else: star = "\u2b50"
 
     if action == 'duplicate':
-        action_emoji, action_text = "⚠️", "Duplicate Lead Skipped"
+        action_emoji, action_text = "\u26a0\ufe0f", "Duplicate Lead Skipped"
     elif action == 'status_update':
-        action_emoji, action_text = "📌", "Lead Status Updated"
+        action_emoji, action_text = "\u1f4cc", "Lead Status Updated"
     elif action == 'qualified':
-        action_emoji, action_text = "🔥🔥🔥", "HOT LEAD QUALIFIED"
+        action_emoji, action_text = "\u1f525\u1f525\u1f525", "HOT LEAD QUALIFIED"
     else:
-        action_emoji, action_text = "🆕", "New Lead Saved"
+        action_emoji, action_text = "\u1f195", "New Lead Saved"
 
     fb = lead.get('followers', '') or '-'
     lpd = lead.get('last_post_date', '') or '-'
@@ -469,40 +469,40 @@ def send_telegram_notification(lead, action='saved'):
     trojan = detect_trojan_horse(lead.get('business_name', ''), lead.get('category', ''))
     trojan_line = ''
     if trojan and action not in ('status_update', 'qualified'):
-        trojan_line = f'\n🎯 Trojan Horse: <b>{trojan["product"]}</b> ({trojan["entry"]})'
+        trojan_line = f'\n\u1f3af Trojan Horse: <b>{trojan["product"]}</b> ({trojan["entry"]})'
     elif trojan and action in ('status_update', 'qualified'):
         if lead.get('status') == 'qualified':
-            trojan_line = f'\n🎯 Trojan Horse: <b>{trojan["product"]}</b> — pain: {trojan["pain"]}'
+            trojan_line = f'\n\u1f3af Trojan Horse: <b>{trojan["product"]}</b> \u2014 pain: {trojan["pain"]}'
 
     st = lead.get('status', 'new')
 
     def h(val):
         return html.escape(str(val) if val is not None else '')
 
-    file_info = f'\n📁 File: {CSV_PATH}' if action == 'duplicate' else ''
-    qualified_footer = '\n\n📂 Saved to: <b>qualified_leads/qualified_leads.csv</b>\n📞 <b>Contact this lead NOW</b>' if action == 'qualified' else ''
+    file_info = f'\n\u1f4c1 File: {CSV_PATH}' if action == 'duplicate' else ''
+    qualified_footer = '\n\n\u1f4c2 Saved to: <b>qualified_leads/qualified_leads.csv</b>\n\u1f4de <b>Contact this lead NOW</b>' if action == 'qualified' else ''
 
-    platform_emoji = {'google_maps': '🗺️', 'facebook': '📘', 'instagram': '📸', 'linkedin': '💼'}.get(lead.get('platform', ''), '🔍')
+    platform_emoji = {'google_maps': '\u1f5fa\ufe0f', 'facebook': '\u1f4d8', 'instagram': '\u1f4f8', 'linkedin': '\u1f4bc'}.get(lead.get('platform', ''), '\u1f50d')
     source_line = f'\n{platform_emoji} Source: <b>{h(lead.get("platform", "unknown"))}</b>'
     saved_by = (lead.get('saved_by_user_name') or '').strip()
-    saved_by_line = f'\n👤 Saved by: <b>{h(saved_by) or "—"}</b>' if saved_by else ''
+    saved_by_line = f'\n\u1f464 Saved by: <b>{h(saved_by) or "\u2014"}</b>' if saved_by else ''
 
     message = f"""{action_emoji} <b>{h(action_text)}</b>{source_line}{saved_by_line}
-🏢 <b>{h(lead.get('business_name', 'Unknown'))}</b>
-📊 Score: {score}/10 {star} | Status: <b>{h(st)}</b>
-📂 Category: {h(lead.get('category', '-'))}
-👥 Followers: {h(fb)}
-📞 Phone: {h(lead.get('phone', 'Not found'))}
-📧 Email: {h(lead.get('email', 'Not found'))}
-🌐 Website: {h(has_site)}{f' ({h(website)})' if website else ''}
-📍 Address: {h(addr)}
-{'🕐 ' + h(open_state) + (' (' + h(hours_text) + ')' if hours_text else '') if lead.get('platform') == 'google_maps' and open_state else '📅 Last Post: ' + h(lpd)}
-📝 Notes: {h(notes)}
-📌 Follow-up: {h(fud if fud else 'Not set')}
-🔗 {h(lead.get('page_url', ''))}{trojan_line}{file_info}{qualified_footer}"""
+\u1f3e2 <b>{h(lead.get('business_name', 'Unknown'))}</b>
+\u1f4ca Score: {score}/10 {star} | Status: <b>{h(st)}</b>
+\u1f4c2 Category: {h(lead.get('category', '-'))}
+\u1f465 Followers: {h(fb)}
+\u1f4de Phone: {h(lead.get('phone', 'Not found'))}
+\u1f4e7 Email: {h(lead.get('email', 'Not found'))}
+\u1f310 Website: {h(has_site)}{f' ({h(website)})' if website else ''}
+\u1f4cd Address: {h(addr)}
+{'\u1f550 ' + h(open_state) + (' (' + h(hours_text) + ')' if hours_text else '') if lead.get('platform') == 'google_maps' and open_state else '\u1f4c5 Last Post: ' + h(lpd)}
+\u1f4dd Notes: {h(notes)}
+\u1f4cc Follow-up: {h(fud if fud else 'Not set')}
+\u1f517 {h(lead.get('page_url', ''))}{trojan_line}{file_info}{qualified_footer}"""
 
     if action == 'saved':
-        message += "\n\n━━━━━━━━━━━━━━━━━\n⚡ <b>Quick actions</b> → tell me: <i>qualify</i> / <i>disqualify</i> / <i>demo</i>"
+        message += "\n\n\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\n\u26a1 <b>Quick actions</b> \u2192 tell me: <i>qualify</i> / <i>disqualify</i> / <i>demo</i>"
 
     payload = {
         "chat_id": TELEGRAM_CHAT_ID,
@@ -819,9 +819,9 @@ def get_qualified_leads():
 
 def read_all_leads(filter_status=None, include_trashed=False, user_id=None, include_all_users=False):
     """Read leads.
-    - user_id given → only that user's CSV.
-    - include_all_users=True (admin) → merged view across all per-user CSVs AND global CSV.
-    - neither → fall back to global CSV (legacy).
+    - user_id given \u2192 only that user's CSV.
+    - include_all_users=True (admin) \u2192 merged view across all per-user CSVs AND global CSV.
+    - neither \u2192 fall back to global CSV (legacy).
     """
     if USE_MONGO:
         is_admin = bool(include_all_users)
@@ -885,7 +885,7 @@ def h(val):
 
 
 def _find_lead_by_url(page_url, user_id=None):
-    """Find a lead by URL. user_id given → only that user's CSV. None → all CSVs (admin)."""
+    """Find a lead by URL. user_id given \u2192 only that user's CSV. None \u2192 all CSVs (admin)."""
     if USE_MONGO:
         is_admin = user_id is None
         lead = mongo_db.find_lead_by_url(page_url, user_id, is_admin=is_admin)
@@ -940,19 +940,19 @@ def _generate_and_send_demo(chat_id, thread_id, lead_info, name, phone, category
     try:
         subprocess.run(cmd, check=True, capture_output=True, text=True, timeout=30)
     except subprocess.CalledProcessError as e:
-        requests.post(f"{api}/sendMessage", json={"chat_id": chat_id, "message_thread_id": thread_id, "text": f"❌ Demo failed:\n<code>{h(e.stderr)}</code>", "parse_mode": "HTML"}, timeout=10)
+        requests.post(f"{api}/sendMessage", json={"chat_id": chat_id, "message_thread_id": thread_id, "text": f"\u274c Demo failed:\n<code>{h(e.stderr)}</code>", "parse_mode": "HTML"}, timeout=10)
         return
     except Exception as e:
-        requests.post(f"{api}/sendMessage", json={"chat_id": chat_id, "message_thread_id": thread_id, "text": f"❌ Error: {h(str(e))}", "parse_mode": "HTML"}, timeout=10)
+        requests.post(f"{api}/sendMessage", json={"chat_id": chat_id, "message_thread_id": thread_id, "text": f"\u274c Error: {h(str(e))}", "parse_mode": "HTML"}, timeout=10)
         return
     if not os.path.exists(out_path):
-        requests.post(f"{api}/sendMessage", json={"chat_id": chat_id, "message_thread_id": thread_id, "text": "❌ Demo file not created.", "parse_mode": "HTML"}, timeout=10)
+        requests.post(f"{api}/sendMessage", json={"chat_id": chat_id, "message_thread_id": thread_id, "text": "\u274c Demo file not created.", "parse_mode": "HTML"}, timeout=10)
         return
 
     # Read JSON metadata for enriched caption
     caption_html = (
-        f"✅ <b>Demo Ready: {h(name)}</b>\n"
-        f"🔗 Open HTML in browser or share PDF with client"
+        f"\u2705 <b>Demo Ready: {h(name)}</b>\n"
+        f"\u1f517 Open HTML in browser or share PDF with client"
     )
 
     # Send HTML file
@@ -974,7 +974,7 @@ def _generate_and_send_demo(chat_id, thread_id, lead_info, name, phone, category
     if os.path.exists(pdf_path):
         try:
             with open(pdf_path, 'rb') as f:
-                doc_data = {"chat_id": chat_id, "caption": "📄 <b>PDF version</b> — ready to share with client", "parse_mode": "HTML"}
+                doc_data = {"chat_id": chat_id, "caption": "\u1f4c4 <b>PDF version</b> \u2014 ready to share with client", "parse_mode": "HTML"}
                 if thread_id:
                     doc_data["message_thread_id"] = thread_id
                 if reply_to:
@@ -985,11 +985,11 @@ def _generate_and_send_demo(chat_id, thread_id, lead_info, name, phone, category
             pass
 
     if not html_sent and not pdf_sent:
-        requests.post(f"{api}/sendMessage", json={"chat_id": chat_id, "message_thread_id": thread_id, "text": f"⚠️ Files at:\n<code>{out_path}</code>\n<code>{pdf_path}</code>", "parse_mode": "HTML"}, timeout=10)
+        requests.post(f"{api}/sendMessage", json={"chat_id": chat_id, "message_thread_id": thread_id, "text": f"\u26a0\ufe0f Files at:\n<code>{out_path}</code>\n<code>{pdf_path}</code>", "parse_mode": "HTML"}, timeout=10)
 
 
 def _find_lead_by_name(name, user_id=None):
-    """Find a lead by business_name. user_id given → only that user's CSV. None → all CSVs (admin)."""
+    """Find a lead by business_name. user_id given \u2192 only that user's CSV. None \u2192 all CSVs (admin)."""
     name_lower = name.strip().lower()
     if USE_MONGO:
         from db import get_db
@@ -1020,9 +1020,9 @@ def _find_lead_by_name(name, user_id=None):
     return None
 
 
-# ═══════════════════════════════════════════════════════════════════
+# \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
 #  F-COMMERCE LEAD HUNTER
-# ═══════════════════════════════════════════════════════════════════
+# \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
 
 
 def _ensure_fcommerce_csv():
@@ -1098,28 +1098,28 @@ def _send_fcommerce_telegram(lead):
 
     score = int(lead.get('qualification_score', 0))
     priority = lead.get('priority', '')
-    star = "🔥🔥🔥" if priority == 'HIGH' else ("🔥🔥" if priority == 'MEDIUM' else "⭐")
+    star = "\u1f525\u1f525\u1f525" if priority == 'HIGH' else ("\u1f525\u1f525" if priority == 'MEDIUM' else "\u2b50")
     priority_box = (
-        "\n━━━━━━━━━━━━━━━━━\n"
-        f"<b>🔥 HIGH PRIORITY — CONTACT NOW</b>\n"
+        "\n\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\n"
+        f"<b>\u1f525 HIGH PRIORITY \u2014 CONTACT NOW</b>\n"
         f"<code>{FCOMMERCE_SALES_PITCH}</code>\n"
-        "━━━━━━━━━━━━━━━━━"
+        "\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501"
     ) if priority == 'HIGH' else ''
 
-    message = f"""🛒 <b>F-Commerce Lead</b>
-🏢 <b>{hh(lead.get('business_name', 'Unknown'))}</b>
-📊 Score: {score}/10 {star} | Priority: <b>{hh(priority)}</b>
-📂 Product: {hh(lead.get('product_categories', '-'))}
-👥 Followers: {hh(lead.get('followers_int', '-'))}
-🌐 Has Website: {hh(lead.get('has_website', '-'))}
-📦 Order Method: {hh(lead.get('order_method', '-'))}
-🔍 Source: {hh(lead.get('discovery_source', '-'))}
-📍 Address: {hh(lead.get('address', '-'))}
-📞 Phone: {hh(lead.get('phone', 'Not found'))}
-📧 Email: {hh(lead.get('email', 'Not found'))}
-🏷️ Opportunities: {hh(lead.get('opportunity_flags', '-'))}
-📝 Notes: {hh(lead.get('notes', ''))}
-🔗 {hh(lead.get('page_url', ''))}{priority_box}"""
+    message = f"""\u1f6d2 <b>F-Commerce Lead</b>
+\u1f3e2 <b>{hh(lead.get('business_name', 'Unknown'))}</b>
+\u1f4ca Score: {score}/10 {star} | Priority: <b>{hh(priority)}</b>
+\u1f4c2 Product: {hh(lead.get('product_categories', '-'))}
+\u1f465 Followers: {hh(lead.get('followers_int', '-'))}
+\u1f310 Has Website: {hh(lead.get('has_website', '-'))}
+\u1f4e6 Order Method: {hh(lead.get('order_method', '-'))}
+\u1f50d Source: {hh(lead.get('discovery_source', '-'))}
+\u1f4cd Address: {hh(lead.get('address', '-'))}
+\u1f4de Phone: {hh(lead.get('phone', 'Not found'))}
+\u1f4e7 Email: {hh(lead.get('email', 'Not found'))}
+\u1f3f7\ufe0f Opportunities: {hh(lead.get('opportunity_flags', '-'))}
+\u1f4dd Notes: {hh(lead.get('notes', ''))}
+\u1f517 {hh(lead.get('page_url', ''))}{priority_box}"""
 
     payload = {
         "chat_id": TELEGRAM_CHAT_ID,
@@ -1179,7 +1179,7 @@ def _save_fcommerce_lead(data):
     elif score >= 6:
         lead['priority'] = 'MEDIUM'
     else:
-        return False, f'score_too_low ({score}/10 — below threshold)', lead
+        return False, f'score_too_low ({score}/10 \u2014 below threshold)', lead
 
     if not lead.get('opportunity_flags', '').strip():
         lead['opportunity_flags'] = _fcommerce_auto_flags(lead)
@@ -1283,7 +1283,7 @@ def _fcommerce_stats():
     return stats
 
 
-# ═══════════════════════════════════════════════════════════════════
+# \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
 
 _PLAYWRIGHT_BROWSER = None
 
@@ -1357,9 +1357,9 @@ def _apply_fb_cookies(ctx):
 
 
 
-# ═══════════════════════════════════════════════════════════════════
-# Apify Facebook Pages Scraper — primary extractor (uses FB-internal access)
-# ═══════════════════════════════════════════════════════════════════
+# \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
+# Apify Facebook Pages Scraper \u2014 primary extractor (uses FB-internal access)
+# \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
 
 APIFY_API_KEY = os.environ.get('APIFY_API_KEY', '')
 APIFY_ACTOR_ID = 'apify~facebook-pages-scraper'
@@ -1369,7 +1369,7 @@ APIFY_BASE = 'https://api.apify.com/v2'
 def _extract_via_apify(fb_url, timeout=300):
     """Call Apify Facebook Pages Scraper. Returns dict matching _extract_facebook_page shape or None on failure."""
     if not APIFY_API_KEY:
-        print('[apify] APIFY_API_KEY not set — skipping', flush=True)
+        print('[apify] APIFY_API_KEY not set \u2014 skipping', flush=True)
         return None
     try:
         headers = {'Authorization': f'Bearer {APIFY_API_KEY}', 'Content-Type': 'application/json'}
@@ -1407,7 +1407,7 @@ def _extract_via_apify(fb_url, timeout=300):
         name = (item.get('title') or item.get('name') or '').strip()
         # Strip "Verified account" suffix and trailing whitespace
         name = re.sub(r'\s*[\u00a0\s]Verified\s*(?:account|page)?\s*$', '', name, flags=re.I).strip()
-        # Strip trailing "| City" pipe-suffix (e.g. "Diamond World DNM | Dhaka" — keep the brand part)
+        # Strip trailing "| City" pipe-suffix (e.g. "Diamond World DNM | Dhaka" \u2014 keep the brand part)
         # Actually keep it as-is; user might want the location info too
         phone = (item.get('phone') or '').strip()
         email = (item.get('email') or '').strip()
@@ -1428,7 +1428,7 @@ def _extract_via_apify(fb_url, timeout=300):
                 phone = p_clean
         # Normalize email to lowercase
         if email: email = email.lower().strip()
-        # Clean up category — skip generic "Page" if there's a more specific one
+        # Clean up category \u2014 skip generic "Page" if there's a more specific one
         if category and category.lower().strip() == 'page' and categories and len(categories) > 1:
             for c in categories:
                 if c and c.lower().strip() != 'page':
@@ -1455,11 +1455,11 @@ def _extract_via_apify(fb_url, timeout=300):
 
 def _extract_fb_json_data(html):
     """Parse Facebook page HTML for JSON-embedded business data (phone, email, website, address).
-    Only uses narrow, targeted patterns — avoids broad key searches that pick up random data."""
+    Only uses narrow, targeted patterns \u2014 avoids broad key searches that pick up random data."""
     out = {}
     # Normalize escaped JSON slashes for matching
     norm_html = html.replace('\\/', '/').replace('\\u0040', '@')
-    # Phone: scan for any WhatsApp send URL (api.whatsapp.com/send?phone=NUMBER) — FB embeds real business phone here
+    # Phone: scan for any WhatsApp send URL (api.whatsapp.com/send?phone=NUMBER) \u2014 FB embeds real business phone here
     for wa in re.finditer(r'api\.whatsapp\.com/send\?phone=(\d+)', norm_html):
         num = wa.group(1)
         if num.startswith('880') and len(num) >= 13:
@@ -1469,9 +1469,9 @@ def _extract_fb_json_data(html):
             if re.match(r'^1[3-9]\d{8}$', stripped):
                 out['phone'] = n
                 break
-    # Phone that appears in the same JSON block as the email — likely the real business phone
+    # Phone that appears in the same JSON block as the email \u2014 likely the real business phone
     if not out.get('phone') and out.get('email'):
-        # Email in HTML might use \u0040 instead of @ — try both forms
+        # Email in HTML might use \u0040 instead of @ \u2014 try both forms
         em_pos = norm_html.find('"' + out['email'] + '"')
         if em_pos < 0:
             esc_email = out['email'].replace('@', '\\u0040')
@@ -1486,9 +1486,9 @@ def _extract_fb_json_data(html):
                 if re.match(r'^\+?8801[3-9]\d{8}$', n):
                     out['phone'] = n
                     break
-    # REMOVED frequency-based phone fallback — was returning wrong phones from FB internal data
-    # REMOVED raw-HTML phone scan — was picking random 11-digit sequences from FB's internal SVG/CSS data
-    # Look for email in JSON context (reliable — email addresses are specific enough to avoid false positives)
+    # REMOVED frequency-based phone fallback \u2014 was returning wrong phones from FB internal data
+    # REMOVED raw-HTML phone scan \u2014 was picking random 11-digit sequences from FB's internal SVG/CSS data
+    # Look for email in JSON context (reliable \u2014 email addresses are specific enough to avoid false positives)
     em = re.search(r'"(?:email|email_address|contact_email)"\s*:\s*"([^"]+@[^"]+\.[a-zA-Z]{2,})"', norm_html)
     if em:
         e = em.group(1).replace('\\/', '/').lower()
@@ -1503,16 +1503,16 @@ def _extract_fb_json_data(html):
                 break
     # Look for website in JSON context (specific keys)
     site_excl = ['facebook.com', 'fb.com', 'instagram.com', 'instagram', 'fbcdn', 'maps.google.com', 'google.com/maps', 'youtube.com', 'twitter.com', 'x.com', 'w3.org', 'schema.org', 'dms.net', 'messenger.com', 'm.me', 'mng.com', 'doubleclick.net', 'googleadservices.com', 'googlesyndication.com', 'msn.com', 'live.com', 'bing.com']
-    # Hard media/news blocklist — these are NEVER valid business websites
+    # Hard media/news blocklist \u2014 these are NEVER valid business websites
     media_block = ['msn.com', 'yahoo.com', 'cnn.com', 'bbc.com', 'bbc.co.uk', 'nytimes.com', 'washingtonpost.com', 'foxnews.com', 'nbcnews.com', 'cbsnews.com', 'abcnews.go.com', 'reuters.com', 'apnews.com', 'theguardian.com', 'huffpost.com', 'buzzfeed.com', 'dailymail.co.uk', 'nypost.com', 'usatoday.com', 'forbes.com', 'businessinsider.com', 'techcrunch.com', 'theverge.com', 'engadget.com', 'wired.com', 'mashable.com', 'cnet.com', 'zdnet.com', 'news.google.com', 'news.yahoo.com', 'apple.com', 'microsoft.com', 'google.com', 'support.google', 'policies.google', 'play.google.com', 'developers.facebook', 'about.meta']
-    # First try keys that always have protocol — narrow keys only (link/url are too noisy)
+    # First try keys that always have protocol \u2014 narrow keys only (link/url are too noisy)
     ws = re.findall(r'"(?:website|website_url|external_url|site_url|vanity_url|display_url)"\s*:\s*"(https?://[^"]+)"', norm_html)
     for u in ws:
         u = u.replace('\\/', '/').lower()
         if not any(e in u for e in site_excl) and not any(m in u for m in media_block) and len(u) < 100:
             out['website'] = u
             break
-    # Try page_url separately — only accept if it looks like the page's own domain (not news/media)
+    # Try page_url separately \u2014 only accept if it looks like the page's own domain (not news/media)
     if not out.get('website'):
         page_urls = re.findall(r'"page_url"\s*:\s*"(https?://[^"]+)"', norm_html)
         for u in page_urls:
@@ -1521,7 +1521,7 @@ def _extract_fb_json_data(html):
                 if not any(noise in u for noise in ['/article/', '/news/', '/story/', '/post/', '/blog/', '/video/', '/watch/', '/wiki/']):
                     out['website'] = u
                     break
-    # Try protocol-less website values (drop page_url from this list — too noisy)
+    # Try protocol-less website values (drop page_url from this list \u2014 too noisy)
     if not out.get('website'):
         ws2 = re.findall(r'"(?:website|website_url|external_url|site_url|vanity_url|display_url)"\s*:\s*"((?:[a-zA-Z0-9\-]+\.)+(?:com|bd|net|org|shop|store|app)(?:/[^"]*)?)"', norm_html)
         for u in ws2:
@@ -1533,7 +1533,7 @@ def _extract_fb_json_data(html):
     # Look for address in JSON context
     addr = re.search(r'"(?:address|location|street_address|full_address|display_address)"\s*:\s*"([^"]{10,200})"', norm_html)
     if addr:
-        a = addr.group(1).replace('\\/', '/').replace('\\n', ', ').replace('\\u00e0', 'à')
+        a = addr.group(1).replace('\\/', '/').replace('\\n', ', ').replace('\\u00e0', '\u00e0')
         out['address'] = a
     # Look for category in JSON context
     cat = re.search(r'"(?:category|page_category|category_name)"\s*:\s*"([^"]{2,80})"', norm_html)
@@ -1640,19 +1640,19 @@ def _extract_facebook_page(fb_url):
           if (!d.category) { var des = document.querySelector('meta[property="og:description"],meta[name="description"]'); if (des) { var dc = des.getAttribute('content') || ''; for (var i = 0; i < cats.length; i++) { if (new RegExp('\\\\b' + cats[i] + '\\\\b', 'i').test(dc)) { d.category = cats[i]; break; } } } }
           if (!d.category) { for (var ci = 0; ci < cats.length; ci++) { if (new RegExp('\\\\b' + cats[ci] + '\\\\b', 'i').test(fullText)) { d.category = cats[ci]; break; } } }
 
-          var fm = body.match(/([\\d,.]+[KkMmBb]?)\\s*(followers|likes|people follow|জন ফলোয়ার|follower)/i);
+          var fm = body.match(/([\\d,.]+[KkMmBb]?)\\s*(followers|likes|people follow|\u099c\u09a8 \u09ab\u09b2\u09cb\u09af\u09bc\u09be\u09b0|follower)/i);
           if (!fm) fm = body.match(/([\\d,.]+[KkMmBb]?)\\s*followers?\\s*[\\u2022\\/\\|\\-]\\s*(?:\\d+\\s*)?following/i);
           if (!fm) fm = body.match(/([\\d,.]+[KkMmBb]?)\\s*(?:\\w+\\s+)?(?:followers?|likes?)/i);
           if (!fm) { var fl = body.match(/(\\d[\\d,]*)\\s*(?:people|person)\\s+(?:follow|like)/i); if (fl) fm = fl; }
           // Fallback: extract followers from og:description (e.g. "Pearl Kingdom, Dhaka. 266,936 likes ...")
           if (!fm) { var ogd = (document.querySelector('meta[property="og:description"],meta[name="description"]') || {}).content || ''; var ofm = ogd.match(/([\\d,.]+[KkMmBb]?)\\s*(likes|followers)/i); if (ofm) fm = ofm; }
           // Fallback: extract followers from fullText (textContent with script/style stripped)
-          if (!fm) { var ftm = fullText.match(/([\\d,.]+[KkMmBb]?)\\s*(followers|likes|people follow|জন ফলোয়ার|follower)/i); if (ftm) fm = ftm; }
+          if (!fm) { var ftm = fullText.match(/([\\d,.]+[KkMmBb]?)\\s*(followers|likes|people follow|\u099c\u09a8 \u09ab\u09b2\u09cb\u09af\u09bc\u09be\u09b0|follower)/i); if (ftm) fm = ftm; }
           if (!fm) { var ftm = fullText.match(/([\\d,.]+[KkMmBb]?)\\s*followers?\\s*[\\u2022\\/\\|\\-]\\s*(?:\\d+\\s*)?following/i); if (ftm) fm = ftm; }
           if (!fm) { var ftm = fullText.match(/([\\d,.]+[KkMmBb]?)\\s*(?:\\w+\\s+)?(?:followers?|likes?)/i); if (ftm) fm = ftm; }
           if (fm) d.followers = fm[1];
 
-          // ── Email (extension approach: mailto: + contact sections + JSON scripts) ──
+          // \u2500\u2500 Email (extension approach: mailto: + contact sections + JSON scripts) \u2500\u2500
           var emailExcl = ['facebook.com', 'fb.com', 'sentry.io', 'example.com', '.png', '.jpg', '.svg', '.gif', 'w3.org', 'schema.org', 'google.com', 'googleapis.com', 'play.google', 'support.google', 'policies.google', 'developers.facebook', 'about.meta'];
           var emailRe = /[a-zA-Z0-9._%+\\-]+@[a-zA-Z0-9.\\-]+\\.[a-zA-Z]{2,}/g;
           var emailResults = [];
@@ -1683,7 +1683,7 @@ def _extract_facebook_page(fb_url):
             var m = raw.match(emailRe) || [];
             for (var sj = 0; sj < m.length; sj++) addEmail(m[sj]);
           }
-          // Page innerHTML (broader JSON search) — strips script tags first
+          // Page innerHTML (broader JSON search) \u2014 strips script tags first
           if (emailResults.length === 0) {
             try {
               var allScripts = document.querySelectorAll('script');
@@ -1712,7 +1712,7 @@ def _extract_facebook_page(fb_url):
           }
           if (emailResults.length > 0) d.email = emailResults[0];
 
-          // ── Phone (extension approach: tel: + contact sections + validation) ──
+          // \u2500\u2500 Phone (extension approach: tel: + contact sections + validation) \u2500\u2500
           function looksReal(s) {
             if (/^0{2,}/.test(s)) return false;
             if (/^(\\d)\\1+$/.test(s)) return false;
@@ -1770,7 +1770,7 @@ def _extract_facebook_page(fb_url):
           }
           if (phoneResults.length > 0) d.phone = phoneResults.join(', ');
 
-          // ── Website (extension approach: all links + JSON scripts + redirects) ──
+          // \u2500\u2500 Website (extension approach: all links + JSON scripts + redirects) \u2500\u2500
            var siteExcl = ['facebook.com','fb.com','fbcdn','instagram','twitter','youtube','whatsapp','wa.me','messenger','google','gmail','maps.google.com','google.com/maps','dms.net','m.me','mng.com','doubleclick.net','googlesyndication.com','googleadservices.com','msn.com','live.com','bing.com','yahoo.com','cnn.com','bbc.com','nypost.com','apple.com','microsoft.com','support.google','policies.google','play.google.com','developers.facebook','about.meta','news.'];
           function isExcluded(url) {
             try {
@@ -1787,7 +1787,7 @@ def _extract_facebook_page(fb_url):
               if (d.website) break;
             }
           }
-          // All links fallback — restrict to ProfileCards/about links only (avoid grabbing random post links)
+          // All links fallback \u2014 restrict to ProfileCards/about links only (avoid grabbing random post links)
           if (!d.website) {
             var scopedLinks = document.querySelectorAll('[data-pagelet="ProfileCards"] a[href], [data-pagelet="PageHeader"] a[href], [aria-label*="website" i] a[href], [aria-label*="Website" i]');
             for (var li = 0; li < scopedLinks.length; li++) {
@@ -1814,12 +1814,12 @@ def _extract_facebook_page(fb_url):
               if (m && m[1].indexOf('http') === 0 && !isExcluded(m[1])) { d.website = m[1]; d.has_website = true; break; }
             }
           }
-          // REMOVED fullText regex fallback for website — too noisy (grabbed random URLs like ncl.com, sky.com, msn.com from page body)
+          // REMOVED fullText regex fallback for website \u2014 too noisy (grabbed random URLs like ncl.com, sky.com, msn.com from page body)
 
-          // ── Address (extension approach: Google Maps links + structured patterns) ──
-          // Normalize: split text by separators so we never match across "Location A · Location B"
+          // \u2500\u2500 Address (extension approach: Google Maps links + structured patterns) \u2500\u2500
+          // Normalize: split text by separators so we never match across "Location A \u00b7 Location B"
           function splitSegments(s) {
-            return (s || '').split(/[·•|;]/).map(function(x) { return x.trim(); }).filter(function(x) { return x.length > 2; });
+            return (s || '').split(/[\u00b7\u2022|;]/).map(function(x) { return x.trim(); }).filter(function(x) { return x.length > 2; });
           }
           var bodySegs = splitSegments(body);
           var ftSegs = splitSegments(fullText);
@@ -1841,7 +1841,7 @@ def _extract_facebook_page(fb_url):
             }
             if (d.address) break;
           }
-          // Structured address pattern fallback — run on segments, never on joined text
+          // Structured address pattern fallback \u2014 run on segments, never on joined text
           if (!d.address) {
             var addrPatterns = [
               /(?:Road|House|Floor|Level|Lane|Street|Block|Sector|Building|Village|Thana|Upazila).{3,120}?(?:Dhaka|Chattogram|Chittagong|Sylhet|Khulna|Rajshahi|Barisal)/i,
@@ -1867,7 +1867,7 @@ def _extract_facebook_page(fb_url):
             if (!d.address) for (var si5 = 0; si5 < ogdSegs.length && !d.address; si5++) { var m3 = ogdSegs[si5].match(cityRe); if (m3) d.address = m3[0].trim(); }
           }
 
-          // Strategy 1: <time datetime="..."> elements (Facebook uses these — convert ISO to "X ago")
+          // Strategy 1: <time datetime="..."> elements (Facebook uses these \u2014 convert ISO to "X ago")
           if (!d.last_post_date) {
             var timeEls = document.querySelectorAll('time');
             for (var ti = 0; ti < timeEls.length; ti++) {
@@ -1893,7 +1893,7 @@ def _extract_facebook_page(fb_url):
                   else d.last_post_date = 'Just now';
                   break;
                 }
-                // ISO unparseable or too old — fall through to visible text strategy
+                // ISO unparseable or too old \u2014 fall through to visible text strategy
                 var visible = (timeEls[ti].textContent || '').trim();
                 if (visible && /\\d/.test(visible)) { d.last_post_date = visible; break; }
               }
@@ -1951,10 +1951,10 @@ def _extract_facebook_page(fb_url):
             var abbrRe = body.match(/\\b(?:just now|yesterday)\\b|\\b(\\d+)\\s*(s|sec|secs|second|seconds|m|min|mins|minute|minutes|h|hr|hrs|hour|hours|d|day|days|w|wk|wks|week|weeks|mo|mos|month|months|y|yr|yrs|year|years)\\b/gi);
             if (abbrRe && abbrRe.length) d.last_post_date = abbrRe[0];
           }
-          // Strategy 5: Bengali relative-time phrases (e.g. "২ ঘণ্টা আগে", "৩ দিন আগে")
+          // Strategy 5: Bengali relative-time phrases (e.g. "\u09e8 \u0998\u09a3\u09cd\u099f\u09be \u0986\u0997\u09c7", "\u09e9 \u09a6\u09bf\u09a8 \u0986\u0997\u09c7")
           if (!d.last_post_date) {
-            var bnRe = body.match(/\\d+\\s*(সেকেন্ড|মিনিট|ঘণ্টা|দিন|সপ্তাহ|মাস|বছর)\\s*(আগে|পূর্বে)/);
-            if (!bnRe) bnRe = fullText.match(/\\d+\\s*(সেকেন্ড|মিনিট|ঘণ্টা|দিন|সপ্তাহ|মাস|বছর)\\s*(আগে|পূর্বে)/);
+            var bnRe = body.match(/\\d+\\s*(\u09b8\u09c7\u0995\u09c7\u09a8\u09cd\u09a1|\u09ae\u09bf\u09a8\u09bf\u099f|\u0998\u09a3\u09cd\u099f\u09be|\u09a6\u09bf\u09a8|\u09b8\u09aa\u09cd\u09a4\u09be\u09b9|\u09ae\u09be\u09b8|\u09ac\u099b\u09b0)\\s*(\u0986\u0997\u09c7|\u09aa\u09c2\u09b0\u09cd\u09ac\u09c7)/);
+            if (!bnRe) bnRe = fullText.match(/\\d+\\s*(\u09b8\u09c7\u0995\u09c7\u09a8\u09cd\u09a1|\u09ae\u09bf\u09a8\u09bf\u099f|\u0998\u09a3\u09cd\u099f\u09be|\u09a6\u09bf\u09a8|\u09b8\u09aa\u09cd\u09a4\u09be\u09b9|\u09ae\u09be\u09b8|\u09ac\u099b\u09b0)\\s*(\u0986\u0997\u09c7|\u09aa\u09c2\u09b0\u09cd\u09ac\u09c7)/);
             if (bnRe) d.last_post_date = bnRe[0];
           }
           // Normalize abbreviated forms to readable "X hours/days ago" form
@@ -2014,7 +2014,7 @@ def _extract_facebook_page(fb_url):
         except Exception:
             pass  # HTML extraction is best-effort
 
-        # Visit /directory_contact_info FIRST — FB embeds WhatsApp phone link here (most reliable source)
+        # Visit /directory_contact_info FIRST \u2014 FB embeds WhatsApp phone link here (most reliable source)
         if not result.get('phone') or not result.get('email'):
             contact_info_url = fb_url.rstrip('/') + '/directory_contact_info'
             try:
@@ -2037,14 +2037,14 @@ def _extract_facebook_page(fb_url):
                     elif p.startswith('880') and not p.startswith('+'): p = '+' + p
                     if re.match(r'^\+?8801[3-9]\d{8}$', p): result['phone'] = p
             except Exception:
-                pass  # Contact info may not exist — best-effort
+                pass  # Contact info may not exist \u2014 best-effort
         # Visit About page for contact info (works for public pages)
         if not result.get('email') or not result.get('phone') or not result.get('address') or not result.get('website'):
             about_url = fb_url.rstrip('/') + '/about'
             try:
                 page.goto(about_url, timeout=10000, wait_until='domcontentloaded')
                 page.wait_for_timeout(2000)
-                # Click "Contact info" tab if present — many pages hide phone/email behind this
+                # Click "Contact info" tab if present \u2014 many pages hide phone/email behind this
                 try:
                     clicked = page.evaluate('''() => {
                         for (const el of document.querySelectorAll('span, a, div, [role="tab"]')) {
@@ -2094,7 +2094,7 @@ def _extract_facebook_page(fb_url):
                   }
 
            var exc = ['facebook','fb.com','fbcdn','instagram','twitter','youtube','whatsapp','wa.me','messenger','google','gmail','maps.google.com','google.com/maps','dms.net','m.me','mng.com','doubleclick.net','googlesyndication.com','googleadservices.com','msn.com','live.com','bing.com','yahoo.com','cnn.com','bbc.com','nypost.com','apple.com','microsoft.com','support.google','policies.google','play.google.com','developers.facebook','about.meta','news.','sky.com','sky.','skynews','nytimes.com','washingtonpost.com','foxnews.com','reuters.com','apnews.com','theguardian.com','huffpost.com','buzzfeed.com','dailymail.co.uk','usatoday.com','forbes.com','businessinsider.com','techcrunch.com','theverge.com','engadget.com','wired.com','mashable.com','cnet.com','zdnet.com','news.yahoo.com','akamaihd.net','cloudfront.net','amazonaws.com','googleusercontent.com','fbcdn.net','fbsbx.com','staticxx.com'];
-                  // Scope to official page info containers only — avoid grabbing random post links
+                  // Scope to official page info containers only \u2014 avoid grabbing random post links
                   var profileAnchors = document.querySelectorAll('[data-pagelet="ProfileCards"] a[href], [data-pagelet="PageHeader"] a[href], [aria-label*="website" i] a[href], [aria-label*="Website" i]');
                   for (var i = 0; i < profileAnchors.length; i++) {
                     var hf = profileAnchors[i].href;
@@ -2105,7 +2105,7 @@ def _extract_facebook_page(fb_url):
                       try { var p2 = new URL(hf); if (!exc.some(function(e) { return p2.hostname.indexOf(e) > -1; })) { d.website = p2.origin + p2.pathname; d.has_website = true; break; } } catch(e) {}
                     }
                   }
-                  // REMOVED body-text regex fallback for website on About page — too noisy (grabbed random URLs like ncl.com, sky.com, msn.com). Now only ProfileCards anchors above.
+                  // REMOVED body-text regex fallback for website on About page \u2014 too noisy (grabbed random URLs like ncl.com, sky.com, msn.com). Now only ProfileCards anchors above.
                   var am = body.match(/(?:Road|House|Floor|Level|Lane|Street|Block|Sector|Building|Village|Thana|Upazila).{5,120}(?:Dhaka|Chattogram|Chittagong|Sylhet|Khulna|Rajshahi|Barisal)/i);
                   if (!am) am = body.match(/(?:Gulshan|Banani|Mirpur|Uttara|Dhanmondi|Mohammadpur|Motijheel|Khilgaon|Badda|Bashundhara|Farmgate|Shyamoli|Lalmatia|Malibagh|Rampura|Wari|Jatrabari).{5,80}(?:Dhaka|Chattogram|Chittagong|Sylhet)/i);
                   if (!am) am = body.match(/(?:Panthapath|Kakrail|Shahbag|Kawran Bazar|Elephant Road|New Market|Azimpur|Green Road|Nikunja|Baridhara|Bonosree|Aftab Nagar).{5,60}(?:Dhaka|Chattogram)/i);
@@ -2123,7 +2123,7 @@ def _extract_facebook_page(fb_url):
                 if about_data.get('address') and not result.get('address'): result['address'] = about_data['address']
                 if about_data.get('category') and not result.get('category'): result['category'] = about_data['category']
             except Exception:
-                pass  # About page may be behind login — best-effort
+                pass  # About page may be behind login \u2014 best-effort
     except Exception as e:
         raise Exception(f'Extraction failed: {e}')
     finally:
@@ -2374,56 +2374,56 @@ class Handler(BaseHTTPRequestHandler):
         bm_js = f'''(function(){{
   var d={{url:window.location.href.split('?')[0].replace(/\\/+$/,'')}};
 
-  /* ── Business Name ── */
+  /* \u2500\u2500 Business Name \u2500\u2500 */
   var h=document.querySelector('[data-pagelet="ProfileHeader"],[data-pagelet="CommercialProfile"]');
   if(h){{var el=h.querySelector('h1,h2,strong');if(el)d.business_name=el.innerText.trim();}}
   if(!d.business_name){{var og=document.querySelector('meta[property="og:title"]');if(og)d.business_name=(og.getAttribute('content')||'').trim();}}
   if(!d.business_name){{var h1=document.querySelector('h1');if(h1)d.business_name=h1.innerText.trim();}}
   if(!d.business_name){{var t=document.title.replace(/ \\| Facebook$/,'').replace(/ - Facebook$/,'').trim();if(t&&!/^search/i.test(t))d.business_name=t;}}
 
-  /* ── Category ── */
+  /* \u2500\u2500 Category \u2500\u2500 */
   var cats=['Beauty Salon','Boutique','Clothing','Store','Shop','Restaurant','Cafe','Bakery','Jewelry','Skincare','Cosmetics','Fashion','Grocery','Pharmacy','Clinic','Fitness','Gym','Salon','Spa','Tailor','Studio'];
   var body=document.body.innerText||'';
   for(var i=0;i<cats.length;i++){{if(new RegExp('\\\\b'+cats[i]+'\\\\b','i').test(body)){{d.category=cats[i];break;}}}}
   if(!d.category){{var desc=document.querySelector('meta[property="og:description"]');if(desc){{var dc=desc.getAttribute('content')||'';for(var i=0;i<cats.length;i++){{if(new RegExp('\\\\b'+cats[i]+'\\\\b','i').test(dc)){{d.category=cats[i];break;}}}}}}}}
 
-  /* ── Followers ── */
-  var fm=body.match(/([\\d,.]+[KkMmBb]?)\\s*(followers|likes|people follow|জন ফলোয়ার|follower)/i);
+  /* \u2500\u2500 Followers \u2500\u2500 */
+  var fm=body.match(/([\\d,.]+[KkMmBb]?)\\s*(followers|likes|people follow|\u099c\u09a8 \u09ab\u09b2\u09cb\u09af\u09bc\u09be\u09b0|follower)/i);
   if(!fm)fm=body.match(/([\\d,.]+[KkMmBb]?)\\s*followers?\\s*[\\u2022\\/\\|\\-]\\s*(?:\\d+\\s*)?following/i);
   if(!fm)fm=body.match(/([\\d,.]+[KkMmBb]?)\\s*(?:\\w+\\s+)?(?:followers?|likes?)/i);
   if(fm)d.followers=fm[1];
   // Fallback: og:description (e.g. "Pearl Kingdom, Dhaka. 266,936 likes ...")
   if(!d.followers){{var ogd=(document.querySelector('meta[property="og:description"],meta[name="description"]')||{{}}).content||'';var ofm=ogd.match(/([\\d,.]+[KkMmBb]?)\\s*(likes|followers)/i);if(ofm)d.followers=ofm[1];}}
 
-  /* ── Email ── */
+  /* \u2500\u2500 Email \u2500\u2500 */
   var em=body.match(/[a-zA-Z0-9._%+\\-]+@[a-zA-Z0-9.\\-]+\\.[a-zA-Z]{{2,}}/g);
   if(em){{for(var i=0;i<em.length;i++){{if(!/(facebook|fb\\.com|sentry|example)/i.test(em[i])){{d.email=em[i];break;}}}}}}
 
-  /* ── Phone (BD format) ── */
+  /* \u2500\u2500 Phone (BD format) \u2500\u2500 */
   var ph=body.replace(/[\\s\\-\\(\\)\\.]/g,'').match(/(?:01[3-9]\\d{{8}}|\\+?8801[3-9]\\d{{8}})/);
   if(ph){{var p=ph[0];if(p.indexOf('+')!==0&&p.indexOf('880')===0)p='+'+p;else if(p.indexOf('01')===0)p='+880'+p.slice(1);d.phone=p;}}
 
-  /* ── Website ── */
+  /* \u2500\u2500 Website \u2500\u2500 */
   var excl=['facebook','fb\\.com','fbcdn','instagram','twitter','youtube','whatsapp','wa\\.me','messenger','google','gmail'];
   var links=document.querySelectorAll('a[href]');
   for(var i=0;i<links.length;i++){{var hf=links[i].href;if(hf.indexOf('l.facebook.com/l.php?u=')>-1){{var m=hf.match(/[?&]u=([^&]+)/);if(m){{try{{var u=decodeURIComponent(m[1]);var p=new URL(u);if(!excl.some(function(e){{return p.hostname.indexOf(e)>-1}})){{d.website=u;d.has_website=true;break;}}}}catch(e){{}}}}}}}}
-  /* REMOVED body-text regex fallback — too noisy (grabbed random URLs like ncl.com, sky.com, msn.com). Instagram typically provides website via external_url above. */
+  /* REMOVED body-text regex fallback \u2014 too noisy (grabbed random URLs like ncl.com, sky.com, msn.com). Instagram typically provides website via external_url above. */
 
-  /* ── Address ── */
+  /* \u2500\u2500 Address \u2500\u2500 */
   var am=body.match(/(?:Road|House|Floor|Level|Lane|Street|Block|Sector|Building|Village|Thana|Upazila).{{5,120}}(?:Dhaka|Chattogram|Chittagong|Sylhet|Khulna|Rajshahi|Barisal)/i);
   if(!am){{var ogd=(document.querySelector('meta[property="og:description"],meta[name="description"]')||{{}}).content||'';var am2=ogd.match(/(?:Shop|House|Building|Road|Block|Sector|Floor|Gulshan|Banani|Mirpur|Uttara|Dhanmondi|Bashundhara).{{3,90}}(?:Dhaka|Chattogram)/i);if(am2)am=am2;}}
   if(am)d.address=am[0].trim();
 
-  /* ── Last Post Date ── */
+  /* \u2500\u2500 Last Post Date \u2500\u2500 */
   var abbrs=document.querySelectorAll('abbr');
   for(var i=0;i<abbrs.length;i++){{var t=abbrs[i].getAttribute('aria-label')||abbrs[i].getAttribute('title')||abbrs[i].textContent||'';if(t&&!/notification/i.test(t)){{if(/\\b(?:about\\s+)?(?:\\d+|an?)\\s+(hours?|minutes?|days?|weeks?|months?|years?)\\s+ago\\b|^just now$/i.test(t)){{d.last_post_date=t;break;}}}}}}
   if(!d.last_post_date){{var timeEls=document.querySelectorAll('time');for(var ti=0;ti<timeEls.length;ti++){{var iso=timeEls[ti].getAttribute('datetime')||'';if(iso&&/\\d{{4}}/.test(iso)){{d.last_post_date=iso;break;}}}}}}
   if(!d.last_post_date){{var tm=body.match(/\\b(?:about\\s+)?(?:\\d+|an?)\\s+(hours?|minutes?|days?|weeks?|months?|years?)\\s+ago\\b|^just now$/gi);if(tm)d.last_post_date=tm[0];}}
   if(!d.last_post_date){{var abbrRe=body.match(/\\b(?:just now|yesterday)\\b|\\b(\\d+)\\s*(s|sec|secs|second|seconds|m|min|mins|minute|minutes|h|hr|hrs|hour|hours|d|day|days|w|wk|wks|week|weeks|mo|mos|month|months|y|yr|yrs|year|years)\\b/gi);if(abbrRe&&abbrRe.length)d.last_post_date=abbrRe[0];}}
-  if(!d.last_post_date){{var bnRe=body.match(/\\d+\\s*(সেকেন্ড|মিনিট|ঘণ্টা|দিন|সপ্তাহ|মাস|বছর)\\s*(আগে|পূর্বে)/);if(bnRe)d.last_post_date=bnRe[0];}}
+  if(!d.last_post_date){{var bnRe=body.match(/\\d+\\s*(\u09b8\u09c7\u0995\u09c7\u09a8\u09cd\u09a1|\u09ae\u09bf\u09a8\u09bf\u099f|\u0998\u09a3\u09cd\u099f\u09be|\u09a6\u09bf\u09a8|\u09b8\u09aa\u09cd\u09a4\u09be\u09b9|\u09ae\u09be\u09b8|\u09ac\u099b\u09b0)\\s*(\u0986\u0997\u09c7|\u09aa\u09c2\u09b0\u09cd\u09ac\u09c7)/);if(bnRe)d.last_post_date=bnRe[0];}}
   if(d.last_post_date){{var norm=d.last_post_date.trim().toLowerCase();var map={{'just now':'Just now','yesterday':'Yesterday'}};if(map[norm]){{d.last_post_date=map[norm];}}else{{var m=norm.match(/^(\\d+)\\s*([a-z]+)/);if(m){{var n=parseInt(m[1]);var unit=m[2];var unitMap={{s:'second',sec:'second',secs:'second',second:'second',seconds:'second',m:'minute',min:'minute',mins:'minute',minute:'minute',minutes:'minute',h:'hour',hr:'hour',hrs:'hour',hour:'hour',hours:'hour',d:'day',day:'day',days:'day',w:'week',wk:'week',wks:'week',week:'week',weeks:'week',mo:'month',mos:'month',month:'month',months:'month',y:'year',yr:'year',yrs:'year',year:'year',years:'year'}};var fullUnit=unitMap[unit]||unit;d.last_post_date=n+' '+fullUnit+(n===1?'':'s')+' ago';}}}}}}
 
-  /* ── Score ── */
+  /* \u2500\u2500 Score \u2500\u2500 */
   var sc=5;
   if(!d.has_website)sc++;
   if(d.phone)sc++;
@@ -2434,7 +2434,7 @@ class Handler(BaseHTTPRequestHandler):
   if(d.last_post_date){{var days=999;if(/just now|min|hour/i.test(d.last_post_date))days=0;else{{var nu=parseInt(d.last_post_date.match(/\\d+/)?.[0]||'0');if(/day/i.test(d.last_post_date))days=nu;else if(/week/i.test(d.last_post_date))days=nu*7;else if(/month/i.test(d.last_post_date))days=nu*30;else if(/year/i.test(d.last_post_date))days=nu*365;}}if(days>90)sc-=4;else if(days>50)sc-=2;}}
   d.qualification_score=Math.max(1,Math.min(10,sc));
 
-  /* ── Navigate ── */
+  /* \u2500\u2500 Navigate \u2500\u2500 */
   var enc=encodeURIComponent(JSON.stringify(d));
   window.location.href='{base}/extract?data='+enc;
 }})();'''
@@ -2511,7 +2511,7 @@ class Handler(BaseHTTPRequestHandler):
                 self._json(200, {'page_url': url})
             else:
                 self._json(404, {'error': 'No recent lead'})
-        # ── F-Commerce GET endpoints ────────────────────────────
+        # \u2500\u2500 F-Commerce GET endpoints \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
         elif parsed.path == '/api/fcommerce/leads':
             params = parse_qs(parsed.query)
             filters = {
@@ -2849,7 +2849,7 @@ class Handler(BaseHTTPRequestHandler):
             if not ok and is_admin:
                 ok, msg = trash_lead(page_url)
             if ok:
-                self._json(200, {'status': 'trashed', 'message': 'Moved to Trash — recoverable', 'page_url': page_url})
+                self._json(200, {'status': 'trashed', 'message': 'Moved to Trash \u2014 recoverable', 'page_url': page_url})
             else:
                 self._json(400, {'error': msg})
         elif parsed.path == '/api/lead/trash':
@@ -3005,7 +3005,7 @@ class Handler(BaseHTTPRequestHandler):
                     moved.append(url)
                 else:
                     failed.append({'page_url': url, 'reason': msg})
-            self._json(200, {'status': 'ok', 'deleted_count': len(moved), 'failed_count': len(failed), 'deleted': moved, 'failed': failed, 'note': 'Moved to Trash — recoverable from /trash'})
+            self._json(200, {'status': 'ok', 'deleted_count': len(moved), 'failed_count': len(failed), 'deleted': moved, 'failed': failed, 'note': 'Moved to Trash \u2014 recoverable from /trash'})
         elif parsed.path == '/api/lead/action':
             if data is None:
                 self._json(400, {'error': 'Invalid JSON'})
@@ -3029,13 +3029,13 @@ class Handler(BaseHTTPRequestHandler):
             if action == 'qualify':
                 ok, msg = update_lead_status(page_url, 'qualified', user_id=user['id'])
                 if ok:
-                    self._json(200, {'status': 'qualified', 'message': f'✅ {lead["business_name"]} qualified & saved to vault'})
+                    self._json(200, {'status': 'qualified', 'message': f'\u2705 {lead["business_name"]} qualified & saved to vault'})
                 else:
                     self._json(400, {'error': msg})
             elif action == 'disqualify':
                 ok, msg = delete_lead(page_url, user_id=user['id'])
                 if ok:
-                    self._json(200, {'status': 'deleted', 'message': f'❌ {lead["business_name"]} removed from leads'})
+                    self._json(200, {'status': 'deleted', 'message': f'\u274c {lead["business_name"]} removed from leads'})
                 else:
                     self._json(400, {'error': msg})
             elif action == 'demo':
@@ -3044,8 +3044,8 @@ class Handler(BaseHTTPRequestHandler):
                 cat = lead.get('category', '')
                 addr = lead.get('address', '')
                 _generate_and_send_demo(TELEGRAM_CHAT_ID, TELEGRAM_THREAD_ID, lead, n, p, cat, addr)
-                self._json(200, {'status': 'demo_generated', 'message': f'🌐 Demo for {n} sent to Dashboard'})
-        # ── F-Commerce POST / DELETE endpoints ──────────────────
+                self._json(200, {'status': 'demo_generated', 'message': f'\u1f310 Demo for {n} sent to Dashboard'})
+        # \u2500\u2500 F-Commerce POST / DELETE endpoints \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
         elif parsed.path == '/api/fcommerce/lead':
             if data is None:
                 self._json(400, {'error': 'Invalid JSON'})
@@ -3057,7 +3057,7 @@ class Handler(BaseHTTPRequestHandler):
                 self._json(400, {
                     'status': 'rejected',
                     'message': msg,
-                    'warning': 'Lead rejected — score below 6. Improve website status, followers, or post recency to qualify.'
+                    'warning': 'Lead rejected \u2014 score below 6. Improve website status, followers, or post recency to qualify.'
                 })
             elif ok:
                 self._json(201, {
@@ -3080,7 +3080,7 @@ class Handler(BaseHTTPRequestHandler):
                 self._json(200, {'status': 'deleted', 'message': msg})
             else:
                 self._json(400, {'error': msg})
-        # ── Lead Gen Outreach ─────────────────────────────────
+        # \u2500\u2500 Lead Gen Outreach \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
         elif parsed.path == '/api/outreach':
             if data is None:
                 self._json(400, {'error': 'Invalid JSON'})
@@ -3095,7 +3095,7 @@ class Handler(BaseHTTPRequestHandler):
             if intent:
                 print(f"  Intent provided: {intent}", flush=True)
             print(f"{'='*60}", flush=True)
-            # Parse + ask — do NOT auto-execute unless intent is clearly demo
+            # Parse + ask \u2014 do NOT auto-execute unless intent is clearly demo
             result = lead_gen_outreach.process_lead_init(text, intent=intent)
             if result.get('error') == 'NETLIFY_TOKEN_REQUIRED':
                 self._json(412, {'status': 'token_required', 'message': result.get('message', '')})
@@ -3154,7 +3154,7 @@ class Handler(BaseHTTPRequestHandler):
             if not url:
                 self._json(400, {'error': 'url is required'})
                 return
-            _tg_send(f"🔍 <b>Auditing website...</b>\n<code>{h(url)}</code>")
+            _tg_send(f"\u1f50d <b>Auditing website...</b>\n<code>{h(url)}</code>")
             audit = lead_gen_outreach.audit_website(url, coverage)
             name = data.get('name', url)
             msg = lead_gen_outreach.format_audit_result(name, audit)
@@ -3240,7 +3240,7 @@ class Handler(BaseHTTPRequestHandler):
                 self._json(400, {'error': 'Valid Facebook URL required'})
                 return
             try:
-                # Playwright only — fast (~30s). For missing fields, user clicks "Try Apify" or fills manual.
+                # Playwright only \u2014 fast (~30s). For missing fields, user clicks "Try Apify" or fills manual.
                 result = _extract_facebook_page(fb_url)
                 if result is not None:
                     result['source'] = 'playwright'
@@ -3248,7 +3248,7 @@ class Handler(BaseHTTPRequestHandler):
             except Exception as e:
                 self._json(500, {'ok': False, 'error': str(e)})
         elif parsed.path == '/api/extract-facebook/apify':
-            # Slower but more reliable — uses FB-internal API via Apify
+            # Slower but more reliable \u2014 uses FB-internal API via Apify
             if data is None:
                 self._json(400, {'error': 'Invalid JSON'})
                 return
@@ -3299,7 +3299,7 @@ class Handler(BaseHTTPRequestHandler):
                 self._json(200, {'ok': True, 'data': result})
             except Exception as e:
                 self._json(500, {'ok': False, 'error': str(e)})
-        # ── Auth POST endpoints ──────────────────────────────────
+        # \u2500\u2500 Auth POST endpoints \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
         elif parsed.path == '/api/auth/register':
             if data is None:
                 self._json(400, {'error': 'Invalid JSON'})
@@ -3677,7 +3677,7 @@ class Handler(BaseHTTPRequestHandler):
             self._json(404, {'error': 'Not found'})
 
 
-# ── Telegram Polling (incoming message handler) ──────────────────────
+# \u2500\u2500 Telegram Polling (incoming message handler) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 BOT_API = os.environ.get('TELEGRAM_BOT_API', 'http://localhost:8081/bot')
 _last_update_offset = 0
 
@@ -3773,8 +3773,8 @@ def get_today_leads():
     return [], None
 
 
-CIRCLED_NUMS = ['①', '②', '③', '④', '⑤', '⑥', '⑦', '⑧', '⑨', '⑩',
-                '⑪', '⑫', '⑬', '⑭', '⑮', '⑯', '⑰', '⑱', '⑲', '⑳']
+CIRCLED_NUMS = ['\u2460', '\u2461', '\u2462', '\u2463', '\u2464', '\u2465', '\u2466', '\u2467', '\u2468', '\u2469',
+                '\u246a', '\u246b', '\u246c', '\u246d', '\u246e', '\u246f', '\u2470', '\u2471', '\u2472', '\u2473']
 
 
 def _has_real_website(row):
@@ -3852,16 +3852,16 @@ def _parse_hunt_output(stdout):
             for p in s.split(' | '):
                 if p.strip().startswith('http'):
                     urls.append(p.strip().rstrip('/'))
-        elif any(k in s for k in ('Smart Hunt Complete', 'URLs found', 'Enriched', 'Saved leads', 'PREMIUM', 'HIGH', 'MEDIUM', 'Time', '🔥', '⭐', '🟡', '⏭')):
+        elif any(k in s for k in ('Smart Hunt Complete', 'URLs found', 'Enriched', 'Saved leads', 'PREMIUM', 'HIGH', 'MEDIUM', 'Time', '\u1f525', '\u2b50', '\u1f7e1', '\u23ed')):
             summary.append(s)
     result = '\n'.join(summary)
     if urls:
-        result += '\n\n' + '\n'.join(f'• {u}' for u in urls)
+        result += '\n\n' + '\n'.join(f'\u2022 {u}' for u in urls)
     return result if result else (stdout[:500] if stdout else 'No results.')
 
 
 def _run_hunt(cat, chat_id, thread_id, extra_args, count):
-    send_telegram_text(chat_id, thread_id, f"🔍 Hunting <b>{cat}</b> for {count} lead(s)...")
+    send_telegram_text(chat_id, thread_id, f"\u1f50d Hunting <b>{cat}</b> for {count} lead(s)...")
     cmd = [sys.executable, SMART_HUNT_SCRIPT, '--category', cat, '--count', str(count)]
     cmd += extra_args
     print(f"  Running: {' '.join(cmd)}", flush=True)
@@ -3871,9 +3871,9 @@ def _run_hunt(cat, chat_id, thread_id, extra_args, count):
         send_telegram_text(chat_id, thread_id, msg)
         _last_hunt_summary[(chat_id, thread_id)] = msg
     except subprocess.TimeoutExpired:
-        send_telegram_text(chat_id, thread_id, '⏱ Hunt timed out after 10 minutes.')
+        send_telegram_text(chat_id, thread_id, '\u23f1 Hunt timed out after 10 minutes.')
     except Exception as e:
-        send_telegram_text(chat_id, thread_id, f'❌ Hunt error: {e}')
+        send_telegram_text(chat_id, thread_id, f'\u274c Hunt error: {e}')
         print(f"  Hunt error: {e}", flush=True)
 
 
@@ -3897,11 +3897,11 @@ def handle_dashboard_message(chat_id, thread_id, text):
     # Greetings
     if re.match(r'^(?:hi|hello|hey|yo|assalamu|salam|sup|good\s+(?:morning|afternoon|evening))\b', text_clean):
         send_telegram_text(chat_id, thread_id,
-            "Hey! 👋 I can hunt leads by category, show today's finds, or export. "
+            "Hey! \u1f44b I can hunt leads by category, show today's finds, or export. "
             "Try \"find fashion leads\", \"how many today?\", or \"send csv\".")
         return
 
-    # Export intent: send/give/export (all/last N) leads (csv/xlsx) — no category mentioned
+    # Export intent: send/give/export (all/last N) leads (csv/xlsx) \u2014 no category mentioned
     export = re.match(r'(?:give|send|export|get)\s+(?:me\s+)?(?:all|the\s+)?(?:last\s+)?(\d+)?\s*leads?(?:\s*(?:in|to|as)\s*(?:csv|xlsx|excel|file))?\s*$', text_clean)
     if not export:
         export = re.match(r'(?:last\s+)?(\d+)?\s*leads?(?:\s*csv|xlsx)?\s*$', text_clean)
@@ -3914,12 +3914,12 @@ def handle_dashboard_message(chat_id, thread_id, text):
             return
         today = datetime.now().strftime('%Y-%m-%d')
         filename = f"leads_{today}.xlsx"
-        source_map = {'daily': '📋 Today\'s Qualified', 'qualified': '📋 Qualified Master', 'all': '📋 All Leads'}
-        caption = f"{source_map.get(source_label, '📊')} — Last {n} leads ({today})"
+        source_map = {'daily': '\u1f4cb Today\'s Qualified', 'qualified': '\u1f4cb Qualified Master', 'all': '\u1f4cb All Leads'}
+        caption = f"{source_map.get(source_label, '\u1f4ca')} \u2014 Last {n} leads ({today})"
         send_xlsx_document(chat_id, thread_id, xlsx_bytes, filename, caption)
         return
 
-    # Find/hunt/search [category] (leads) — triggers smart hunt
+    # Find/hunt/search [category] (leads) \u2014 triggers smart hunt
     hunt_cat = re.match(r'(?:find|hunt|search|look\s+for)\s+(?:me\s+)?(?:for\s+)?(.+?)\s*(?:leads?|business(?:es)?|pages?)?\s*$', text_clean)
     if not hunt_cat:
         hunt_cat = re.match(r'^(.+?)\s*leads?\s*$', text_clean)
@@ -3938,7 +3938,7 @@ def handle_dashboard_message(chat_id, thread_id, text):
                     break
         if resolved:
             _pending_hunt[(chat_id, thread_id)] = {'state': 'pick_count', 'cat': resolved, 'extra_args': []}
-            send_telegram_text(chat_id, thread_id, f"❓ How many <b>{CATEGORY_DISPLAY_NAMES.get(resolved, resolved)}</b> leads? (1-100)")
+            send_telegram_text(chat_id, thread_id, f"\u2753 How many <b>{CATEGORY_DISPLAY_NAMES.get(resolved, resolved)}</b> leads? (1-100)")
             return
         cats = sorted(CATEGORY_QUERIES.keys())
         lines = [f"{i}) {CATEGORY_DISPLAY_NAMES.get(c, c)}" for i, c in enumerate(cats, 1)]
@@ -3965,9 +3965,9 @@ def handle_dashboard_message(chat_id, thread_id, text):
     # Fallback
     send_telegram_text(chat_id, thread_id,
         f"Not sure about \"{h(text_raw[:50])}\". Try:\n"
-        f"• \"find fashion leads\" — hunt\n"
-        f"• \"how many today?\" — count\n"
-        f"• \"send csv\" — export")
+        f"\u2022 \"find fashion leads\" \u2014 hunt\n"
+        f"\u2022 \"how many today?\" \u2014 count\n"
+        f"\u2022 \"send csv\" \u2014 export")
 
 
 def poll_dashboard():
@@ -4002,7 +4002,7 @@ def poll_dashboard():
 
                 if cid == TELEGRAM_CHAT_ID and tid in (TELEGRAM_THREAD_ID, 382) and txt:
                     label = 'Dashboard' if tid == TELEGRAM_THREAD_ID else 'Lead Finder'
-                    print(f"  ← {label} message: {txt[:120]}", flush=True)
+                    print(f"  \u2190 {label} message: {txt[:120]}", flush=True)
                     handle_dashboard_message(cid, tid, txt)
 
         except requests.Timeout:
@@ -4063,5 +4063,5 @@ if __name__ == '__main__':
     try:
         server.serve_forever()
     except KeyboardInterrupt:
-        print('\nShutting down…', flush=True)
+        print('\nShutting down\u2026', flush=True)
         server.server_close()
