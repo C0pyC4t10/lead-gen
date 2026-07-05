@@ -3087,10 +3087,21 @@ class Handler(BaseHTTPRequestHandler):
                 self._json(400, {'error': 'Valid Facebook URL required'})
                 return
             try:
-                # Playwright only \u2014 fast (~30s). For missing fields, user clicks "Try Apify" or fills manual.
+                # Playwright first (fast, ~20-30s). If phone or email missing AND Apify key is set,
+                # automatically fall back to Apify to fill missing fields.
                 result = _extract_facebook_page(fb_url)
                 if result is not None:
                     result['source'] = 'playwright'
+                    missing = not result.get('phone') or not result.get('email')
+                    if missing and APIFY_API_KEY:
+                        apify_result = _extract_via_apify(fb_url, timeout=60)
+                        if apify_result:
+                            for f in ('phone', 'email', 'website', 'address', 'category', 'followers', 'business_name'):
+                                if not result.get(f) and apify_result.get(f):
+                                    result[f] = apify_result[f]
+                            if apify_result.get('website') and not result.get('website'):
+                                result['has_website'] = True
+                            result['source'] = 'playwright+apify'
                 self._json(200, {'ok': True, 'data': result})
             except Exception as e:
                 self._json(500, {'ok': False, 'error': str(e)})
