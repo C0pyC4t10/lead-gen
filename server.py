@@ -2584,6 +2584,16 @@ class Handler(BaseHTTPRequestHandler):
             user = require_auth(self)
             if not user: return
             self._json(200, user)
+        elif parsed.path == '/api/debug/sessions':
+            conn = sqlite3.connect(AUTH_DB_PATH, timeout=30)
+            conn.row_factory = sqlite3.Row
+            c = conn.cursor()
+            c.execute('SELECT * FROM sessions ORDER BY id DESC LIMIT 10')
+            rows = [dict(r) for r in c.fetchall()]
+            c.execute('SELECT COUNT(*) as cnt FROM sessions')
+            total = c.fetchone()['cnt']
+            conn.close()
+            self._json(200, {'total_sessions': total, 'sessions': rows, 'db_path': AUTH_DB_PATH})
         elif parsed.path == '/api/auth/leads-remaining':
             user = require_auth(self)
             if not user: return
