@@ -456,15 +456,15 @@
     </a>
     <div class="nav-links">
       <a href="/">Extract</a>
-      <a href="/leads.html">Leads</a>
-      <a href="/trash.html" id="trashNav">Trash <span id="trashBadge" style="display:none;background:#EF4444;color:#fff;font-size:10px;padding:1px 6px;border-radius:8px;margin-left:4px">0</span></a>
-      <a href="/pricing.html">Pricing</a>
+      <a href="/leads">Leads</a>
+      <a href="/trash" id="trashNav">Trash <span id="trashBadge" style="display:none;background:#EF4444;color:#fff;font-size:10px;padding:1px 6px;border-radius:8px;margin-left:4px">0</span></a>
+      <a href="/pricing">Pricing</a>
     </div>
     <div id="auth-nav">
-        <a href="/login.html" class="auth-btn" id="loginLink">Sign In</a>
+        <a href="/login" class="auth-btn" id="loginLink">Sign In</a>
         <span class="lead-badge" id="leadBadge" title="Leads used" style="display:none"></span>
-        <a href="/profile.html" class="avatar-circle" id="profileLink" style="display:none">S</a>
-        <a href="/admin.html" class="auth-btn" id="adminLink" style="display:none">Admin</a>
+        <a href="/profile" class="avatar-circle" id="profileLink" style="display:none">S</a>
+        <a href="/admin" class="auth-btn" id="adminLink" style="display:none">Admin</a>
         <button class="auth-btn" id="logoutBtn" style="display:none">Logout</button>
       </div>
     </div>
@@ -479,7 +479,7 @@
     <div id="proTeaser" class="pro-teaser">
       <h3>Unlock Unlimited Leads</h3>
       <p>You're on the Free plan (20 lifetime leads). Upgrade to Pro for unlimited extraction, LinkedIn scraping, bulk mode, and priority support.</p>
-      <a href="/pricing.html" class="pro-btn">See Plans &rarr;</a>
+      <a href="/pricing" class="pro-btn">See Plans &rarr;</a>
     </div>
 
     <div class="tab-bar">
@@ -1311,7 +1311,7 @@
         let result;
         try { result = await resp.json(); } catch (e) { result = {}; }
         if (resp.ok) {
-          showStatus('Moved ' + (result.moved_count || 0) + ' lead' + ((result.moved_count || 0) === 1 ? '' : 's') + ' to Trash · <a href="/trash.html" style="color:#00E5FF">View Trash</a>' + (result.failed_count ? ' (' + result.failed_count + ' failed)' : ''), 'success');
+          showStatus('Moved ' + (result.moved_count || 0) + ' lead' + ((result.moved_count || 0) === 1 ? '' : 's') + ' to Trash · <a href="/trash" style="color:#00E5FF">View Trash</a>' + (result.failed_count ? ' (' + result.failed_count + ' failed)' : ''), 'success');
           const sa = document.getElementById('selectAllHist');
           if (sa) sa.checked = false;
           loadHistory();
@@ -1871,7 +1871,7 @@
       let user;
       try { user = JSON.parse(localStorage.getItem('skarbol_user') || 'null'); } catch(e) { user = null; }
       if (!token) {
-        window.location.href = '/login.html?redirect=' + encodeURIComponent(window.location.pathname);
+        window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname);
         return;
       }
       fetch(API_BASE + '/api/auth/me', { headers: { 'Authorization': 'Bearer ' + token } })
@@ -1882,7 +1882,7 @@
         })
         .catch(() => {
           if (user && user.name) { renderLeadsAuth(user); return; }
-          window.location.href = '/login.html?redirect=' + encodeURIComponent(window.location.pathname);
+          window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname);
         });
     })();
 
