@@ -1098,15 +1098,33 @@ def _fcommerce_stats():
 # \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
 
 _PLAYWRIGHT_BROWSER = None
+_PLAYWRIGHT_INSTANCE = None
 
 
 def _get_browser():
-    global _PLAYWRIGHT_BROWSER
+    global _PLAYWRIGHT_BROWSER, _PLAYWRIGHT_INSTANCE
     if _PLAYWRIGHT_BROWSER is None:
         from playwright.sync_api import sync_playwright
-        p = sync_playwright().start()
-        _PLAYWRIGHT_BROWSER = p.chromium.launch(headless=True)
+        _PLAYWRIGHT_INSTANCE = sync_playwright().start()
+        _PLAYWRIGHT_BROWSER = _PLAYWRIGHT_INSTANCE.chromium.launch(
+            headless=True,
+            args=['--disable-blink-features=AutomationControlled']
+        )
+        print('[playwright] Browser launched', flush=True)
     return _PLAYWRIGHT_BROWSER
+
+
+def _new_page():
+    """Create a new browser context + page from the shared browser."""
+    browser = _get_browser()
+    ctx = browser.new_context(
+        user_agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36',
+        viewport={'width': 1920, 'height': 1080},
+        locale='en_US',
+    )
+    ctx.add_init_script(_stealth_init_script())
+    _apply_fb_cookies(ctx)
+    return ctx, ctx.new_page()
 
 
 _FB_COOKIES_CACHE = None
