@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+  <title>Scraven — Lead Extractor for Facebook & Instagram</title>
+  <meta name="description" content="Extract qualified business leads from Facebook & Instagram pages. Phone, email, website, followers, all in one click." />
+  <link rel="icon" type="image/svg+xml" href="assets/icon.svg" />
+  <link rel="icon" type="image/png" sizes="32x32" href="assets/icon32.png" />
+  <link rel="apple-touch-icon" href="assets/icon192.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    :focus-visible { outline: 3px solid rgba(0, 229, 255, 0.25); outline-offset: 2px; }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #050A14; color: #E2E8F0; font-size: 16px; line-height: 1.6;
+      min-height: 100vh; -webkit-font-smoothing: antialiased;
+    }
+
+    /* Nav */
+    .nav{width:100%;display:flex;align-items:center;gap:12px;padding:14px 24px;background:rgba(5,10,20,0.85);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);border-bottom:1px solid rgba(226,232,240,0.06);position:sticky;top:0;z-index:100}
+    .logo{display:flex;align-items:center;gap:10px;text-decoration:none;color:#F8FAFC;font-size:18px;font-weight:700;transition:transform .2s}
+    .logo:hover{transform:scale(1.03)}
+    .logo-icon{width:36px;height:36px;border-radius:10px;object-fit:contain;flex-shrink:0;display:block}
+    .brand-navy{color:#0A4FD9}
+    .brand-white{color:#F8FAFC}
+    .nav-links{display:flex;align-items:center;gap:8px;margin-left:auto}
+    .nav-links a{color:#94A3B8;text-decoration:none;font-size:14px;padding:8px 14px;border-radius:8px;transition:all .2s;font-weight:500}
+    .nav-links a:hover{color:#F8FAFC;background:rgba(148,163,184,0.08)}
+    .nav-links a.primary{background:linear-gradient(135deg,#0A4FD9,#00E5FF);color:#fff;font-weight:600}
+    .nav-links a.primary:hover{opacity:0.9}
+
+    /* Hero */
+    .hero{padding:60px 24px 40px;max-width:1280px;margin:0 auto}
+    .hero-grid{display:grid;grid-template-columns:1fr 1fr;gap:48px;align-items:center}
+    .hero-tag{display:inline-flex;align-items:center;gap:8px;padding:6px 14px;background:rgba(0,229,255,0.08);border:1px solid rgba(0,229,255,0.2);border-radius:999px;font-size:12px;font-weight:600;color:#00E5FF;margin-bottom:20px}
+    .hero-tag .dot{width:6px;height:6px;background:#00E5FF;border-radius:50%;box-shadow:0 0 8px #00E5FF}
+    .hero h1{font-size:56px;font-weight:800;line-height:1.05;letter-spacing:-1.5px;margin-bottom:20px;color:#F8FAFC}
+    .hero h1 .grad{background:linear-gradient(135deg,#0A4FD9,#00E5FF);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+    .hero p.lead{font-size:18px;color:#94A3B8;line-height:1.6;margin-bottom:32px;max-width:520px}
+    .hero-cta{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:32px}
+    .btn{padding:14px 28px;border-radius:10px;font-size:15px;font-weight:700;border:none;cursor:pointer;transition:all .2s;display:inline-flex;align-items:center;gap:8px;text-decoration:none;font-family:inherit}
+    .btn-glow{background:linear-gradient(135deg,#0A4FD9,#00E5FF);color:#fff;box-shadow:0 8px 24px rgba(10,79,217,0.3)}
+    .btn-glow:hover{transform:translateY(-1px);box-shadow:0 12px 28px rgba(10,79,217,0.4)}
+    .btn-ghost{background:transparent;color:#F8FAFC;border:1px solid rgba(226,232,240,0.15)}
+    .btn-ghost:hover{background:rgba(226,232,240,0.05);border-color:rgba(226,232,240,0.3)}
+    .hero-stats{display:flex;gap:32px;flex-wrap:wrap}
+    .stat{display:flex;flex-direction:column;gap:2px}
+    .stat-num{font-size:24px;font-weight:800;background:linear-gradient(135deg,#F8FAFC,#00E5FF);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+    .stat-label{font-size:12px;color:#64748B;font-weight:500;text-transform:uppercase;letter-spacing:0.5px}
+
+    /* Hero image */
+    .hero-image{position:relative;border-radius:16px;overflow:hidden;border:1px solid rgba(226,232,240,0.08);box-shadow:0 24px 64px rgba(0,0,0,0.4)}
+    .hero-image img{width:100%;height:auto;display:block}
+    .hero-image-glow{position:absolute;inset:0;background:radial-gradient(circle at 50% 50%, rgba(10,79,217,0.15), transparent 70%);pointer-events:none}
+
+    /* Features */
+    .features{padding:80px 24px;max-width:1280px;margin:0 auto}
+    .section-tag{text-align:center;font-size:12px;font-weight:700;color:#00E5FF;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:12px}
+    .section-title{text-align:center;font-size:42px;font-weight:800;color:#F8FAFC;margin-bottom:12px;letter-spacing:-0.5px}
+    .section-sub{text-align:center;font-size:17px;color:#94A3B8;max-width:600px;margin:0 auto 48px}
+    .feature-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+    .feature-card{background:rgba(14,24,37,0.6);border:1px solid rgba(226,232,240,0.08);border-radius:16px;padding:28px;transition:all .2s}
+    .feature-card:hover{border-color:rgba(0,229,255,0.3);transform:translateY(-2px)}
+    .feature-icon{width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,rgba(10,79,217,0.2),rgba(0,229,255,0.15));border:1px solid rgba(0,229,255,0.2);display:flex;align-items:center;justify-content:center;font-size:22px;margin-bottom:16px}
+    .feature-title{font-size:17px;font-weight:700;color:#F8FAFC;margin-bottom:8px}
+    .feature-desc{font-size:14px;color:#94A3B8;line-height:1.6}
+
+    /* CTA banner */
+    .cta-banner{margin:80px 24px;max-width:1232px;padding:60px 48px;border-radius:20px;background:linear-gradient(135deg,#0A4FD9,#0E3A9C);text-align:center;position:relative;overflow:hidden}
+    .cta-banner::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 80% 20%, rgba(0,229,255,0.3), transparent 50%);pointer-events:none}
+    .cta-banner h2{font-size:36px;font-weight:800;color:#fff;margin-bottom:12px;position:relative}
+    .cta-banner p{font-size:16px;color:rgba(255,255,255,0.85);margin-bottom:28px;position:relative;max-width:560px;margin-left:auto;margin-right:auto}
+    .cta-banner .btn{position:relative;background:#fff;color:#0A4FD9}
+    .cta-banner .btn:hover{background:#F8FAFC}
+
+    /* Footer */
+    .footer{text-align:center;padding:32px 24px 48px;font-size:13px;color:#475569}
+    .footer .brand-name{color:#64748B;font-weight:600}
+    .footer a{color:#00E5FF;text-decoration:none}
+
+    /* Responsive */
+    @media (max-width: 900px) {
+      .hero-grid{grid-template-columns:1fr;gap:32px}
+      .hero h1{font-size:40px}
+      .feature-grid{grid-template-columns:1fr}
+      .section-title{font-size:32px}
+      .cta-banner{padding:40px 24px;margin:60px 16px}
+      .cta-banner h2{font-size:26px}
+    }
+    @media (max-width: 600px) {
+      .nav{padding:10px 16px;flex-wrap:wrap;gap:8px}
+      .nav-links{gap:4px}
+      .nav-links a{font-size:13px;padding:6px 10px}
+      .hero{padding:32px 16px 24px}
+      .hero h1{font-size:32px;letter-spacing:-1px}
+      .hero p.lead{font-size:15px}
+      .hero-cta{flex-direction:column}
+      .hero-cta .btn{width:100%;justify-content:center}
+      .hero-stats{gap:20px}
+      .stat-num{font-size:18px}
+      .features{padding:48px 16px}
+      .cta-banner h2{font-size:22px}
+      .cta-banner p{font-size:14px}
+    }
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <a href="/" class="logo">
+      <img src="/assets/icon32.png" alt="Scraven" class="logo-icon">
+      <span><span class="brand-navy">Scra</span><span class="brand-white">ven</span></span>
+    </a>
+    <div class="nav-links">
+      <a href="/leads">Leads</a>
+      <a href="/pricing">Pricing</a>
+      <a href="/login" id="loginLink">Sign In</a>
+      <a href="/extract" id="extractLink" class="primary">Open App</a>
+    </div>
+  </nav>
+
+  <section class="hero">
+    <div class="hero-grid">
+      <div>
+        <div class="hero-tag"><span class="dot"></span> Built for Bangladesh SMEs</div>
+        <h1>Turn social pages into <span class="grad">qualified leads</span></h1>
+        <p class="lead">Extract phone, email, website, category, and followers from any Facebook or Instagram business page — in seconds, not hours.</p>
+        <div class="hero-cta">
+          <a href="/extract" class="btn btn-glow">Start Extracting →</a>
+          <a href="/pricing" class="btn btn-ghost">See Pricing</a>
+        </div>
+        <div class="hero-stats">
+          <div class="stat">
+            <div class="stat-num">2.4K+</div>
+            <div class="stat-label">Leads found</div>
+          </div>
+          <div class="stat">
+            <div class="stat-num">28</div>
+            <div class="stat-label">Categories</div>
+          </div>
+          <div class="stat">
+            <div class="stat-num">~20s</div>
+            <div class="stat-label">Per extraction</div>
+          </div>
+        </div>
+      </div>
+      <div class="hero-image">
+        <img src="/assets/hero.png" alt="Scraven extracts business data from social media pages" />
+        <div class="hero-image-glow"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="features">
+    <div class="section-tag">How it works</div>
+    <h2 class="section-title">One URL. Full lead profile.</h2>
+    <p class="section-sub">Paste a Facebook or Instagram page URL. Scraven handles the heavy lifting.</p>
+    <div class="feature-grid">
+      <div class="feature-card">
+        <div class="feature-icon">⚡</div>
+        <div class="feature-title">Headless Browser</div>
+        <div class="feature-desc">Custom Playwright engine with anti-detection. Pages render as if a real user is browsing — even on logged-out sessions.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🎯</div>
+        <div class="feature-title">Smart Qualification</div>
+        <div class="feature-desc">Every lead scored 1–10 based on contact completeness, engagement, and category fit. Skip low-quality prospects automatically.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🔌</div>
+        <div class="feature-title">Apify Fallback</div>
+        <div class="feature-desc">Optional integration with Apify's Facebook Pages Scraper for pages that resist direct extraction. You stay in control of token spend.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🍪</div>
+        <div class="feature-title">Cookie Auth</div>
+        <div class="feature-desc">Upload your Facebook session cookies and Scraven extracts as a logged-in user. Free, fast, no API costs.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">📊</div>
+        <div class="feature-title">Excel &amp; CSV Export</div>
+        <div class="feature-desc">Download your full vault as XLSX or CSV. Format-ready for outreach tools, CRMs, and team handoff.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">📣</div>
+        <div class="feature-title">Telegram Alerts</div>
+        <div class="feature-desc">Get a Telegram notification every time you save a high-value lead. Hand off to your sales team instantly.</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="cta-banner">
+    <h2>Ready to find your next 100 leads?</h2>
+    <p>Free tier includes 25 extractions per month. No credit card required.</p>
+    <a href="/register" class="btn">Create Free Account</a>
+  </section>
+
+  <div class="footer">
+    <span class="brand-name">Scraven</span> &mdash; The Hunter &middot; Powered by <a href="https://skarboltech.com" target="_blank">Skarbol Tech</a>
+  </div>
+
+  <script>
+    (async function() {
+      try {
+        const token = localStorage.getItem('skarbol_token');
+        const resp = await fetch(window.location.origin + '/api/auth/me', {
+          headers: token ? { 'Authorization': 'Bearer ' + token } : {}
+        });
+        const data = await resp.json();
+        if (data.ok && data.user) {
+          const loginLink = document.getElementById('loginLink');
+          if (loginLink) {
+            loginLink.textContent = data.user.name || 'Account';
+            loginLink.href = '/profile';
+          }
+          const extractLink = document.getElementById('extractLink');
+          if (extractLink) extractLink.textContent = 'Dashboard →';
+        }
+      } catch(_) {}
+    })();
+  </script>
+</body>
+</html>

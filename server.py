@@ -2432,7 +2432,9 @@ class Handler(BaseHTTPRequestHandler):
                 'netlify_token_configured': token_ok,
                 'telegram_configured': bool(TELEGRAM_TOKEN),
             })
-        elif parsed.path in ('/', '/extract'):
+        elif parsed.path == '/':
+            self._serve_static('index.html')
+        elif parsed.path == '/extract':
             self._serve_static('extract.html')
         elif parsed.path == '/leads':
             self._serve_static('leads.html')
