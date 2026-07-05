@@ -130,7 +130,7 @@ CATEGORY_ALIASES = {
     ],
     "footwear": [
         "shoe", "shoes", "footwear", "sandal", "sneaker", "boot",
-        "slipper", "loafer", "heel", "chappal", "joota", "জুতা",
+        "slipper", "loafer", "heel", "chappal", "joota", "\u099c\u09c1\u09a4\u09be",
     ],
     "baby_kids": [
         "baby", "kids", "children", "toddler", "infant", "maternity",
