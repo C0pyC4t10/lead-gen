@@ -1498,7 +1498,7 @@ def _extract_facebook_page(fb_url):
           if (!fm) { var ftm = fullText.match(/([\\d,.]+[KkMmBb]?)\\s*(?:\\w+\\s+)?(?:followers?|likes?)/i); if (ftm) fm = ftm; }
           if (fm) d.followers = fm[1];
 
-          var emailExcl = ['facebook.com', 'fb.com', 'sentry.io', 'example.com', '.png', '.jpg', '.svg', '.gif', 'w3.org', 'schema.org', 'google.com', 'googleapis.com', 'play.google', 'support.google', 'policies.google', 'developers.facebook', 'about.meta'];
+          var emailExcl = ['facebook.com', 'fb.com', 'sentry.io', 'example.com', '.png', '.jpg', '.svg', '.gif', 'w3.org', 'schema.org', 'google.com', 'googleapis.com', 'play.google', 'support.google', 'policies.google', 'developers.facebook', 'about.meta', 'meta.com', 'meta.ai'];
           var emailRe = /[a-zA-Z0-9._%+\\-]+@[a-zA-Z0-9.\\-]+\\.[a-zA-Z]{2,}/g;
           var emailResults = [];
           var emailSeen = {};
@@ -1599,7 +1599,7 @@ def _extract_facebook_page(fb_url):
           }
           if (phoneResults.length > 0) d.phone = phoneResults.join(', ');
 
-          var siteExcl = ['facebook.com','fb.com','fbcdn','instagram','twitter','youtube','whatsapp','wa.me','messenger','google','gmail','maps.google.com','google.com/maps','dms.net','m.me','mng.com','doubleclick.net','googlesyndication.com','googleadservices.com','msn.com','live.com','bing.com','yahoo.com','cnn.com','bbc.com','nypost.com','apple.com','microsoft.com','support.google','policies.google','play.google.com','developers.facebook','about.meta','meta.com','www.meta.com','news.'];
+          var siteExcl = ['facebook.com','fb.com','fbcdn','instagram','twitter','youtube','whatsapp','wa.me','messenger','google','gmail','maps.google.com','google.com/maps','dms.net','m.me','mng.com','doubleclick.net','googlesyndication.com','googleadservices.com','msn.com','live.com','bing.com','yahoo.com','cnn.com','bbc.com','nypost.com','apple.com','microsoft.com','support.google','policies.google','play.google.com','developers.facebook','about.meta','meta.com','www.meta.com','meta.ai','www.meta.ai','news.'];
           function isExcluded(url) {
             try {
               var u = new URL(url);
@@ -1901,7 +1901,7 @@ def _extract_facebook_page(fb_url):
                       if (d.email) break;
                     }
                   }
-                  var exc = ['facebook','fb.com','fbcdn','instagram','twitter','youtube','whatsapp','wa.me','messenger','google','gmail','maps.google.com','google.com/maps','dms.net','m.me','mng.com','doubleclick.net','googlesyndication.com','googleadservices.com','msn.com','live.com','bing.com','yahoo.com','cnn.com','bbc.com','nypost.com','apple.com','microsoft.com','support.google','policies.google','play.google.com','developers.facebook','about.meta','meta.com','www.meta.com','news.','sky.com','sky.','skynews','nytimes.com','washingtonpost.com','foxnews.com','reuters.com','apnews.com','theguardian.com','huffpost.com','buzzfeed.com','dailymail.co.uk','usatoday.com','forbes.com','businessinsider.com','techcrunch.com','theverge.com','engadget.com','wired.com','mashable.com','cnet.com','zdnet.com','news.yahoo.com','akamaihd.net','cloudfront.net','amazonaws.com','googleusercontent.com','fbcdn.net','fbsbx.com','staticxx.com'];
+                  var exc = ['facebook','fb.com','fbcdn','instagram','twitter','youtube','whatsapp','wa.me','messenger','google','gmail','maps.google.com','google.com/maps','dms.net','m.me','mng.com','doubleclick.net','googlesyndication.com','googleadservices.com','msn.com','live.com','bing.com','yahoo.com','cnn.com','bbc.com','nypost.com','apple.com','microsoft.com','support.google','policies.google','play.google.com','developers.facebook','about.meta','meta.com','www.meta.com','meta.ai','www.meta.ai','news.','sky.com','sky.','skynews','nytimes.com','washingtonpost.com','foxnews.com','reuters.com','apnews.com','theguardian.com','huffpost.com','buzzfeed.com','dailymail.co.uk','usatoday.com','forbes.com','businessinsider.com','techcrunch.com','theverge.com','engadget.com','wired.com','mashable.com','cnet.com','zdnet.com','news.yahoo.com','akamaihd.net','cloudfront.net','amazonaws.com','googleusercontent.com','fbcdn.net','fbsbx.com','staticxx.com'];
                   var profileAnchors = document.querySelectorAll('[data-pagelet="ProfileCards"] a[href], [data-pagelet="PageHeader"] a[href], [aria-label*="website" i] a[href], [aria-label*="Website" i]');
                   for (var i = 0; i < profileAnchors.length; i++) {
                     var hf = profileAnchors[i].href;
@@ -1963,7 +1963,7 @@ def _extract_facebook_page(fb_url):
                     em = re.findall(r'[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}', mbasic_text)
                     for e in em:
                         lo = e.lower()
-                        if any(x in lo for x in ['facebook.com', 'fb.com', 'sentry.io', 'example.com', 'meta.com', 'google.com', 'gmail.com']): continue
+                        if any(x in lo for x in ['facebook.com', 'fb.com', 'sentry.io', 'example.com', 'meta.com', 'meta.ai', 'google.com', 'gmail.com']): continue
                         result['email'] = e.lower()
                         break
                 if not result.get('website'):
