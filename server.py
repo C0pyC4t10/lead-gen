@@ -1907,7 +1907,7 @@ def _extract_facebook_page(fb_url):
                       if (d.email) break;
                     }
                   }
-                  var exc = ['facebook','fb.com','fbcdn','instagram','twitter','youtube','whatsapp','wa.me','messenger','google','gmail','maps.google.com','google.com/maps','dms.net','m.me','mng.com','doubleclick.net','googlesyndication.com','googleadservices.com','msn.com','live.com','bing.com','yahoo.com','cnn.com','bbc.com','nypost.com','apple.com','microsoft.com','support.google','policies.google','play.google.com','developers.facebook','about.meta','news.','sky.com','sky.','skynews','nytimes.com','washingtonpost.com','foxnews.com','reuters.com','apnews.com','theguardian.com','huffpost.com','buzzfeed.com','dailymail.co.uk','usatoday.com','forbes.com','businessinsider.com','techcrunch.com','theverge.com','engadget.com','wired.com','mashable.com','cnet.com','zdnet.com','news.yahoo.com','akamaihd.net','cloudfront.net','amazonaws.com','googleusercontent.com','fbcdn.net','fbsbx.com','staticxx.com'];
+                  var exc = ['facebook','fb.com','fbcdn','instagram','twitter','youtube','whatsapp','wa.me','messenger','google','gmail','maps.google.com','google.com/maps','dms.net','m.me','mng.com','doubleclick.net','googlesyndication.com','googleadservices.com','msn.com','live.com','bing.com','yahoo.com','cnn.com','bbc.com','nypost.com','apple.com','microsoft.com','support.google','policies.google','play.google.com','developers.facebook','about.meta','meta.com','www.meta.com','news.','sky.com','sky.','skynews','nytimes.com','washingtonpost.com','foxnews.com','reuters.com','apnews.com','theguardian.com','huffpost.com','buzzfeed.com','dailymail.co.uk','usatoday.com','forbes.com','businessinsider.com','techcrunch.com','theverge.com','engadget.com','wired.com','mashable.com','cnet.com','zdnet.com','news.yahoo.com','akamaihd.net','cloudfront.net','amazonaws.com','googleusercontent.com','fbcdn.net','fbsbx.com','staticxx.com'];
                   var profileAnchors = document.querySelectorAll('[data-pagelet="ProfileCards"] a[href], [data-pagelet="PageHeader"] a[href], [aria-label*="website" i] a[href], [aria-label*="Website" i]');
                   for (var i = 0; i < profileAnchors.length; i++) {
                     var hf = profileAnchors[i].href;
@@ -3094,8 +3094,8 @@ class Handler(BaseHTTPRequestHandler):
                 self._json(200, {'ok': True, 'data': result})
             except Exception as e:
                 self._json(500, {'ok': False, 'error': str(e)})
-        elif parsed.path == '/api/extract-facebook/apify':
-            # Slower but more reliable \u2014 uses FB-internal API via Apify
+elif parsed.path == '/api/extract-facebook/apify':
+            # Slower but more reliable — uses FB-internal API via Apify
             if data is None:
                 self._json(400, {'error': 'Invalid JSON'})
                 return
@@ -3103,9 +3103,12 @@ class Handler(BaseHTTPRequestHandler):
             if not fb_url or 'facebook.com' not in fb_url:
                 self._json(400, {'error': 'Valid Facebook URL required'})
                 return
+            if not APIFY_API_KEY:
+                self._json(503, {'ok': False, 'error': 'APIFY_API_KEY not set on server. Add it in Render dashboard → Environment.'})
+                return
             result = _extract_via_apify(fb_url, timeout=60)
             if result is None:
-                self._json(500, {'ok': False, 'error': 'Apify extraction failed or timed out'})
+                self._json(500, {'ok': False, 'error': 'Apify extraction failed or timed out. Check server logs.'})
                 return
             result['source'] = 'apify'
             self._json(200, {'ok': True, 'data': result})
