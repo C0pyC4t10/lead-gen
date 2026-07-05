@@ -2,7 +2,7 @@ import csv, html, io, json, os, sys, re, subprocess, threading, time, signal, sq
 import hashlib, secrets, smtplib, string
 from email.mime.text import MIMEText
 from datetime import datetime, timedelta
-from http.server import HTTPServer, BaseHTTPRequestHandler
+from http.server import ThreadingHTTPServer, BaseHTTPRequestHandler
 from urllib.parse import urlparse, parse_qs
 import requests
 import openpyxl
@@ -280,9 +280,13 @@ def create_session(user_id):
     if USE_MONGO:
         mongo_db.create_session(user_id, token)
     else:
-        from db import execute as _exec
-        _exec('INSERT INTO sessions (user_id, token, created_at) VALUES (?, ?, ?)',
-              (user_id, token, datetime.now().isoformat()))
+        from db import execute as _exec, AUTH_DB_PATH as _db_path
+        try:
+            _exec('INSERT INTO sessions (user_id, token, created_at) VALUES (?, ?, ?)',
+                  (user_id, token, datetime.now().isoformat()))
+            print(f"[auth] Session created: user={user_id} token={token[:16]}... db={_db_path}", flush=True)
+        except Exception as e:
+            print(f"[auth] Session CREATE failed: {e}", flush=True)
     return token
 
 def get_user_from_token(token):
@@ -303,25 +307,35 @@ def get_user_from_token(token):
             'subscription_tier': u.get('subscription_tier', 'free'),
         }
     from db import auth_conn, USE_POSTGRES
+    import db as _db_mod
+    _db_path = _db_mod.AUTH_DB_PATH
+    print(f"[auth] db.AUTH_DB_PATH={_db_path} exists={os.path.exists(_db_path)}", flush=True)
+    print(f"[auth] server.AUTH_DB_PATH={AUTH_DB_PATH} exists={os.path.exists(AUTH_DB_PATH)}", flush=True)
+    print(f"[auth] Same file? {os.path.exists(_db_path) and os.path.exists(AUTH_DB_PATH) and os.path.samefile(_db_path, AUTH_DB_PATH) if os.name != 'nt' else 'N/A'}", flush=True)
     cutoff_iso = (datetime.now() - timedelta(days=SESSION_EXPIRY_DAYS)).isoformat()
     row = None
     cols = None
-    with auth_conn() as conn:
-        c = conn.cursor()
-        if USE_POSTGRES:
-            c.execute("DELETE FROM sessions WHERE created_at < %s", (cutoff_iso,))
-        else:
-            cutoff_ts = datetime.now().timestamp() - SESSION_EXPIRY_DAYS * 86400
-            c.execute("DELETE FROM sessions WHERE CAST(strftime('%s', created_at) AS real) < ?", (cutoff_ts,))
-        c.execute('''SELECT u.id, u.name, u.email, u.role, u.created_at,
-                     COALESCE(u.email_verified, 0) AS email_verified,
-                     COALESCE(u.leads_used, 0) AS leads_used,
-                     COALESCE(u.subscription_tier, 'free') AS subscription_tier
-                     FROM users u JOIN sessions s ON u.id = s.user_id
-                     WHERE s.token = ?''', (token,))
-        row = c.fetchone()
-        if USE_POSTGRES and row:
-            cols = [d[0] for d in c.description]
+    try:
+        with auth_conn() as conn:
+            c = conn.cursor()
+            if USE_POSTGRES:
+                c.execute("DELETE FROM sessions WHERE created_at < %s", (cutoff_iso,))
+            else:
+                cutoff_ts = datetime.now().timestamp() - SESSION_EXPIRY_DAYS * 86400
+                c.execute("DELETE FROM sessions WHERE CAST(strftime('%s', created_at) AS real) < ?", (cutoff_ts,))
+            c.execute('''SELECT u.id, u.name, u.email, u.role, u.created_at,
+                         COALESCE(u.email_verified, 0) AS email_verified,
+                         COALESCE(u.leads_used, 0) AS leads_used,
+                         COALESCE(u.subscription_tier, 'free') AS subscription_tier
+                         FROM users u JOIN sessions s ON u.id = s.user_id
+                         WHERE s.token = ?''', (token,))
+            row = c.fetchone()
+            if USE_POSTGRES and row:
+                cols = [d[0] for d in c.description]
+            print(f"[auth] Session query: token={token[:16]}... row={'FOUND' if row else 'NOT FOUND'}", flush=True)
+    except Exception as e:
+        print(f"[auth] EXCEPTION in session query: {e}", flush=True)
+        return None
     if not row:
         return None
     if cols:
@@ -3445,8 +3459,10 @@ class Handler(BaseHTTPRequestHandler):
                 self._json(401, {'error': 'Invalid email or password'})
                 return
             _login_attempts.pop(client_ip, None)
+            print(f"[auth] LOGIN success: user={row[0]} email={email}", flush=True)
             token = create_session(row[0])
             conn.close()
+            print(f"[auth] Login response: token={token[:20]}... user={row[1]}", flush=True)
             self._json(200, {'token': token, 'user': {'id': row[0], 'name': row[1], 'email': row[2], 'role': row[3], 'email_verified': bool(row[6]), 'leads_used': row[7], 'subscription_tier': row[8]}})
         elif parsed.path == '/api/auth/refresh':
             user = require_auth(self)
@@ -4047,7 +4063,7 @@ if __name__ == '__main__':
         # polling_thread.start()
 
     port = int(os.environ.get('PORT', 8800))
-    server = HTTPServer(('0.0.0.0', port), Handler)
+    server = ThreadingHTTPServer(('0.0.0.0', port), Handler)
 
     def _shutdown(signum, frame):
         print(f'\nReceived signal {signum}, shutting down gracefully...', flush=True)
