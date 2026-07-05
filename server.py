@@ -275,21 +275,27 @@ def hash_password(password, salt=None):
 def verify_password(password, hash_val, salt):
     return hash_password(password, salt)[0] == hash_val
 
-def create_session(user_id):
+def create_session(user_id, conn=None):
     token = secrets.token_hex(32)
     if USE_MONGO:
         mongo_db.create_session(user_id, token)
     else:
         try:
-            conn = sqlite3.connect(AUTH_DB_PATH)
+            if conn is None:
+                conn = sqlite3.connect(AUTH_DB_PATH, timeout=30)
+                own_conn = True
+            else:
+                own_conn = False
             c = conn.cursor()
             c.execute('INSERT INTO sessions (user_id, token, created_at) VALUES (?, ?, ?)',
                       (user_id, token, datetime.now().isoformat()))
-            conn.commit()
-            conn.close()
+            if own_conn:
+                conn.commit()
+                conn.close()
             print(f"[auth] Session created: user={user_id} token={token[:16]}... path={AUTH_DB_PATH}", flush=True)
         except Exception as e:
             print(f"[auth] Session CREATE failed: {e}", flush=True)
+            return None
     return token
 
 def get_user_from_token(token):
@@ -310,7 +316,7 @@ def get_user_from_token(token):
             'subscription_tier': u.get('subscription_tier', 'free'),
         }
     try:
-        conn = sqlite3.connect(AUTH_DB_PATH)
+        conn = sqlite3.connect(AUTH_DB_PATH, timeout=30)
         conn.row_factory = sqlite3.Row
         c = conn.cursor()
         print(f"[auth] get_user_from_token: path={AUTH_DB_PATH} exists={os.path.exists(AUTH_DB_PATH)}", flush=True)
@@ -449,11 +455,11 @@ def send_telegram_notification(lead, action='saved'):
     if action == 'duplicate':
         action_emoji, action_text = "\u26a0\ufe0f", "Duplicate Lead Skipped"
     elif action == 'status_update':
-        action_emoji, action_text = "\u1f4cc", "Lead Status Updated"
+        action_emoji, action_text = "\U0001F4CC", "Lead Status Updated"
     elif action == 'qualified':
-        action_emoji, action_text = "\u1f525\u1f525\u1f525", "HOT LEAD QUALIFIED"
+        action_emoji, action_text = "\U0001F525\U0001F525\U0001F525", "HOT LEAD QUALIFIED"
     else:
-        action_emoji, action_text = "\u1f195", "New Lead Saved"
+        action_emoji, action_text = "\U0001F195", "New Lead Saved"
 
     fb = lead.get('followers', '') or '-'
     lpd = lead.get('last_post_date', '') or '-'
@@ -472,40 +478,40 @@ def send_telegram_notification(lead, action='saved'):
     trojan = detect_trojan_horse(lead.get('business_name', ''), lead.get('category', ''))
     trojan_line = ''
     if trojan and action not in ('status_update', 'qualified'):
-        trojan_line = f'\n\u1f3af Trojan Horse: <b>{trojan["product"]}</b> ({trojan["entry"]})'
+        trojan_line = f'\n\U0001F3AF Trojan Horse: <b>{trojan["product"]}</b> ({trojan["entry"]})'
     elif trojan and action in ('status_update', 'qualified'):
         if lead.get('status') == 'qualified':
-            trojan_line = f'\n\u1f3af Trojan Horse: <b>{trojan["product"]}</b> \u2014 pain: {trojan["pain"]}'
+            trojan_line = f'\n\U0001F3AF Trojan Horse: <b>{trojan["product"]}</b> \u2014 pain: {trojan["pain"]}'
 
     st = lead.get('status', 'new')
 
     def h(val):
         return html.escape(str(val) if val is not None else '')
 
-    file_info = f'\n\u1f4c1 File: {CSV_PATH}' if action == 'duplicate' else ''
-    qualified_footer = '\n\n\u1f4c2 Saved to: <b>qualified_leads/qualified_leads.csv</b>\n\u1f4de <b>Contact this lead NOW</b>' if action == 'qualified' else ''
+    file_info = f'\n\U0001F4C1 File: {CSV_PATH}' if action == 'duplicate' else ''
+    qualified_footer = '\n\n\U0001F4C2 Saved to: <b>qualified_leads/qualified_leads.csv</b>\n\U0001F4DE <b>Contact this lead NOW</b>' if action == 'qualified' else ''
 
-    platform_emoji = {'google_maps': '\u1f5fa\ufe0f', 'facebook': '\u1f4d8', 'instagram': '\u1f4f8', 'linkedin': '\u1f4bc'}.get(lead.get('platform', ''), '\u1f50d')
+    platform_emoji = {'google_maps': '\U0001F5FA\ufe0f', 'facebook': '\U0001F4D8', 'instagram': '\U0001F4F8', 'linkedin': '\U0001F4BC'}.get(lead.get('platform', ''), '\U0001F50D')
     source_line = f'\n{platform_emoji} Source: <b>{h(lead.get("platform", "unknown"))}</b>'
     saved_by = (lead.get('saved_by_user_name') or '').strip()
     _em_dash = '\u2014'
-    saved_by_line = f'\n\u1f464 Saved by: <b>{h(saved_by) or _em_dash}</b>' if saved_by else ''
-    _open_hours_prefix = '\u1f550 '
-    _last_post_prefix = '\u1f4c5 Last Post: '
+    saved_by_line = f'\n\U0001F464 Saved by: <b>{h(saved_by) or _em_dash}</b>' if saved_by else ''
+    _open_hours_prefix = '\U0001F550 '
+    _last_post_prefix = '\U0001F4C5 Last Post: '
 
     message = f"""{action_emoji} <b>{h(action_text)}</b>{source_line}{saved_by_line}
-\u1f3e2 <b>{h(lead.get('business_name', 'Unknown'))}</b>
-\u1f4ca Score: {score}/10 {star} | Status: <b>{h(st)}</b>
-\u1f4c2 Category: {h(lead.get('category', '-'))}
-\u1f465 Followers: {h(fb)}
-\u1f4de Phone: {h(lead.get('phone', 'Not found'))}
-\u1f4e7 Email: {h(lead.get('email', 'Not found'))}
-\u1f310 Website: {h(has_site)}{f' ({h(website)})' if website else ''}
-\u1f4cd Address: {h(addr)}
+\U0001F3E2 <b>{h(lead.get('business_name', 'Unknown'))}</b>
+\U0001F4CA Score: {score}/10 {star} | Status: <b>{h(st)}</b>
+\U0001F4C2 Category: {h(lead.get('category', '-'))}
+\U0001F465 Followers: {h(fb)}
+\U0001F4DE Phone: {h(lead.get('phone', 'Not found'))}
+\U0001F4E7 Email: {h(lead.get('email', 'Not found'))}
+\U0001F310 Website: {h(has_site)}{f' ({h(website)})' if website else ''}
+\U0001F4CD Address: {h(addr)}
 {_open_hours_prefix + h(open_state) + (' (' + h(hours_text) + ')' if hours_text else '') if lead.get('platform') == 'google_maps' and open_state else _last_post_prefix + h(lpd)}
-\u1f4dd Notes: {h(notes)}
-\u1f4cc Follow-up: {h(fud if fud else 'Not set')}
-\u1f517 {h(lead.get('page_url', ''))}{trojan_line}{file_info}{qualified_footer}"""
+\U0001F4DD Notes: {h(notes)}
+\U0001F4CC Follow-up: {h(fud if fud else 'Not set')}
+\U0001F517 {h(lead.get('page_url', ''))}{trojan_line}{file_info}{qualified_footer}"""
 
     if action == 'saved':
         message += "\n\n\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\n\u26a1 <b>Quick actions</b> \u2192 tell me: <i>qualify</i> / <i>disqualify</i> / <i>demo</i>"
@@ -958,7 +964,7 @@ def _generate_and_send_demo(chat_id, thread_id, lead_info, name, phone, category
     # Read JSON metadata for enriched caption
     caption_html = (
         f"\u2705 <b>Demo Ready: {h(name)}</b>\n"
-        f"\u1f517 Open HTML in browser or share PDF with client"
+        f"\U0001F517 Open HTML in browser or share PDF with client"
     )
 
     # Send HTML file
@@ -980,7 +986,7 @@ def _generate_and_send_demo(chat_id, thread_id, lead_info, name, phone, category
     if os.path.exists(pdf_path):
         try:
             with open(pdf_path, 'rb') as f:
-                doc_data = {"chat_id": chat_id, "caption": "\u1f4c4 <b>PDF version</b> \u2014 ready to share with client", "parse_mode": "HTML"}
+                doc_data = {"chat_id": chat_id, "caption": "\U0001F4C4 <b>PDF version</b> \u2014 ready to share with client", "parse_mode": "HTML"}
                 if thread_id:
                     doc_data["message_thread_id"] = thread_id
                 if reply_to:
@@ -1104,28 +1110,28 @@ def _send_fcommerce_telegram(lead):
 
     score = int(lead.get('qualification_score', 0))
     priority = lead.get('priority', '')
-    star = "\u1f525\u1f525\u1f525" if priority == 'HIGH' else ("\u1f525\u1f525" if priority == 'MEDIUM' else "\u2b50")
+    star = "\U0001F525\U0001F525\U0001F525" if priority == 'HIGH' else ("\U0001F525\U0001F525" if priority == 'MEDIUM' else "\u2b50")
     priority_box = (
         "\n\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\n"
-        f"<b>\u1f525 HIGH PRIORITY \u2014 CONTACT NOW</b>\n"
+        f"<b>\U0001F525 HIGH PRIORITY \u2014 CONTACT NOW</b>\n"
         f"<code>{FCOMMERCE_SALES_PITCH}</code>\n"
         "\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501"
     ) if priority == 'HIGH' else ''
 
-    message = f"""\u1f6d2 <b>F-Commerce Lead</b>
-\u1f3e2 <b>{hh(lead.get('business_name', 'Unknown'))}</b>
-\u1f4ca Score: {score}/10 {star} | Priority: <b>{hh(priority)}</b>
-\u1f4c2 Product: {hh(lead.get('product_categories', '-'))}
-\u1f465 Followers: {hh(lead.get('followers_int', '-'))}
-\u1f310 Has Website: {hh(lead.get('has_website', '-'))}
-\u1f4e6 Order Method: {hh(lead.get('order_method', '-'))}
-\u1f50d Source: {hh(lead.get('discovery_source', '-'))}
-\u1f4cd Address: {hh(lead.get('address', '-'))}
-\u1f4de Phone: {hh(lead.get('phone', 'Not found'))}
-\u1f4e7 Email: {hh(lead.get('email', 'Not found'))}
-\u1f3f7\ufe0f Opportunities: {hh(lead.get('opportunity_flags', '-'))}
-\u1f4dd Notes: {hh(lead.get('notes', ''))}
-\u1f517 {hh(lead.get('page_url', ''))}{priority_box}"""
+    message = f"""\U0001F6D2 <b>F-Commerce Lead</b>
+\U0001F3E2 <b>{hh(lead.get('business_name', 'Unknown'))}</b>
+\U0001F4CA Score: {score}/10 {star} | Priority: <b>{hh(priority)}</b>
+\U0001F4C2 Product: {hh(lead.get('product_categories', '-'))}
+\U0001F465 Followers: {hh(lead.get('followers_int', '-'))}
+\U0001F310 Has Website: {hh(lead.get('has_website', '-'))}
+\U0001F4E6 Order Method: {hh(lead.get('order_method', '-'))}
+\U0001F50D Source: {hh(lead.get('discovery_source', '-'))}
+\U0001F4CD Address: {hh(lead.get('address', '-'))}
+\U0001F4DE Phone: {hh(lead.get('phone', 'Not found'))}
+\U0001F4E7 Email: {hh(lead.get('email', 'Not found'))}
+\U0001F3F7\ufe0f Opportunities: {hh(lead.get('opportunity_flags', '-'))}
+\U0001F4DD Notes: {hh(lead.get('notes', ''))}
+\U0001F517 {hh(lead.get('page_url', ''))}{priority_box}"""
 
     payload = {
         "chat_id": TELEGRAM_CHAT_ID,
@@ -3050,7 +3056,7 @@ class Handler(BaseHTTPRequestHandler):
                 cat = lead.get('category', '')
                 addr = lead.get('address', '')
                 _generate_and_send_demo(TELEGRAM_CHAT_ID, TELEGRAM_THREAD_ID, lead, n, p, cat, addr)
-                self._json(200, {'status': 'demo_generated', 'message': f'\u1f310 Demo for {n} sent to Dashboard'})
+                self._json(200, {'status': 'demo_generated', 'message': f'\U0001F310 Demo for {n} sent to Dashboard'})
         # \u2500\u2500 F-Commerce POST / DELETE endpoints \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
         elif parsed.path == '/api/fcommerce/lead':
             if data is None:
@@ -3160,7 +3166,7 @@ class Handler(BaseHTTPRequestHandler):
             if not url:
                 self._json(400, {'error': 'url is required'})
                 return
-            _tg_send(f"\u1f50d <b>Auditing website...</b>\n<code>{h(url)}</code>")
+            _tg_send(f"\U0001F50D <b>Auditing website...</b>\n<code>{h(url)}</code>")
             audit = lead_gen_outreach.audit_website(url, coverage)
             name = data.get('name', url)
             msg = lead_gen_outreach.format_audit_result(name, audit)
@@ -3435,7 +3441,7 @@ class Handler(BaseHTTPRequestHandler):
             if not email or not password:
                 self._json(400, {'error': 'Email and password required'})
                 return
-            conn = sqlite3.connect(AUTH_DB_PATH)
+            conn = sqlite3.connect(AUTH_DB_PATH, timeout=30)
             c = conn.cursor()
             c.execute('SELECT id, name, email, role, password_hash, password_salt, COALESCE(email_verified, 0), COALESCE(leads_used, 0), COALESCE(subscription_tier, "free") FROM users WHERE email = ?', (email,))
             row = c.fetchone()
@@ -3449,7 +3455,13 @@ class Handler(BaseHTTPRequestHandler):
                 return
             _login_attempts.pop(client_ip, None)
             print(f"[auth] LOGIN success: user={row[0]} email={email}", flush=True)
-            token = create_session(row[0])
+            token = create_session(row[0], conn)
+            if not token:
+                conn.close()
+                print(f"[auth] Login FAILED: session creation returned None", flush=True)
+                self._json(500, {'error': 'Failed to create session'})
+                return
+            conn.commit()
             conn.close()
             print(f"[auth] Login response: token={token[:20]}... user={row[1]}", flush=True)
             self._json(200, {'token': token, 'user': {'id': row[0], 'name': row[1], 'email': row[2], 'role': row[3], 'email_verified': bool(row[6]), 'leads_used': row[7], 'subscription_tier': row[8]}})
@@ -3860,7 +3872,7 @@ def _parse_hunt_output(stdout):
             for p in s.split(' | '):
                 if p.strip().startswith('http'):
                     urls.append(p.strip().rstrip('/'))
-        elif any(k in s for k in ('Smart Hunt Complete', 'URLs found', 'Enriched', 'Saved leads', 'PREMIUM', 'HIGH', 'MEDIUM', 'Time', '\u1f525', '\u2b50', '\u1f7e1', '\u23ed')):
+        elif any(k in s for k in ('Smart Hunt Complete', 'URLs found', 'Enriched', 'Saved leads', 'PREMIUM', 'HIGH', 'MEDIUM', 'Time', '\U0001F525', '\u2b50', '\U0001F7E1', '\u23ed')):
             summary.append(s)
     result = '\n'.join(summary)
     if urls:
@@ -3869,7 +3881,7 @@ def _parse_hunt_output(stdout):
 
 
 def _run_hunt(cat, chat_id, thread_id, extra_args, count):
-    send_telegram_text(chat_id, thread_id, f"\u1f50d Hunting <b>{cat}</b> for {count} lead(s)...")
+    send_telegram_text(chat_id, thread_id, f"\U0001F50D Hunting <b>{cat}</b> for {count} lead(s)...")
     cmd = [sys.executable, SMART_HUNT_SCRIPT, '--category', cat, '--count', str(count)]
     cmd += extra_args
     print(f"  Running: {' '.join(cmd)}", flush=True)
@@ -3905,7 +3917,7 @@ def handle_dashboard_message(chat_id, thread_id, text):
     # Greetings
     if re.match(r'^(?:hi|hello|hey|yo|assalamu|salam|sup|good\s+(?:morning|afternoon|evening))\b', text_clean):
         send_telegram_text(chat_id, thread_id,
-            "Hey! \u1f44b I can hunt leads by category, show today's finds, or export. "
+            "Hey! \U0001F44B I can hunt leads by category, show today's finds, or export. "
             "Try \"find fashion leads\", \"how many today?\", or \"send csv\".")
         return
 
@@ -3922,8 +3934,8 @@ def handle_dashboard_message(chat_id, thread_id, text):
             return
         today = datetime.now().strftime('%Y-%m-%d')
         filename = f"leads_{today}.xlsx"
-        source_map = {'daily': '\u1f4cb Today\'s Qualified', 'qualified': '\u1f4cb Qualified Master', 'all': '\u1f4cb All Leads'}
-        _chart_emoji = '\u1f4ca'
+        source_map = {'daily': '\U0001F4CB Today\'s Qualified', 'qualified': '\U0001F4CB Qualified Master', 'all': '\U0001F4CB All Leads'}
+        _chart_emoji = '\U0001F4CA'
         caption = f"{source_map.get(source_label, _chart_emoji)} \u2014 Last {n} leads ({today})"
         send_xlsx_document(chat_id, thread_id, xlsx_bytes, filename, caption)
         return
