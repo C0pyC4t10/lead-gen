@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""build_demo.py — CLI wrapper to generate any category demo.
+"""build_demo.py \u2014 CLI wrapper to generate any category demo.
 
 Usage:
   python3 build_demo.py --category fashion --name "My Store" --phone 01712345678
