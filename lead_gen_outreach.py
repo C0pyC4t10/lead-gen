@@ -601,8 +601,9 @@ NAV_ITEMS = [
 def _build_header(name: str, phone: str, canonical: str, active: str) -> str:
     wa = clean_phone_for_whatsapp(phone)
     logo_svg = _build_logo_svg(canonical)
+    _active_cls = ' class="active"'
     nav_links = '\n'.join(
-        f'      <a href="{href}"{" class=\"active\"" if page == active else ""}>'
+        f'      <a href="{href}"{_active_cls if page == active else ""}>'
         f'<span class="lang-bn">{bn}</span><span class="lang-en">{en}</span></a>'
         for href, page, bn, en in NAV_ITEMS
     )

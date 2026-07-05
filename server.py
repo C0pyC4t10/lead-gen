@@ -485,7 +485,8 @@ def send_telegram_notification(lead, action='saved'):
     platform_emoji = {'google_maps': '\u1f5fa\ufe0f', 'facebook': '\u1f4d8', 'instagram': '\u1f4f8', 'linkedin': '\u1f4bc'}.get(lead.get('platform', ''), '\u1f50d')
     source_line = f'\n{platform_emoji} Source: <b>{h(lead.get("platform", "unknown"))}</b>'
     saved_by = (lead.get('saved_by_user_name') or '').strip()
-    saved_by_line = f'\n\u1f464 Saved by: <b>{h(saved_by) or "\u2014"}</b>' if saved_by else ''
+    _em_dash = '\u2014'
+    saved_by_line = f'\n\u1f464 Saved by: <b>{h(saved_by) or _em_dash}</b>' if saved_by else ''
 
     message = f"""{action_emoji} <b>{h(action_text)}</b>{source_line}{saved_by_line}
 \u1f3e2 <b>{h(lead.get('business_name', 'Unknown'))}</b>
@@ -3915,7 +3916,8 @@ def handle_dashboard_message(chat_id, thread_id, text):
         today = datetime.now().strftime('%Y-%m-%d')
         filename = f"leads_{today}.xlsx"
         source_map = {'daily': '\u1f4cb Today\'s Qualified', 'qualified': '\u1f4cb Qualified Master', 'all': '\u1f4cb All Leads'}
-        caption = f"{source_map.get(source_label, '\u1f4ca')} \u2014 Last {n} leads ({today})"
+        _chart_emoji = '\u1f4ca'
+        caption = f"{source_map.get(source_label, _chart_emoji)} \u2014 Last {n} leads ({today})"
         send_xlsx_document(chat_id, thread_id, xlsx_bytes, filename, caption)
         return
 
