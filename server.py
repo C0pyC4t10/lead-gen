@@ -3124,8 +3124,8 @@ class Handler(BaseHTTPRequestHandler):
                        now, now))
             user_id = c.lastrowid
             c.execute('INSERT INTO settings (user_id) VALUES (?)', (user_id,))
+            token = create_session(user_id, conn)
             conn.commit()
-            token = create_session(user_id)
             conn.close()
             if role != 'admin':
                 threading.Thread(target=send_verification_email, args=(email, code), daemon=True).start()
