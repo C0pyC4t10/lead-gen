@@ -283,44 +283,27 @@ def verify_password(password, hash_val, salt):
 
 def create_session(user_id, conn=None):
     token = secrets.token_hex(32)
-    if USE_MONGO:
-        mongo_db.create_session(user_id, token)
-    else:
-        try:
-            if conn is None:
-                conn = sqlite3.connect(AUTH_DB_PATH, timeout=30)
-                own_conn = True
-            else:
-                own_conn = False
-            c = conn.cursor()
-            c.execute('INSERT INTO sessions (user_id, token, created_at) VALUES (?, ?, ?)',
-                      (user_id, token, datetime.now().isoformat()))
-            if own_conn:
-                conn.commit()
-                conn.close()
-            print(f"[auth] Session created: user={user_id} token={token[:16]}... path={AUTH_DB_PATH}", flush=True)
-        except Exception as e:
-            print(f"[auth] Session CREATE failed: {e}", flush=True)
-            return None
+    try:
+        if conn is None:
+            conn = sqlite3.connect(AUTH_DB_PATH, timeout=30)
+            own_conn = True
+        else:
+            own_conn = False
+        c = conn.cursor()
+        c.execute('INSERT INTO sessions (user_id, token, created_at) VALUES (?, ?, ?)',
+                  (user_id, token, datetime.now().isoformat()))
+        if own_conn:
+            conn.commit()
+            conn.close()
+        print(f"[auth] Session created: user={user_id} token={token[:16]}... path={AUTH_DB_PATH}", flush=True)
+    except Exception as e:
+        print(f"[auth] Session CREATE failed: {e}", flush=True)
+        return None
     return token
 
 def get_user_from_token(token):
     if not token:
         return None
-    if USE_MONGO:
-        u = mongo_db.get_user_from_token(token)
-        if not u:
-            return None
-        return {
-            'id': str(u['_id']),
-            'name': u.get('name', ''),
-            'email': u.get('email', ''),
-            'role': u.get('role', 'user'),
-            'created_at': u.get('created_at', ''),
-            'email_verified': bool(u.get('email_verified', 0)),
-            'leads_used': u.get('leads_used', 0) or 0,
-            'subscription_tier': u.get('subscription_tier', 'free'),
-        }
     try:
         conn = sqlite3.connect(AUTH_DB_PATH, timeout=30)
         conn.execute('PRAGMA journal_mode=WAL')
