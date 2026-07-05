@@ -1097,21 +1097,28 @@ def _fcommerce_stats():
 
 # \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
 
-_PLAYWRIGHT_BROWSER = None
-_PLAYWRIGHT_INSTANCE = None
+_PLAYWRIGHT_LOCAL = threading.local()
 
 
 def _get_browser():
-    global _PLAYWRIGHT_BROWSER, _PLAYWRIGHT_INSTANCE
-    if _PLAYWRIGHT_BROWSER is None:
+    """Get the Playwright browser for the current thread.
+    Playwright's sync API is bound to the thread that started it
+    (greenlet issue), so each thread needs its own browser instance.
+    ThreadingHTTPServer reuses threads from a pool, so we get
+    one browser per worker thread.
+    """
+    browser = getattr(_PLAYWRIGHT_LOCAL, 'browser', None)
+    if browser is None:
         from playwright.sync_api import sync_playwright
-        _PLAYWRIGHT_INSTANCE = sync_playwright().start()
-        _PLAYWRIGHT_BROWSER = _PLAYWRIGHT_INSTANCE.chromium.launch(
+        instance = sync_playwright().start()
+        browser = instance.chromium.launch(
             headless=True,
             args=['--disable-blink-features=AutomationControlled']
         )
-        print('[playwright] Browser launched', flush=True)
-    return _PLAYWRIGHT_BROWSER
+        _PLAYWRIGHT_LOCAL.instance = instance
+        _PLAYWRIGHT_LOCAL.browser = browser
+        print('[playwright] Browser launched on thread', threading.get_ident(), flush=True)
+    return browser
 
 
 def _new_page():
@@ -3875,18 +3882,6 @@ if __name__ == '__main__':
     ensure_csv()
     init_auth_db()
     leads_db.init_db()
-
-    # Pre-warm Playwright browser so first extraction is fast
-    try:
-        from playwright.sync_api import sync_playwright
-        _PLAYWRIGHT_INSTANCE = sync_playwright().start()
-        _PLAYWRIGHT_BROWSER = _PLAYWRIGHT_INSTANCE.chromium.launch(
-            headless=True,
-            args=['--disable-blink-features=AutomationControlled']
-        )
-        print('[playwright] Browser pre-warmed for fast extraction', flush=True)
-    except Exception as e:
-        print(f'[playwright] Pre-warm failed: {e}', flush=True)
 
     # Register Telegram bot commands
     if TELEGRAM_TOKEN:
