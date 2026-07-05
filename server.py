@@ -265,6 +265,12 @@ SESSION_EXPIRY_DAYS = 30
 def init_auth_db():
     from db import init_auth_db as _init
     _init()
+    try:
+        conn = sqlite3.connect(AUTH_DB_PATH, timeout=30)
+        conn.execute('PRAGMA journal_mode=WAL')
+        conn.close()
+    except Exception:
+        pass
 
 def hash_password(password, salt=None):
     if salt is None:
@@ -317,31 +323,36 @@ def get_user_from_token(token):
         }
     try:
         conn = sqlite3.connect(AUTH_DB_PATH, timeout=30)
+        conn.execute('PRAGMA journal_mode=WAL')
         conn.row_factory = sqlite3.Row
         c = conn.cursor()
         print(f"[auth] get_user_from_token: path={AUTH_DB_PATH} exists={os.path.exists(AUTH_DB_PATH)}", flush=True)
-        cutoff_ts = datetime.now().timestamp() - SESSION_EXPIRY_DAYS * 86400
-        c.execute("DELETE FROM sessions WHERE CAST(strftime('%s', created_at) AS real) < ?", (cutoff_ts,))
-        c.execute('''SELECT u.id, u.name, u.email, u.role, u.created_at,
-                     COALESCE(u.email_verified, 0) AS email_verified,
-                     COALESCE(u.leads_used, 0) AS leads_used,
-                     COALESCE(u.subscription_tier, 'free') AS subscription_tier
-                     FROM users u JOIN sessions s ON u.id = s.user_id
-                     WHERE s.token = ?''', (token,))
+        c.execute("SELECT user_id, created_at FROM sessions WHERE token = ?", (token,))
+        srow = c.fetchone()
+        if srow is None:
+            conn.close()
+            print(f"[auth] Session NOT FOUND for token={token[:16]}...", flush=True)
+            return None
+        print(f"[auth] Session FOUND: user_id={srow['user_id']} created_at={srow['created_at']}", flush=True)
+        c.execute('''SELECT id, name, email, role, created_at,
+                     COALESCE(email_verified, 0) AS email_verified,
+                     COALESCE(leads_used, 0) AS leads_used,
+                     COALESCE(subscription_tier, 'free') AS subscription_tier
+                     FROM users WHERE id = ?''', (srow['user_id'],))
         row = c.fetchone()
-        conn.commit()
         conn.close()
-        print(f"[auth] Session query: token={token[:16]}... row={'FOUND' if row else 'NOT FOUND'}", flush=True)
+        if row is None:
+            print(f"[auth] User NOT FOUND for id={srow['user_id']}", flush=True)
+            return None
+        r = dict(row)
+        print(f"[auth] User FOUND: {r['name']} role={r['role']}", flush=True)
+        return {'id': r['id'], 'name': r['name'], 'email': r['email'], 'role': r['role'], 'created_at': r['created_at'],
+                'email_verified': bool(r['email_verified']), 'leads_used': r['leads_used'], 'subscription_tier': r['subscription_tier']}
     except Exception as e:
         print(f"[auth] EXCEPTION in session query: {e}", flush=True)
         import traceback
         traceback.print_exc()
         return None
-    if not row:
-        return None
-    r = dict(row)
-    return {'id': r['id'], 'name': r['name'], 'email': r['email'], 'role': r['role'], 'created_at': r['created_at'],
-            'email_verified': bool(r['email_verified']), 'leads_used': r['leads_used'], 'subscription_tier': r['subscription_tier']}
 
 def get_lead_limit(user):
     if not user:
