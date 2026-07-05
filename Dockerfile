@@ -15,12 +15,4 @@ COPY . .
 
 EXPOSE 8800
 
-CMD ["sh", "-c", "\
-  mkdir -p /app/data/collected_leads /app/data/qualified_leads /app/data/avatars && \
-  rm -rf /app/collected_leads /app/qualified_leads /app/avatars && \
-  ln -sf /app/data/collected_leads /app/collected_leads && \
-  ln -sf /app/data/qualified_leads /app/qualified_leads && \
-  ln -sf /app/data/avatars /app/avatars && \
-  touch /app/data/auth.db && \
-  ln -sf /app/data/auth.db /app/auth.db && \
-  python server.py"]
+CMD ["sh", "-c", "python server.py"]
