@@ -3090,50 +3090,48 @@ class Handler(BaseHTTPRequestHandler):
             if data is None:
                 self._json(400, {'error': 'Invalid JSON'})
                 return
-            name = data.get('name', '').strip()
-            email = data.get('email', '').strip().lower()
-            password = data.get('password', '')
-            if not name or not email or not password:
-                self._json(400, {'error': 'name, email, and password required'})
-                return
-            if len(password) < 6:
-                self._json(400, {'error': 'Password must be at least 6 characters'})
-                return
-            conn = sqlite3.connect(AUTH_DB_PATH)
-            c = conn.cursor()
-            c.execute('SELECT id FROM users WHERE email = ?', (email,))
-            if c.fetchone():
+            try:
+                name = data.get('name', '').strip()
+                email = data.get('email', '').strip().lower()
+                password = data.get('password', '')
+                if not name or not email or not password:
+                    self._json(400, {'error': 'name, email, and password required'})
+                    return
+                if len(password) < 6:
+                    self._json(400, {'error': 'Password must be at least 6 characters'})
+                    return
+                conn = sqlite3.connect(AUTH_DB_PATH, timeout=30)
+                c = conn.cursor()
+                c.execute('SELECT id FROM users WHERE email = ?', (email,))
+                if c.fetchone():
+                    conn.close()
+                    self._json(409, {'error': 'Email already registered'})
+                    return
+                h, salt = hash_password(password)
+                now = datetime.now().isoformat()
+                role = 'admin' if os.environ.get('ADMIN_EMAIL', '').lower() == email else 'user'
+                c.execute('''INSERT INTO users (name, email, password_hash, password_salt, role,
+                             email_verified, created_at, updated_at)
+                             VALUES (?, ?, ?, ?, ?, ?, ?, ?)''',
+                          (name, email, h, salt, role, 1, now, now))
+                user_id = c.lastrowid
+                c.execute('INSERT INTO settings (user_id) VALUES (?)', (user_id,))
+                token = create_session(user_id, conn)
+                if not token:
+                    conn.close()
+                    self._json(500, {'error': 'Failed to create session'})
+                    return
+                conn.commit()
                 conn.close()
-                self._json(409, {'error': 'Email already registered'})
-                return
-            h, salt = hash_password(password)
-            now = datetime.now().isoformat()
-            role = 'admin' if os.environ.get('ADMIN_EMAIL', '').lower() == email else 'user'
-            if role == 'admin':
-                code = 'verified'
-                exp = now
-            else:
-                code = ''.join(secrets.choice(string.digits) for _ in range(6))
-                exp = (datetime.now().timestamp() + 600)
-            c.execute('''INSERT INTO users (name, email, password_hash, password_salt, role,
-                         email_verified, verification_code, verification_expires, created_at, updated_at)
-                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
-                      (name, email, h, salt, role,
-                       1 if role == 'admin' else 0,
-                       code, str(exp) if role != 'admin' else '',
-                       now, now))
-            user_id = c.lastrowid
-            c.execute('INSERT INTO settings (user_id) VALUES (?)', (user_id,))
-            token = create_session(user_id, conn)
-            conn.commit()
-            conn.close()
-            if role != 'admin':
-                threading.Thread(target=send_verification_email, args=(email, code), daemon=True).start()
-            self._json(201, {'token': token,
-                             'user': {'id': user_id, 'name': name, 'email': email, 'role': role,
-                                      'email_verified': role == 'admin'},
-                             'verification_sent': role != 'admin',
-                             'message': 'Account created. Please verify your email.' if role != 'admin' else 'Account created.'})
+                self._json(201, {'token': token,
+                                 'user': {'id': user_id, 'name': name, 'email': email, 'role': role,
+                                          'email_verified': True},
+                                 'message': 'Account created.'})
+            except Exception as e:
+                print(f"[auth] Register failed: {e}", flush=True)
+                import traceback
+                traceback.print_exc()
+                self._json(500, {'error': 'Registration failed'})
         elif parsed.path == '/api/auth/verify-email':
             if data is None:
                 self._json(400, {'error': 'Invalid JSON'})
