@@ -64,6 +64,9 @@
     @media(max-width:600px){.nav{flex-wrap:wrap;gap:8px;padding:8px 12px}.nav-links{flex-wrap:wrap;gap:4px}.nav-links a,.nav-links button{font-size:12px;padding:6px 10px}.auth-btn{font-size:12px!important;padding:6px 10px!important}}
     @media(max-width:480px){.nav{flex-wrap:wrap;gap:6px;padding:8px 12px}.nav-links{flex-wrap:wrap;gap:4px}.nav-links a,.nav-links button{font-size:11px;padding:4px 8px}.auth-btn{font-size:11px!important;padding:4px 8px!important}}
     @media(max-width:360px){.nav-links a,.nav-links button{font-size:10px;padding:3px 6px}.auth-btn{font-size:10px!important;padding:3px 6px!important}.logo-icon{width:28px;height:28px}.logo span{font-size:14px}}
+  
+    .footer { text-align: center; padding: 32px 0 24px; font-size: 12px; color: #475569; }
+    .footer .brand-name { color: #64748B; }
   </style>
 </head>
 <body>
@@ -291,5 +294,8 @@
   </script>
   <script>document.querySelectorAll('.nav-links > a').forEach(function(a){var h=a.getAttribute('href');if(h===location.pathname||(h!=='/'&&location.pathname.startsWith(h))){a.style.color='#F8FAFC';a.style.background='rgba(148,163,184,0.08)';a.style.fontWeight='600'}})</script>
 <script src="/assets/scraven-modal.js"></script>
+  <div class="footer">
+      <span class="brand-name">Scraven</span> &mdash; The Hunter &middot; Powered by <a href="https://skarboltech.com" target="_blank" style="color:#00E5FF;text-decoration:none">Skarbol Tech</a>
+    </div>
 </body>
 </html>

@@ -179,6 +179,9 @@
     .lead-badge.warning{color:#FBBF24;border-color:rgba(251,191,36,0.2);background:rgba(251,191,36,0.08)}
     .lead-badge.danger{color:#EF4444;border-color:rgba(239,68,68,0.2);background:rgba(239,68,68,0.08)}
     .lead-badge.unlimited{color:#10B981;border-color:rgba(16,185,129,0.2);background:rgba(16,185,129,0.08)}
+  
+    .footer { text-align: center; padding: 32px 0 24px; font-size: 12px; color: #475569; }
+    .footer .brand-name { color: #64748B; }
   </style>
 </head>
 <body>
@@ -663,5 +666,8 @@
     })();
   </script>
   <script>document.querySelectorAll('.nav-links > a').forEach(function(a){var h=a.getAttribute('href');if(h===location.pathname||(h!=='/'&&location.pathname.startsWith(h))){a.style.color='#F8FAFC';a.style.background='rgba(148,163,184,0.08)';a.style.fontWeight='600'}})</script>
+  <div class="footer">
+      <span class="brand-name">Scraven</span> &mdash; The Hunter &middot; Powered by <a href="https://skarboltech.com" target="_blank" style="color:#00E5FF;text-decoration:none">Skarbol Tech</a>
+    </div>
 </body>
 </html>

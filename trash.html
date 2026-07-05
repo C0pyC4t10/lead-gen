@@ -6,7 +6,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
-  <title>Trash — Skarbol Lead Gen</title>
+  <title>Scraven — Trash</title>
   <link rel="icon" type="image/svg+xml" href="assets/icon.svg" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -23,7 +23,7 @@
     .nav{width:100%;display:flex;align-items:center;gap:12px;padding:12px 24px;background:rgba(5,10,20,0.8);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);border-bottom:1px solid rgba(226,232,240,0.06);position:sticky;top:0;z-index:100}
     .logo{display:flex;align-items:center;gap:10px;text-decoration:none;color:#F8FAFC;font-size:18px;font-weight:700;transition:transform .2s}
     .logo:hover{transform:scale(1.03)}
-    .logo-icon{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#EF4444,#F59E0B);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;color:#fff;flex-shrink:0}
+    .logo-icon{width:36px;height:36px;border-radius:10px;object-fit:contain;flex-shrink:0;display:block}
     .nav-links{display:flex;align-items:center;gap:12px}
     .nav-links a,.nav-links button{color:#94A3B8;text-decoration:none;font-size:14px;padding:8px 14px;border-radius:8px;transition:all .2s;background:none;border:none;cursor:pointer;font-family:inherit}
     .nav-links a:hover,.nav-links button:hover{color:#F8FAFC;background:rgba(148,163,184,0.08)}
@@ -86,13 +86,16 @@
     .checkbox-cell input{width:16px;height:16px;cursor:pointer;accent-color:#00E5FF}
     .info-banner{margin-top:16px;padding:12px 16px;background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.25);border-radius:8px;font-size:12px;color:#FCD34D}
     @media(max-width:700px){.container{padding:16px 12px 40px}.page-title{font-size:24px}.actions-row{flex-direction:column;align-items:stretch}.actions-row .right{justify-content:flex-start}}
+  
+    .footer { text-align: center; padding: 32px 0 24px; font-size: 12px; color: #475569; }
+    .footer .brand-name { color: #64748B; }
   </style>
 </head>
 <body>
   <nav class="nav">
     <a href="/" class="logo">
-      <div class="logo-icon">🗑</div>
-      <span>Trash</span>
+      <img src="/assets/icon32.png" alt="Scraven" class="logo-icon">
+      <span>Scraven</span>
     </a>
     <div class="nav-links">
       <a href="/">Extract</a>
@@ -112,7 +115,7 @@
   <div class="container">
     <div class="page-header">
       <div>
-        <div class="page-title">🗑 Trash</div>
+        <div class="page-title">Trash</div>
         <div class="page-sub">Deleted leads are kept here. You can recover them back to your vault or permanently delete them.</div>
       </div>
       <div class="stat-pill" id="trashCount">0 leads</div>
@@ -350,5 +353,8 @@
     loadTrash();
   </script>
 <script src="/assets/scraven-modal.js"></script>
+  <div class="footer">
+      <span class="brand-name">Scraven</span> &mdash; The Hunter &middot; Powered by <a href="https://skarboltech.com" target="_blank" style="color:#00E5FF;text-decoration:none">Skarbol Tech</a>
+    </div>
 </body>
 </html>
