@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate a Branded Demo PDF for Test Bakery & Cafe — ExecERP Inventory Module Trojan Horse."""
+"""Generate a Branded Demo PDF for Test Bakery & Cafe \u2014 ExecERP Inventory Module Trojan Horse."""
 
 import os
 from weasyprint import HTML
@@ -384,7 +384,7 @@ def build_html():
 
 <hr>
 
-<!-- ====== TROJAN HORSE — INVENTORY MODULE ====== -->
+<!-- ====== TROJAN HORSE \u2014 INVENTORY MODULE ====== -->
 <h2>&#128220; The Strategy: ExecERP Inventory Module</h2>
 
 <div class="trojan-box">
@@ -603,4 +603,4 @@ if __name__ == '__main__':
     html_content = build_html()
     out_path = os.path.join(OUT_DIR, "Test_Bakery_Cafe_Demo.pdf")
     HTML(string=html_content).write_pdf(out_path)
-    print(f"✅ Demo PDF generated: {out_path}")
+    print(f"\u2705 Demo PDF generated: {out_path}")
