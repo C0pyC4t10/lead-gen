@@ -8,17 +8,7 @@ import requests
 import openpyxl
 from openpyxl.styles import Alignment
 
-# MongoDB + Cloudinary storage layer
-try:
-    import mongo_db
-    import cloudinary_storage
-except ImportError:
-    mongo_db = None
-    cloudinary_storage = None
-USE_MONGO = False
-import leads_db
-
-# Load .env (force override shell env so .env values always win)
+# Load .env FIRST so mongo_db picks up MONGODB_URI/MONGODB_DB at import time.
 env_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '.env')
 if os.path.exists(env_path):
     with open(env_path) as f:
@@ -27,6 +17,84 @@ if os.path.exists(env_path):
             if line and not line.startswith('#') and '=' in line:
                 k, v = line.split('=', 1)
                 os.environ[k.strip()] = v.strip()
+
+# MongoDB + Cloudinary storage layer (must come after .env load)
+try:
+    import mongo_db
+    import cloudinary_storage
+except ImportError:
+    mongo_db = None
+    cloudinary_storage = None
+import leads_db
+
+# Auto-detect: use MongoDB if MONGODB_URI is present (Render envs set it).
+USE_MONGO = bool(mongo_db and os.environ.get('MONGODB_URI', '').strip())
+
+
+def _mongo_alive():
+    """True only if the Mongo client is reachable. False-safe."""
+    if not USE_MONGO or mongo_db is None:
+        return False
+    try:
+        return mongo_db.get_db() is not None
+    except Exception:
+        return False
+
+
+def _backfill_mongo_from_csv():
+    """One-time: if Mongo is empty and collected_leads/leads.csv has data, seed it."""
+    if not _mongo_alive():
+        return
+    try:
+        db = mongo_db.get_db()
+        if db.leads.count_documents({}) > 0:
+            print('[mongo-backfill] leads collection already populated — skipping', flush=True)
+            return
+        csv_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'collected_leads', 'leads.csv')
+        if not os.path.exists(csv_path):
+            print('[mongo-backfill] no CSV found, nothing to seed', flush=True)
+            return
+        added = 0
+        with open(csv_path, 'r', encoding='utf-8') as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                page_url = (row.get('page_url') or '').strip()
+                if not page_url:
+                    continue
+                # Idempotent by (page_url, saved_by_user_id=None)
+                existing = db.leads.find_one({'page_url': page_url, 'saved_by_user_id': None, 'deleted_at': None})
+                if existing:
+                    continue
+                doc = {
+                    'date': row.get('date') or '',
+                    'platform': row.get('platform') or 'facebook',
+                    'business_name': row.get('business_name') or '',
+                    'page_url': page_url,
+                    'category': row.get('category') or '',
+                    'followers': str(row.get('followers') or ''),
+                    'email': row.get('email') or '',
+                    'phone': row.get('phone') or '',
+                    'website': row.get('website') or '',
+                    'has_website': row.get('has_website') or '',
+                    'address': row.get('address') or '',
+                    'last_post_date': row.get('last_post_date') or '',
+                    'qualification_score': str(row.get('qualification_score') or ''),
+                    'status': row.get('status') or 'new',
+                    'notes': row.get('notes') or '',
+                    'follow_up_date': row.get('follow_up_date') or '',
+                    'open_state': row.get('open_state') or '',
+                    'hours_text': row.get('hours_text') or '',
+                    'deleted_at': None,
+                    'saved_by_user_id': None,
+                    'saved_by_user_name': row.get('saved_by_user_name') or 'csv-import',
+                    'created_at': row.get('date') or mongo_db.now_iso(),
+                }
+                db.leads.insert_one(doc)
+                added += 1
+        print(f'[mongo-backfill] seeded {added} leads from CSV into MongoDB', flush=True)
+    except Exception as e:
+        print(f'[mongo-backfill] failed: {e}', flush=True)
+
 
 GMAIL_USER = os.environ.get('GMAIL_USER', '')
 GMAIL_APP_PASS = os.environ.get('GMAIL_APP_PASS', '')
@@ -589,6 +657,20 @@ def append_lead(data, notify_telegram=True, user_id=None):
     if not page_url:
         return False, 'page_url is required'
 
+    if _mongo_alive():
+        result = mongo_db.save_lead(data, user_id)
+        if result is None:
+            return False, 'Database unavailable'
+        if isinstance(result, dict) and result.get('duplicate'):
+            existing = mongo_db.find_lead_by_url(page_url, user_id)
+            if existing and notify_telegram:
+                send_telegram_notification(mongo_db.serialize(existing), 'duplicate', user_id=user_id)
+            return False, 'duplicate'
+        print(f"LEAD SAVED: {data.get('business_name') or 'Unknown'} | {page_url} | telegram={notify_telegram} | storage=mongo", flush=True)
+        if notify_telegram:
+            send_telegram_notification(data, 'saved', user_id=user_id)
+        return True, 'Lead saved'
+
     ok, msg = leads_db.add_lead(data, user_id)
     if msg == 'duplicate':
         existing = leads_db.get_lead_by_url(page_url)
@@ -598,7 +680,7 @@ def append_lead(data, notify_telegram=True, user_id=None):
     if not ok:
         return False, msg
 
-    print(f"LEAD SAVED: {data.get('business_name') or 'Unknown'} | {page_url} | telegram={notify_telegram}", flush=True)
+    print(f"LEAD SAVED: {data.get('business_name') or 'Unknown'} | {page_url} | telegram={notify_telegram} | storage=sqlite", flush=True)
     if notify_telegram:
         send_telegram_notification(data, 'saved', user_id=user_id)
     return True, 'Lead saved'
@@ -630,21 +712,33 @@ def delete_lead(page_url, user_id=None):
 
 
 def trash_lead(page_url, user_id=None):
+    if _mongo_alive():
+        ok = mongo_db.trash_lead(page_url, user_id)
+        return (True, 'trashed') if ok else (False, 'Lead not found')
     ok = leads_db.trash_lead(page_url)
     return (True, 'trashed') if ok else (False, 'Lead not found')
 
 
 def restore_lead(page_url, user_id=None):
+    if _mongo_alive():
+        ok = mongo_db.restore_lead(page_url, user_id)
+        return (True, 'restored') if ok else (False, 'Lead not found')
     ok = leads_db.restore_lead(page_url)
     return (True, 'restored') if ok else (False, 'Lead not found')
 
 
 def purge_lead(page_url, user_id=None):
+    if _mongo_alive():
+        ok = mongo_db.purge_lead(page_url, user_id)
+        return (True, 'purged') if ok else (False, 'Lead not found')
     ok = leads_db.delete_lead_permanently(page_url)
     return (True, 'purged') if ok else (False, 'Lead not found')
 
 
 def read_trashed_leads(user_id=None, include_all_users=False):
+    if _mongo_alive():
+        rows = mongo_db.list_trashed_leads(user_id=user_id, is_admin=bool(include_all_users))
+        return mongo_db.serialize(rows)
     rows = leads_db.get_leads(include_trashed=True, user_id=user_id, include_all_users=include_all_users)
     rows = [r for r in rows if r.get('deleted_at', '')]
     rows.sort(key=lambda r: r.get('deleted_at', ''), reverse=True)
@@ -653,13 +747,33 @@ def read_trashed_leads(user_id=None, include_all_users=False):
 
 def append_qualified_lead(lead):
     page_url = lead.get('page_url', '')
-    leads_db.qualify_lead(page_url)
+    if _mongo_alive():
+        try:
+            mongo_db.save_qualified_lead(lead, qualified_by_user_id=lead.get('saved_by_user_id') or lead.get('user_id'))
+        except Exception:
+            pass
+    else:
+        leads_db.qualify_lead(page_url)
     print(f"QUALIFIED: {lead.get('business_name')}", flush=True)
 
 
 def update_lead_status(page_url, new_status, follow_up_date=None, user_id=None):
     if new_status not in VALID_STATUSES:
         return False, f"Invalid status. Valid: {', '.join(VALID_STATUSES)}"
+    if _mongo_alive():
+        ok = mongo_db.update_lead_status(page_url, user_id, new_status, follow_up_date)
+        if not ok:
+            return False, 'Lead not found'
+        if new_status == 'qualified':
+            lead = mongo_db.find_lead_by_url(page_url, user_id)
+            if lead:
+                append_qualified_lead(mongo_db.serialize(lead))
+                send_telegram_notification(mongo_db.serialize(lead), 'qualified', user_id=user_id)
+        else:
+            lead = mongo_db.find_lead_by_url(page_url, user_id, include_trashed=True)
+            if lead:
+                send_telegram_notification(mongo_db.serialize(lead), 'status_update', user_id=user_id)
+        return True, f"Status updated to {new_status}"
     ok = leads_db.update_lead_status(page_url, new_status, follow_up_date)
     if not ok:
         return False, 'Lead not found'
@@ -676,14 +790,28 @@ def update_lead_status(page_url, new_status, follow_up_date=None, user_id=None):
 
 
 def get_funnel_stats(user_id=None, include_all_users=False):
+    if _mongo_alive():
+        s = mongo_db.funnel_stats(user_id=user_id, is_admin=bool(include_all_users))
+        # Normalize to flat {status: count} so front-end consumers don't break
+        return s.get('breakdown', {}) if isinstance(s, dict) else {}
     return leads_db.get_funnel_stats(user_id=user_id, is_admin=bool(include_all_users))
 
 
 def get_qualified_leads():
+    if _mongo_alive():
+        return mongo_db.serialize(mongo_db.list_qualified_leads())
     return leads_db.get_qualified_leads()
 
 
 def read_all_leads(filter_status=None, include_trashed=False, user_id=None, include_all_users=False):
+    if _mongo_alive():
+        rows = mongo_db.list_leads(
+            user_id=user_id,
+            is_admin=bool(include_all_users),
+            status=filter_status,
+            include_trashed=bool(include_trashed),
+        )
+        return mongo_db.serialize(rows)
     return leads_db.get_leads(
         filter_status=filter_status,
         include_trashed=bool(include_trashed),
@@ -3943,6 +4071,12 @@ if __name__ == '__main__':
     ensure_csv()
     init_auth_db()
     leads_db.init_db()
+
+    if USE_MONGO:
+        print(f"MongoDB layer active (DB: {os.environ.get('MONGODB_DB','scraven')})", flush=True)
+        _backfill_mongo_from_csv()
+    else:
+        print("MongoDB NOT active — using SQLite leads.db (ephemeral on Render free)", flush=True)
 
     # Register Telegram bot commands
     if TELEGRAM_TOKEN:
