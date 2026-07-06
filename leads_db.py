@@ -296,39 +296,74 @@ def get_total_leads_count(user_id=None, is_admin=False):
     return count
 
 def update_telegram_config(user_id, bot_token, chat_id=None):
-    conn = sqlite3.connect(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'auth.db'), timeout=30)
-    conn.execute('PRAGMA journal_mode=WAL')
-    c = conn.cursor()
     try:
-        c.execute('ALTER TABLE users ADD COLUMN telegram_bot_token TEXT DEFAULT NULL')
-    except sqlite3.OperationalError:
-        pass
-    try:
-        c.execute('ALTER TABLE users ADD COLUMN telegram_chat_id TEXT DEFAULT NULL')
-    except sqlite3.OperationalError:
-        pass
-    if chat_id:
-        c.execute('UPDATE users SET telegram_bot_token = ?, telegram_chat_id = ? WHERE id = ?', (bot_token, chat_id, user_id))
-    else:
-        c.execute('UPDATE users SET telegram_bot_token = ?, telegram_chat_id = NULL WHERE id = ?', (bot_token, user_id))
-    conn.commit()
+        from auth_db import _use_mongo
+        if _use_mongo():
+            import mongo_db
+            update = {'telegram_bot_token': bot_token}
+            update['telegram_chat_id'] = chat_id if chat_id else None
+            return bool(mongo_db.update_user(user_id, update))
+        import auth_db
+        conn = auth_db._sqlite_conn()
+        try:
+            conn.execute('PRAGMA journal_mode=WAL')
+            c = conn.cursor()
+            try:
+                c.execute('ALTER TABLE users ADD COLUMN telegram_bot_token TEXT DEFAULT NULL')
+            except sqlite3.OperationalError:
+                pass
+            try:
+                c.execute('ALTER TABLE users ADD COLUMN telegram_chat_id TEXT DEFAULT NULL')
+            except sqlite3.OperationalError:
+                pass
+            if chat_id:
+                c.execute('UPDATE users SET telegram_bot_token = ?, telegram_chat_id = ? WHERE id = ?', (bot_token, chat_id, user_id))
+            else:
+                c.execute('UPDATE users SET telegram_bot_token = ?, telegram_chat_id = NULL WHERE id = ?', (bot_token, user_id))
+            conn.commit()
+        finally:
+            conn.close()
+        return True
+    except Exception:
+        return False
     conn.close()
 
 def get_telegram_config(user_id):
-    conn = sqlite3.connect(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'auth.db'), timeout=30)
-    conn.row_factory = sqlite3.Row
-    c = conn.cursor()
+    """Read per-user Telegram config (bot_token, chat_id).
+
+    On Mongo: stored in users.telegram_bot_token / telegram_chat_id.
+    On SQLite: stored in auth.db users table.
+    Uses auth_db._sqlite_conn() to trigger the lazy schema init — this
+    prevents the "no such table: users" error on Render cold start when
+    a lead-save hits this path before init_auth_db() has run.
+    """
     try:
-        c.execute('ALTER TABLE users ADD COLUMN telegram_bot_token TEXT DEFAULT NULL')
-    except sqlite3.OperationalError:
-        pass
-    try:
-        c.execute('ALTER TABLE users ADD COLUMN telegram_chat_id TEXT DEFAULT NULL')
-    except sqlite3.OperationalError:
-        pass
-    c.execute('SELECT telegram_bot_token, telegram_chat_id FROM users WHERE id = ?', (user_id,))
-    row = c.fetchone()
-    conn.close()
-    if row:
-        return {'bot_token': row['telegram_bot_token'], 'chat_id': row['telegram_chat_id']}
-    return {'bot_token': None, 'chat_id': None}
+        from auth_db import _use_mongo
+        if _use_mongo():
+            import mongo_db
+            u = mongo_db.get_user_by_id(user_id) or {}
+            return {
+                'bot_token': u.get('telegram_bot_token') or None,
+                'chat_id':   u.get('telegram_chat_id')   or None,
+            }
+        import auth_db
+        conn = auth_db._sqlite_conn()
+        try:
+            c = conn.cursor()
+            try:
+                c.execute('ALTER TABLE users ADD COLUMN telegram_bot_token TEXT DEFAULT NULL')
+            except sqlite3.OperationalError:
+                pass
+            try:
+                c.execute('ALTER TABLE users ADD COLUMN telegram_chat_id TEXT DEFAULT NULL')
+            except sqlite3.OperationalError:
+                pass
+            c.execute('SELECT telegram_bot_token, telegram_chat_id FROM users WHERE id = ?', (user_id,))
+            row = c.fetchone()
+            if row:
+                return {'bot_token': row['telegram_bot_token'], 'chat_id': row['telegram_chat_id']}
+            return {'bot_token': None, 'chat_id': None}
+        finally:
+            conn.close()
+    except Exception:
+        return {'bot_token': None, 'chat_id': None}

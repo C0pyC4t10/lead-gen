@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+  <title>Scraven — Qualified Leads</title>
+  <link rel="canonical" href="https://lead-gen-phcw.onrender.com/qualified" />
+  <meta property="og:title" content="Scraven — Qualified Leads" />
+  <meta property="og:description" content="Your qualified leads — the prospects that matter. Filter, search, and export to CSV or XLSX for outreach." />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://lead-gen-phcw.onrender.com/qualified" />
+  <meta property="og:image" content="https://lead-gen-phcw.onrender.com/assets/og-default.png" />
+  <meta name="description" content="Qualified business leads ready for outreach. Filter, search, and export to CSV or XLSX." />
+  <link rel="icon" type="image/svg+xml" href="assets/icon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    :focus-visible { outline: 3px solid rgba(0, 229, 255, 0.25); outline-offset: 2px; }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #050A14; color: #E2E8F0; font-size: 16px; line-height: 1.6;
+      min-height: 100vh; min-height: 100dvh; -webkit-font-smoothing: antialiased;
+    }
+
+    /* Nav — same unified structure as other pages; tabbar.js injects profile+burger */
+    .nav{width:100%;display:flex;align-items:center;gap:12px;padding:12px 24px;background:rgba(5,10,20,0.8);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);border-bottom:1px solid rgba(226,232,240,0.06);position:sticky;top:0;z-index:100}
+    .logo{display:flex;align-items:center;gap:10px;text-decoration:none;color:#F8FAFC;font-size:18px;font-weight:700;transition:transform .2s;flex-shrink:0}
+    .logo:hover{transform:scale(1.03)}
+    .logo-icon{width:36px;height:36px;border-radius:10px;object-fit:contain;flex-shrink:0;display:block}
+    .nav-links{display:flex;align-items:center;gap:12px;margin-left:auto}
+    .nav-links a,.nav-links button{color:#94A3B8;text-decoration:none;font-size:14px;padding:8px 14px;border-radius:8px;transition:all .2s;background:none;border:none;cursor:pointer;font-family:inherit;font-weight:500}
+    .nav-links a:hover,.nav-links button:hover{color:#F8FAFC;background:rgba(148,163,184,0.08)}
+    .nav-links a.active{color:#10B981;background:rgba(16,185,129,0.12);border:1px solid rgba(16,185,129,0.3)}
+    .auth-btn{background:linear-gradient(135deg,#0A4FD9,#00E5FF);color:#fff!important;font-weight:600;padding:8px 14px!important;border-radius:8px!important}
+    .auth-btn:hover{background:linear-gradient(135deg,#0A4FD9,#00E5FF)!important;opacity:0.9}
+    .avatar-circle img{width:36px;height:36px;border-radius:50%;object-fit:cover}
+    .avatar-circle{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#0A4FD9,#00E5FF);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff!important;cursor:pointer;padding:0!important}
+    #auth-nav{display:flex;align-items:center;gap:8px;margin-left:auto}
+    .lead-badge{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:6px;background:rgba(0,229,255,0.08);border:1px solid rgba(0,229,255,0.1);font-size:11px;font-weight:600;color:#00E5FF}
+    .lead-badge.warning{color:#FBBF24;border-color:rgba(251,191,36,0.2);background:rgba(251,191,36,0.08)}
+    .lead-badge.danger{color:#EF4444;border-color:rgba(239,68,68,0.2);background:rgba(239,68,68,0.08)}
+    .lead-badge.unlimited{color:#10B981;border-color:rgba(16,185,129,0.2);background:rgba(16,185,129,0.08)}
+
+    .container{max-width:1280px;width:100%;margin:0 auto;padding:24px 16px 60px}
+    .page-header{display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:16px;margin-bottom:24px}
+    .page-title{font-size:32px;font-weight:800;background:linear-gradient(135deg,#F8FAFC,#10B981);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:8px}
+    .page-sub{color:#94A3B8;font-size:14px;line-height:1.6;max-width:640px}
+    .stat-pill{padding:8px 16px;border-radius:999px;font-size:13px;font-weight:700;background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.3);color:#10B981;white-space:nowrap}
+    .quick-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:20px}
+    .qstat{background:rgba(14,24,37,0.6);border:1px solid rgba(226,232,240,0.08);border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:4px}
+    .qstat-label{font-size:11px;font-weight:700;color:#94A3B8;text-transform:uppercase;letter-spacing:.5px}
+    .qstat-val{font-size:24px;font-weight:800;color:#F8FAFC}
+    .qstat-val.qualified{background:linear-gradient(135deg,#F8FAFC,#10B981);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+
+    .card{background:rgba(14,24,37,0.6);border:1px solid rgba(226,232,240,0.08);border-radius:12px;overflow:hidden}
+    .card-header{padding:16px 20px;font-size:14px;font-weight:700;color:#F8FAFC;border-bottom:1px solid rgba(226,232,240,0.08);display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+    .actions-row{display:flex;gap:8px;flex-wrap:wrap;padding:14px 20px;border-bottom:1px solid rgba(226,232,240,0.08);align-items:center;background:rgba(5,10,20,0.4)}
+    .actions-row .left{display:flex;gap:8px;flex-wrap:wrap;align-items:center;flex:1}
+    .actions-row .right{display:flex;gap:8px;flex-wrap:wrap}
+    .btn{padding:9px 16px;border-radius:6px;font-size:13px;font-weight:600;border:none;cursor:pointer;transition:all .15s;display:inline-flex;align-items:center;gap:6px;font-family:inherit}
+    .btn:disabled{opacity:0.4;cursor:not-allowed}
+    .btn-glow{background:linear-gradient(135deg,#0A4FD9,#00E5FF);color:#fff;font-weight:600;box-shadow:0 4px 14px rgba(10,79,217,.4)}
+    .btn-glow:hover:not(:disabled){box-shadow:0 6px 20px rgba(10,79,217,.55);transform:translateY(-1px)}
+    .btn-ghost{background:transparent;border:1px solid rgba(226,232,240,0.15);color:#CBD5E1}
+    .btn-ghost:hover:not(:disabled){background:rgba(226,232,240,0.05)}
+    .btn-danger{background:rgba(239,68,68,0.12);border:1px solid rgba(239,68,68,0.3);color:#FCA5A5}
+    .btn-danger:hover:not(:disabled){background:rgba(239,68,68,0.22)}
+    .search-input{padding:9px 12px;border-radius:6px;background:rgba(5,10,20,0.6);border:1px solid rgba(226,232,240,0.15);color:#E2E8F0;font-size:13px;outline:none;min-width:200px;font-family:inherit}
+    .search-input:focus{border-color:#00E5FF}
+    .filter-select{padding:9px 12px;border-radius:6px;background:rgba(5,10,20,0.6);border:1px solid rgba(226,232,240,0.15);color:#E2E8F0;font-size:13px;outline:none;cursor:pointer;font-family:inherit}
+    .filter-select:focus{border-color:#00E5FF}
+    .empty{text-align:center;padding:80px 20px;color:#64748B}
+    .empty .icon{font-size:64px;margin-bottom:16px}
+    .empty h3{font-size:18px;color:#94A3B8;margin-bottom:8px}
+    .empty p{font-size:13px;color:#64748B;margin-bottom:20px;max-width:420px;margin-left:auto;margin-right:auto}
+
+    .table-wrap{overflow-x:auto}
+    table.qualified-table{width:100%;border-collapse:collapse;font-size:13px;min-width:900px}
+    table.qualified-table thead th{background:rgba(5,10,20,0.6);padding:12px 14px;text-align:left;font-weight:700;color:#94A3B8;font-size:11px;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid rgba(226,232,240,0.08);white-space:nowrap}
+    table.qualified-table tbody td{padding:12px 14px;border-bottom:1px solid rgba(226,232,240,0.05);color:#E2E8F0;vertical-align:middle}
+    table.qualified-table tbody tr:hover{background:rgba(16,185,129,0.04)}
+    .business-name{font-weight:600;color:#F8FAFC}
+    .business-name:hover{color:#10B981;cursor:pointer}
+    .platform-tag{padding:2px 8px;border-radius:4px;font-size:10px;font-weight:700;background:rgba(0,229,255,0.15);color:#00E5FF;text-transform:uppercase;white-space:nowrap}
+    .score-pill{display:inline-flex;align-items:center;justify-content:center;min-width:36px;height:24px;padding:0 8px;border-radius:6px;font-weight:700;font-size:12px}
+    .score-high{background:rgba(16,185,129,0.18);color:#6EE7B7;border:1px solid rgba(16,185,129,0.35)}
+    .score-mid{background:rgba(245,158,11,0.15);color:#FCD34D;border:1px solid rgba(245,158,11,0.3)}
+    .score-low{background:rgba(239,68,68,0.12);color:#FCA5A5;border:1px solid rgba(239,68,68,0.25)}
+    .contact-cell{font-family:'Inter',monospace;font-size:12px;color:#94A3B8;white-space:nowrap}
+    .contact-cell a{color:#00E5FF;text-decoration:none}
+    .contact-cell a:hover{text-decoration:underline}
+    .q-meta{color:#94A3B8;font-size:11px;white-space:nowrap}
+    .row-actions{display:flex;gap:6px;flex-wrap:nowrap}
+    .row-btn{padding:6px 10px;border-radius:5px;font-size:11px;font-weight:600;border:none;cursor:pointer;font-family:inherit;white-space:nowrap}
+    .row-disqualify{background:rgba(245,158,11,0.15);color:#FCD34D;border:1px solid rgba(245,158,11,0.3)}
+    .row-disqualify:hover{background:rgba(245,158,11,0.3)}
+    .row-trash{background:rgba(239,68,68,0.15);color:#F87171;border:1px solid rgba(239,68,68,0.3)}
+    .row-trash:hover{background:rgba(239,68,68,0.3)}
+    .checkbox{width:16px;height:16px;cursor:pointer;accent-color:#10B981}
+
+    .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);padding:12px 24px;border-radius:8px;font-size:13px;font-weight:600;z-index:200;opacity:0;transition:opacity .2s,transform .2s;pointer-events:none;max-width:90vw;text-align:center}
+    .toast.show{opacity:1;transform:translateX(-50%) translateY(-8px)}
+    .toast.success{background:rgba(16,185,129,0.95);color:#050A14}
+    .toast.error{background:rgba(239,68,68,0.95);color:#F8FAFC}
+    .toast.info{background:rgba(0,229,255,0.95);color:#050A14}
+
+    .status-msg{padding:12px 16px;border-radius:8px;margin-bottom:16px;font-size:13px;display:none}
+    .status-msg.show{display:block}
+    .status-msg.success{background:rgba(16,185,129,0.08);border-left:4px solid #10B981;color:#6EE7B7}
+    .status-msg.error{background:rgba(239,68,68,0.08);border-left:4px solid #EF4444;color:#FCA5A5}
+    .status-msg.info{background:rgba(59,130,246,0.08);border-left:4px solid #3B82F6;color:#93C5FD}
+
+    .footer{padding:32px 24px;text-align:center;color:#475569;font-size:12px;border-top:1px solid rgba(226,232,240,0.05);margin-top:40px}
+    .footer a{color:#67E8F9;text-decoration:none}
+    .footer a:hover{text-decoration:underline}
+
+    @media(max-width:768px){
+      .container{padding:16px 12px 100px}
+      .page-title{font-size:24px}
+      .qstat-val{font-size:20px}
+    }
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <a href="/" class="logo">
+      <img src="/assets/icon32.png" alt="Scraven" class="logo-icon">
+      <span><span style="color:#0A4FD9">Scra</span><span style="color:#F8FAFC">ven</span></span>
+    </a>
+    <div class="nav-links">
+      <a href="/extract">Extract</a>
+      <a href="/leads">Leads</a>
+      <a href="/qualified" class="active">Qualified</a>
+      <a href="/trash">Trash</a>
+      <a href="/pricing">Pricing</a>
+    </div>
+    <div id="auth-nav">
+      <a href="/login" class="auth-btn" id="loginLink" style="display:none">Sign In</a>
+      <span class="lead-badge" id="leadBadge" title="Leads used" style="display:none"></span>
+      <a href="/profile" class="avatar-circle" id="profileLink" style="display:none">S</a>
+      <a href="/admin" class="auth-btn" id="adminLink" style="display:none">Admin</a>
+      <button class="auth-btn" id="logoutBtn" style="display:none">Logout</button>
+    </div>
+  </nav>
+
+  <div class="container">
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">Qualified Leads</h1>
+        <div class="page-sub">The prospects that matter. Filter, search, and export to CSV or XLSX for outreach. Only leads you've marked as <b style="color:#10B981">Qualified</b> show here.</div>
+      </div>
+      <div class="stat-pill" id="qualifiedCount">0 leads</div>
+    </div>
+
+    <div class="quick-stats">
+      <div class="qstat">
+        <div class="qstat-label">Total Qualified</div>
+        <div class="qstat-val qualified" id="statTotal">0</div>
+      </div>
+      <div class="qstat">
+        <div class="qstat-label">This Week</div>
+        <div class="qstat-val" id="statWeek">0</div>
+      </div>
+      <div class="qstat">
+        <div class="qstat-label">Avg Score</div>
+        <div class="qstat-val" id="statAvg">—</div>
+      </div>
+      <div class="qstat">
+        <div class="qstat-label">Hot Leads (≥8)</div>
+        <div class="qstat-val" style="color:#10B981" id="statHot">0</div>
+      </div>
+    </div>
+
+    <div id="statusMsg" class="status-msg"></div>
+
+    <div class="card">
+      <div class="card-header">
+        <span>📋 Qualified Leads List</span>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-ghost" id="btnExportCsv">⬇ Export CSV</button>
+          <button class="btn btn-glow" id="btnExportXlsx">⬇ Export XLSX</button>
+        </div>
+      </div>
+      <div class="actions-row">
+        <div class="left">
+          <input type="text" class="search-input" id="search" placeholder="Search by name, email, phone…" />
+          <select class="filter-select" id="filterPlatform">
+            <option value="">All Platforms</option>
+            <option value="facebook">Facebook</option>
+            <option value="instagram">Instagram</option>
+            <option value="google_maps">Google Maps</option>
+            <option value="linkedin">LinkedIn</option>
+          </select>
+          <select class="filter-select" id="filterScore">
+            <option value="">All Scores</option>
+            <option value="9">⭐⭐⭐ Hot (9-10)</option>
+            <option value="7">⭐⭐ Warm (7-8)</option>
+            <option value="5">⭐ Cold (5-6)</option>
+            <option value="0">Below 5</option>
+          </select>
+        </div>
+        <div class="right">
+          <button class="btn btn-danger" id="btnTrashSelected" disabled>🗑 Trash Selected (<span id="trashCount">0</span>)</button>
+        </div>
+      </div>
+      <div class="table-wrap" id="tableWrap">
+        <table class="qualified-table" id="qualifiedTable">
+          <thead>
+            <tr>
+              <th style="width:36px"><input type="checkbox" class="checkbox" id="selectAll" /></th>
+              <th>Business</th>
+              <th>Platform</th>
+              <th>Score</th>
+              <th>Contact</th>
+              <th>Category</th>
+              <th>Followers</th>
+              <th>Qualified</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="qualifiedTbody"></tbody>
+        </table>
+        <div class="empty" id="emptyState" style="display:none">
+          <div class="icon">🎯</div>
+          <h3>No qualified leads yet</h3>
+          <p>Go to your <a href="/leads" style="color:#00E5FF">Leads</a> page, open a lead detail, and click <b style="color:#10B981">Qualify</b> to add it to this list. Qualified leads are your outreach-ready prospects.</p>
+          <a href="/leads" class="btn btn-glow">📋 Go to Leads</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer">
+      <span style="color:#0A4FD9;font-weight:700">Scraven</span> — The Hunter &middot; Powered by <a href="https://skarboltech.com" target="_blank" rel="noopener noreferrer">Skarbol Tech</a>
+    </div>
+  </div>
+
+  <script>
+    const API_BASE = window.location.origin;
+    let ALL_LEADS = [];
+    let FILTERED = [];
+    let SELECTED = new Set();
+
+    function getToken() { return localStorage.getItem('skarbol_token') || localStorage.getItem('token'); }
+    function getUser() { try { return JSON.parse(localStorage.getItem('skarbol_user') || 'null'); } catch { return null; } }
+    function authHeaders() {
+      const t = getToken();
+      return t ? { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + t } : { 'Content-Type': 'application/json' };
+    }
+    function esc(s) { const d = document.createElement('div'); d.textContent = s == null ? '' : String(s); return d.innerHTML; }
+    function showToast(msg, type) {
+      const t = document.createElement('div');
+      t.className = 'toast ' + (type || 'info');
+      t.textContent = msg;
+      document.body.appendChild(t);
+      requestAnimationFrame(() => t.classList.add('show'));
+      setTimeout(() => { t.classList.remove('show'); setTimeout(() => t.remove(), 200); }, 2500);
+    }
+    function showStatus(msg, type) {
+      const el = document.getElementById('statusMsg');
+      el.textContent = msg;
+      el.className = 'status-msg show ' + (type || 'info');
+      setTimeout(() => el.classList.remove('show'), 4000);
+    }
+
+    async function load() {
+      const tbody = document.getElementById('qualifiedTbody');
+      tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:40px;color:#64748B">Loading qualified leads…</td></tr>';
+      try {
+        const resp = await fetch(API_BASE + '/api/leads/qualified', { headers: authHeaders() });
+        if (!resp.ok) throw new Error('HTTP ' + resp.status);
+        const data = await resp.json();
+        ALL_LEADS = Array.isArray(data) ? data : [];
+        applyFilters();
+      } catch (e) {
+        tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:40px;color:#FCA5A5">Failed to load: ' + esc(e.message) + '</td></tr>';
+        showStatus('Load failed: ' + e.message, 'error');
+      }
+    }
+
+    function applyFilters() {
+      const q = (document.getElementById('search').value || '').toLowerCase().trim();
+      const plat = document.getElementById('filterPlatform').value;
+      const scoreMin = document.getElementById('filterScore').value;
+      FILTERED = ALL_LEADS.filter(l => {
+        if (plat && l.platform !== plat) return false;
+        if (scoreMin !== '') {
+          const s = parseInt(l.qualification_score) || 0;
+          if (parseInt(scoreMin) >= 9 && s < 9) return false;
+          else if (parseInt(scoreMin) >= 7 && s < 7) return false;
+          else if (parseInt(scoreMin) >= 5 && s < 5) return false;
+          else if (parseInt(scoreMin) === '0' && s >= 5) return false;
+        }
+        if (q) {
+          const hay = ((l.business_name || '') + ' ' + (l.email || '') + ' ' + (l.phone || '') + ' ' + (l.category || '')).toLowerCase();
+          if (!hay.includes(q)) return false;
+        }
+        return true;
+      });
+      render();
+      updateStats();
+    }
+
+    function scorePill(s) {
+      const n = parseInt(s) || 0;
+      if (n >= 8) return '<span class="score-pill score-high">⭐ ' + n + '</span>';
+      if (n >= 6) return '<span class="score-pill score-mid">⭐ ' + n + '</span>';
+      return '<span class="score-pill score-low">⭐ ' + n + '</span>';
+    }
+
+    function render() {
+      const tbody = document.getElementById('qualifiedTbody');
+      const empty = document.getElementById('emptyState');
+      if (FILTERED.length === 0) {
+        tbody.innerHTML = '';
+        empty.style.display = 'block';
+        return;
+      }
+      empty.style.display = 'none';
+      tbody.innerHTML = FILTERED.map((l, i) => {
+        const id = l.id || l.page_url;
+        const checked = SELECTED.has(String(id)) ? 'checked' : '';
+        const qualifiedAt = l.qualified_at ? l.qualified_at.split('T')[0] : '—';
+        const by = l.qualified_by || l.saved_by_user_name || '—';
+        return `<tr data-id="${esc(id)}">
+          <td><input type="checkbox" class="checkbox row-sel" data-id="${esc(id)}" ${checked} /></td>
+          <td>
+            <div class="business-name" onclick="window.open('${esc(l.page_url || '#')}', '_blank')">${esc(l.business_name || 'Unknown')}</div>
+            <div style="color:#64748B;font-size:11px;margin-top:2px;word-break:break-all;max-width:280px">${esc((l.page_url || '').substring(0, 60))}${(l.page_url || '').length > 60 ? '…' : ''}</div>
+          </td>
+          <td><span class="platform-tag">${esc(l.platform || 'unknown')}</span></td>
+          <td>${scorePill(l.qualification_score)}</td>
+          <td class="contact-cell">
+            ${l.phone ? '<a href="tel:' + esc(l.phone) + '">' + esc(l.phone) + '</a>' : ''}
+            ${l.phone && l.email ? '<br>' : ''}
+            ${l.email ? '<a href="mailto:' + esc(l.email) + '">' + esc(l.email) + '</a>' : (!l.phone ? '—' : '')}
+          </td>
+          <td style="color:#94A3B8;font-size:12px">${esc(l.category || '—')}</td>
+          <td style="color:#94A3B8;font-size:12px">${esc(l.followers || '—')}</td>
+          <td class="q-meta">${esc(qualifiedAt)}<br><span style="color:#64748B">by ${esc(by)}</span></td>
+          <td>
+            <div class="row-actions">
+              <button class="row-btn row-disqualify" onclick="disqualify('${esc(l.page_url || '')}')" title="Unmark as qualified">Unqualify</button>
+              <button class="row-btn row-trash" onclick="trashOne('${esc(l.page_url || '')}')" title="Move to trash">🗑</button>
+            </div>
+          </td>
+        </tr>`;
+      }).join('');
+      document.getElementById('qualifiedCount').textContent = FILTERED.length + ' lead' + (FILTERED.length === 1 ? '' : 's');
+    }
+
+    function updateStats() {
+      document.getElementById('statTotal').textContent = ALL_LEADS.length;
+      const now = new Date();
+      const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      const thisWeek = ALL_LEADS.filter(l => {
+        const t = l.qualified_at ? new Date(l.qualified_at) : null;
+        return t && t >= weekAgo;
+      }).length;
+      document.getElementById('statWeek').textContent = thisWeek;
+      const valid = ALL_LEADS.filter(l => parseInt(l.qualification_score) > 0);
+      const avg = valid.length ? (valid.reduce((a, l) => a + parseInt(l.qualification_score || 0), 0) / valid.length).toFixed(1) : '—';
+      document.getElementById('statAvg').textContent = avg;
+      const hot = ALL_LEADS.filter(l => parseInt(l.qualification_score) >= 8).length;
+      document.getElementById('statHot').textContent = hot;
+    }
+
+    async function disqualify(pageUrl) {
+      if (!pageUrl) return;
+      const ok = await scravenConfirm('Remove this lead from Qualified? It will go back to "new" status.', { title: 'Unqualify Lead', primaryLabel: 'Unqualify' });
+      if (!ok) return;
+      try {
+        const resp = await fetch(API_BASE + '/api/lead/status', {
+          method: 'POST', headers: authHeaders(),
+          body: JSON.stringify({ page_url: pageUrl, status: 'new' })
+        });
+        if (resp.ok) {
+          showToast('✓ Lead un-qualified', 'success');
+          await load();
+        } else {
+          const r = await resp.json().catch(() => ({}));
+          showToast('Unqualify failed: ' + (r.error || 'HTTP ' + resp.status), 'error');
+        }
+      } catch (e) {
+        showToast('Unqualify failed: ' + e.message, 'error');
+      }
+    }
+
+    async function trashOne(pageUrl) {
+      if (!pageUrl) return;
+      const ok = await scravenConfirm('Move this lead to Trash? You can recover it from /trash.', { title: 'Move to Trash' });
+      if (!ok) return;
+      try {
+        const resp = await fetch(API_BASE + '/api/lead/trash', {
+          method: 'POST', headers: authHeaders(),
+          body: JSON.stringify({ page_url: pageUrl })
+        });
+        if (resp.ok) { showToast('✓ Moved to trash', 'success'); await load(); }
+        else { const r = await resp.json().catch(() => ({})); showToast('Trash failed: ' + (r.error || 'HTTP ' + resp.status), 'error'); }
+      } catch (e) { showToast('Trash failed: ' + e.message, 'error'); }
+    }
+
+    async function trashSelected() {
+      const ids = Array.from(SELECTED);
+      if (!ids.length) return;
+      const ok = await scravenConfirm('Move ' + ids.length + ' qualified lead' + (ids.length === 1 ? '' : 's') + ' to Trash?', { title: 'Move Selected to Trash' });
+      if (!ok) return;
+      try {
+        const resp = await fetch(API_BASE + '/api/lead/bulk-trash', {
+          method: 'POST', headers: authHeaders(),
+          body: JSON.stringify({ page_urls: ids })
+        });
+        if (resp.ok) { showToast('✓ ' + ids.length + ' moved to trash', 'success'); SELECTED.clear(); await load(); }
+        else { const r = await resp.json().catch(() => ({})); showToast('Bulk trash failed: ' + (r.error || 'HTTP ' + resp.status), 'error'); }
+      } catch (e) { showToast('Bulk trash failed: ' + e.message, 'error'); }
+    }
+
+    function exportFile(format) {
+      const t = getToken();
+      const url = API_BASE + '/api/leads/export?status=qualified&format=' + format + (t ? '&token=' + encodeURIComponent(t) : '');
+      window.location.href = url;
+    }
+
+    function updateSelectAll() {
+      const allChecked = FILTERED.length > 0 && FILTERED.every(l => SELECTED.has(String(l.id || l.page_url)));
+      document.getElementById('selectAll').checked = allChecked;
+      const cnt = SELECTED.size;
+      document.getElementById('trashCount').textContent = cnt;
+      document.getElementById('btnTrashSelected').disabled = cnt === 0;
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+      document.getElementById('search').addEventListener('input', applyFilters);
+      document.getElementById('filterPlatform').addEventListener('change', applyFilters);
+      document.getElementById('filterScore').addEventListener('change', applyFilters);
+      document.getElementById('btnExportCsv').addEventListener('click', () => exportFile('csv'));
+      document.getElementById('btnExportXlsx').addEventListener('click', () => exportFile('xlsx'));
+      document.getElementById('btnTrashSelected').addEventListener('click', trashSelected);
+      document.getElementById('selectAll').addEventListener('change', function(e) {
+        FILTERED.forEach(l => {
+          const id = String(l.id || l.page_url);
+          if (e.target.checked) SELECTED.add(id);
+          else SELECTED.delete(id);
+        });
+        document.querySelectorAll('.row-sel').forEach(cb => { cb.checked = e.target.checked; });
+        updateSelectAll();
+      });
+      document.getElementById('qualifiedTbody').addEventListener('change', function(e) {
+        const cb = e.target.closest('.row-sel');
+        if (!cb) return;
+        const id = cb.dataset.id;
+        if (cb.checked) SELECTED.add(id);
+        else SELECTED.delete(id);
+        updateSelectAll();
+      });
+
+      // Auth state
+      const user = getUser();
+      const token = getToken();
+      if (user && token) {
+        document.getElementById('loginLink').style.display = 'none';
+        const link = document.getElementById('profileLink');
+        link.textContent = (user.name || '?').charAt(0).toUpperCase();
+        link.style.display = 'flex';
+        link.title = user.email || 'Profile';
+        if (user.role === 'admin' || user.role === 'super_admin') {
+          document.getElementById('adminLink').style.display = 'inline-flex';
+        }
+        document.getElementById('logoutBtn').style.display = 'inline-flex';
+        const badge = document.getElementById('leadBadge');
+        badge.style.display = 'inline-flex';
+        badge.textContent = (user.leads_used || 0) + '/' + (user.subscription_tier === 'pro' ? '∞' : (user.role && user.role !== 'user' ? '∞' : '20'));
+        // Hydrate avatar from /api/avatars/...
+        (function(){
+          var i = new Image();
+          i.onload = function() { link.innerHTML = ''; link.style.background = 'none'; link.style.padding = '0'; link.appendChild(i); };
+          i.onerror = function() {};
+          i.src = API_BASE + '/api/avatars/' + user.id + '.jpg?t=' + Date.now();
+        })();
+      } else {
+        document.getElementById('loginLink').style.display = 'inline-flex';
+      }
+      document.getElementById('logoutBtn').addEventListener('click', function() {
+        if (token) fetch(API_BASE + '/api/auth/logout', { method: 'POST', headers: { 'Authorization': 'Bearer ' + token } }).catch(function(){});
+        try { localStorage.removeItem('skarbol_token'); localStorage.removeItem('skarbol_user'); } catch (_) {}
+        window.location.href = '/';
+      });
+      load();
+    });
+  </script>
+  <script src="/assets/scraven-modal.js" defer></script>
+  <script src="/assets/tabbar.js?v=4" defer></script>
+</body>
+</html>

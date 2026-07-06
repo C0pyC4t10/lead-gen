@@ -77,7 +77,8 @@
       { href: "/",         icon: "home",    label: "Home" },
       { href: "/extract",  icon: "extract", label: "Extract", primary: true },
       { href: "/leads",    icon: "leads",   label: "Leads" },
-      { href: "/leads#history", icon: "history", label: "History" },
+      { href: "/qualified",icon: "qualified", label: "Qualified" },
+      { href: "/trash",    icon: "trash",   label: "Trash" },
       { href: "/pricing",  icon: "pricing", label: "Pricing" },
     ];
     if (loggedIn) {
@@ -100,6 +101,8 @@
       login:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>',
       register:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>',
       logout:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>',
+      qualified:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="9 12 11 14 15 10"/></svg>',
+      trash:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/></svg>',
     };
     return extra[name] || SVGS[name] || "";
   }
@@ -142,9 +145,11 @@
 
     topNav.appendChild(profile);
 
-    // Hide any pre-existing duplicate profile link in the page header
-    // (avoids two profile buttons showing in the top bar).
-    var dup = topNav.querySelectorAll('#profileLink, .header-profile');
+    // Hide any pre-existing duplicate profile / admin / logout links in
+    // the page header. The new mountProfile dropdown is the single source
+    // of truth for these actions. Lead badge and Sign In are kept (they
+    // aren't duplicated by mountProfile).
+    var dup = topNav.querySelectorAll('#profileLink, .header-profile, #adminLink, #logoutBtn, .logout-btn');
     for (var i = 0; i < dup.length; i++) dup[i].style.display = 'none';
 
     var btn = document.getElementById("navProfileBtn");
@@ -215,28 +220,38 @@
   function mountBurger() {
     var topNav = document.querySelector("nav.nav, header nav, .nav");
     if (!topNav) return;
-    if (document.getElementById("navBurger")) return;
+    var existingBurger = document.getElementById("navBurger");
+    var existingDrawer = document.getElementById("navDrawer");
 
-    var burger = document.createElement("button");
-    burger.type = "button";
-    burger.id = "navBurger";
-    burger.className = "nav-burger";
-    burger.setAttribute("aria-label", "Open menu");
-    burger.setAttribute("aria-expanded", "false");
-    burger.setAttribute("aria-controls", "navDrawer");
-    burger.innerHTML = '<span class="bar"></span><span class="bar"></span><span class="bar"></span>';
-    topNav.appendChild(burger);
+    // If a page already ships its own burger (e.g. homepage with a brand-colored one),
+    // we still need to inject the drawer + wire the toggle to that burger.
+    var burger = existingBurger;
+    if (!burger) {
+      burger = document.createElement("button");
+      burger.type = "button";
+      burger.id = "navBurger";
+      burger.className = "nav-burger";
+      burger.setAttribute("aria-label", "Open menu");
+      burger.setAttribute("aria-expanded", "false");
+      burger.setAttribute("aria-controls", "navDrawer");
+      burger.innerHTML = '<span class="bar"></span><span class="bar"></span><span class="bar"></span>';
+      topNav.appendChild(burger);
+    } else {
+      burger.setAttribute("aria-controls", "navDrawer");
+    }
 
     // Hide nav-links on mobile so the burger + profile sit clean at the right.
     // The drawer replaces them on small viewports.
     var navLinks = topNav.querySelector('.nav-links');
     if (navLinks) navLinks.classList.add('tabbar-hide-mobile');
 
-    var drawer = document.createElement("div");
-    drawer.id = "navDrawer";
-    drawer.className = "nav-drawer";
-    drawer.setAttribute("role", "dialog");
-    drawer.setAttribute("aria-label", "Site navigation");
+    var drawer = existingDrawer;
+    if (!drawer) {
+      drawer = document.createElement("div");
+      drawer.id = "navDrawer";
+      drawer.className = "nav-drawer";
+      drawer.setAttribute("role", "dialog");
+      drawer.setAttribute("aria-label", "Site navigation");
     var user = getUser();
     var userLabel = user && user.name ? user.name : "";
     var userEmail = user && user.email ? user.email : "";
@@ -263,7 +278,8 @@
       return '<a href="' + escAttr(it.href) + '" class="' + cls + '"><span class="di">' + iconSVG(it.icon) + '</span><span class="dl">' + escAttr(it.label) + '</span></a>';
     }).join("");
     drawer.innerHTML = html;
-    document.body.appendChild(drawer);
+    if (!existingDrawer) document.body.appendChild(drawer);
+    }
 
     function setOpen(open) {
       burger.setAttribute("aria-expanded", open ? "true" : "false");
