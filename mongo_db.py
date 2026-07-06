@@ -281,7 +281,18 @@ def restore_user(user_id):
         return False
     try:
         oid = to_object_id(user_id)
-        db.users.update_one({'_id': oid}, {'$set': {'deleted_at': None}})
+        user = db.users.find_one({'_id': oid})
+        if not user:
+            return False
+        # Strip the '--deleted--<uid>' suffix from the email added by soft_delete_user
+        original_email = (user.get('email', '') or '')
+        suffix = '--deleted--' + str(user_id)
+        if original_email.endswith(suffix):
+            original_email = original_email[:-len(suffix)]
+        db.users.update_one(
+            {'_id': oid},
+            {'$set': {'deleted_at': None, 'email': original_email}}
+        )
         return True
     except Exception:
         return False

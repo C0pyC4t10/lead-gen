@@ -280,35 +280,50 @@
       const orig = sel.dataset.orig;
       if (newRole === orig) return;
       sel.disabled = true;
+      sel.style.opacity = '0.6';
       try {
         const resp = await fetch(API_BASE + '/api/admin/users/role', {
           method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
           body: JSON.stringify({ user_id: userId, role: newRole }),
         });
+        const r = await resp.json().catch(() => ({}));
         if (resp.ok) {
-          showStatus('Role updated to ' + newRole, 'success');
+          showStatus('✓ Role updated to ' + newRole, 'success');
           sel.dataset.orig = newRole;
         } else {
-          const r = await resp.json().catch(() => ({}));
-          showStatus(r.error || 'Failed (HTTP ' + resp.status + ')', 'error');
+          showStatus('Role save failed: ' + (r.error || r.message || 'HTTP ' + resp.status), 'error');
           sel.value = orig;
         }
-      } catch (e) { showStatus('Connection error', 'error'); sel.value = orig; }
+      } catch (e) {
+        showStatus('Role save failed: ' + e.message, 'error');
+        sel.value = orig;
+      }
       sel.disabled = false;
+      sel.style.opacity = '1';
     }
 
     async function deleteUser(userId) {
-      if (!(await scravenConfirm('Remove this user?'))) return;
-      const btn = document.querySelector(`button[onclick="deleteUser(${userId})"]`);
+      if (!(await scravenConfirm('Remove this user? They will be moved to the Trash.'))) return;
+      const btn = document.querySelector(`button[data-uid][onclick*="${String(userId).replace(/"/g, '\\"')}"]`)
+        || document.querySelector(`button[data-uid="${String(userId).replace(/"/g, '&quot;')}"]`);
       if (btn) { btn.disabled = true; btn.textContent = '...'; }
       try {
         const resp = await fetch(API_BASE + '/api/admin/users/delete', {
           method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
           body: JSON.stringify({ user_id: userId }),
         });
-        if (resp.ok) { showStatus('User removed', 'success'); loadData(); }
-        else { const r = await resp.json().catch(() => ({})); showStatus(r.error || 'Failed (HTTP ' + resp.status + ')', 'error'); if (btn) { btn.disabled = false; btn.textContent = 'Remove'; } }
-      } catch (e) { showStatus('Connection error', 'error'); if (btn) { btn.disabled = false; btn.textContent = 'Remove'; } }
+        const r = await resp.json().catch(() => ({}));
+        if (resp.ok) {
+          showStatus('✓ ' + (r.message || 'User moved to trash'), 'success');
+          loadData();
+        } else {
+          showStatus('Delete failed: ' + (r.error || 'HTTP ' + resp.status), 'error');
+          if (btn) { btn.disabled = false; btn.textContent = 'Remove'; }
+        }
+      } catch (e) {
+        showStatus('Delete failed: ' + e.message, 'error');
+        if (btn) { btn.disabled = false; btn.textContent = 'Remove'; }
+      }
     }
 
     function showStatus(msg, type) { const el = document.getElementById('statusMsg'); el.textContent = msg; el.className = 'status-msg show ' + type; setTimeout(() => el.classList.remove('show'), 4000); }
