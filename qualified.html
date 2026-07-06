@@ -279,6 +279,9 @@
     .dp-tl-item .tx{font-size:12.5px;color:#E2E8F0;margin-top:2px;line-height:1.4;word-break:break-word;white-space:pre-wrap}
     .dp-foot{padding:16px 24px;border-top:1px solid rgba(226,232,240,0.08);display:flex;gap:8px;background:rgba(5,10,20,0.4);flex-shrink:0}
     .dp-foot .btn{flex:1;justify-content:center}
+    .dp-foot .btn{min-height:42px;font-size:13px;font-weight:700;letter-spacing:.2px;transition:all .15s}
+    .dp-foot .btn:active{transform:scale(.97)}
+    .dp-foot .btn.is-working{opacity:.6;pointer-events:none}
 
     /* Footer */
     .footer{padding:32px 24px;text-align:center;color:#475569;font-size:12px;border-top:1px solid rgba(226,232,240,0.05);margin-top:40px}
@@ -1340,25 +1343,43 @@
       // Detail panel wiring
       document.getElementById('dpClose').addEventListener('click', closeDetail);
       document.getElementById('dpOverlay').addEventListener('click', closeDetail);
+      // Capture page_url and name at the moment the user clicks — don't
+      // rely on `detailLead` (which is cleared by closeDetail()).
       document.getElementById('dpOpenOutreach').addEventListener('click', function() {
         if (!detailLead) return;
+        const pageUrl = detailLead.page_url;
+        const name = detailLead.business_name;
+        this.classList.add('is-working');
         closeDetail();
-        setTimeout(() => openOutreach(detailLead.page_url, detailLead.business_name), 200);
+        setTimeout(() => {
+          document.getElementById('dpOpenOutreach').classList.remove('is-working');
+          openOutreach(pageUrl, name);
+        }, 220);
       });
       document.getElementById('dpOpenRemark').addEventListener('click', function() {
         if (!detailLead) return;
+        const pageUrl = detailLead.page_url;
+        const name = detailLead.business_name;
+        this.classList.add('is-working');
         closeDetail();
-        setTimeout(() => openRemarks(detailLead.page_url, detailLead.business_name), 200);
+        setTimeout(() => {
+          document.getElementById('dpOpenRemark').classList.remove('is-working');
+          openRemarks(pageUrl, name);
+        }, 220);
       });
       document.getElementById('dpTrash').addEventListener('click', async function() {
         if (!detailLead) return;
-        const ok = await scravenConfirm('Move "' + (detailLead.business_name || 'this lead') + '" to Trash?', { title: 'Move to Trash' });
+        const pageUrl = detailLead.page_url;
+        const name = detailLead.business_name || 'this lead';
+        const ok = await scravenConfirm('Move "' + name + '" to Trash?', { title: 'Move to Trash' });
         if (!ok) return;
+        this.classList.add('is-working');
         try {
-          const resp = await fetch(API_BASE + '/api/lead/trash', { method: 'POST', headers: authHeaders(), body: JSON.stringify({ page_url: detailLead.page_url }) });
+          const resp = await fetch(API_BASE + '/api/lead/trash', { method: 'POST', headers: authHeaders(), body: JSON.stringify({ page_url: pageUrl }) });
           if (resp.ok) { showToast('✓ Moved to trash', 'success'); closeDetail(); await load(); }
           else { const r = await resp.json().catch(() => ({})); showToast('Trash failed: ' + (r.error || 'HTTP ' + resp.status), 'error'); }
         } catch (e) { showToast('Trash failed: ' + e.message, 'error'); }
+        finally { this.classList.remove('is-working'); }
       });
 
       // Global keyboard
