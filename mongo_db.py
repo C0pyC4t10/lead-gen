@@ -243,6 +243,19 @@ def update_user(user_id, update):
     update['updated_at'] = now_iso()
     db.users.update_one({'_id': to_object_id(user_id)}, {'$set': update})
 
+def delete_user(user_id):
+    db = get_db()
+    if db is None:
+        return False
+    from bson import ObjectId
+    try:
+        oid = to_object_id(user_id)
+        db.users.delete_one({'_id': oid})
+        db.sessions.delete_many({'user_id': str(user_id)})
+        return True
+    except Exception:
+        return False
+
 def list_users():
     db = get_db()
     if db is None:

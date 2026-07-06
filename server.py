@@ -4054,7 +4054,7 @@ class Handler(BaseHTTPRequestHandler):
             if not user_id:
                 self._json(400, {'error': 'user_id required'})
                 return
-            if int(user_id) == user['id']:
+            if str(user_id) == str(user['id']):
                 self._json(400, {'error': 'Cannot delete yourself'})
                 return
             target = auth_db.get_user_by_id(user_id)
@@ -4065,34 +4065,7 @@ class Handler(BaseHTTPRequestHandler):
             if user['role'] == 'admin' and target_role not in ('user', 'pro'):
                 self._json(403, {'error': 'Admins can only remove regular users'})
                 return
-            if mongo_db and _mongo_alive():
-                mongo_db.delete_session = getattr(mongo_db, 'delete_session', None)
-                mongo_db.delete_sessions_for_user(user_id)
-            auth_db.update_user_fields(user_id, deleted_at=str(datetime.now(timezone.utc))) if False else None
-            # Hard delete from Mongo (no soft-delete in Mongo implementation)
-            try:
-                if mongo_db and _mongo_alive():
-                    db = mongo_db.get_db()
-                    from bson import ObjectId
-                    try:
-                        db.users.delete_one({'_id': ObjectId(user_id)})
-                        db.sessions.delete_many({'user_id': ObjectId(user_id)})
-                    except Exception:
-                        pass
-            except Exception:
-                pass
-            # SQLite hard delete
-            try:
-                import sqlite3 as _sq
-                conn = _sq.connect(AUTH_DB_PATH, timeout=30)
-                c = conn.cursor()
-                c.execute('DELETE FROM sessions WHERE user_id = ?', (user_id,))
-                c.execute('DELETE FROM settings WHERE user_id = ?', (user_id,))
-                c.execute('DELETE FROM users WHERE id = ?', (user_id,))
-                conn.commit()
-                conn.close()
-            except Exception:
-                pass
+            auth_db.delete_user(user_id)
             self._json(200, {'status': 'deleted'})
         elif parsed.path == '/api/admin/users/role':
             user = require_auth(self)
@@ -4108,7 +4081,7 @@ class Handler(BaseHTTPRequestHandler):
             if not target_id or new_role not in ('user', 'pro', 'admin', 'super_admin'):
                 self._json(400, {'error': 'Invalid user_id or role'})
                 return
-            if int(target_id) == user['id']:
+            if str(target_id) == str(user['id']):
                 self._json(400, {'error': 'Cannot change your own role'})
                 return
             target = auth_db.get_user_by_id(target_id)

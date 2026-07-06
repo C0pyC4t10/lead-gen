@@ -240,6 +240,21 @@ def update_password(uid, password_hash, password_salt):
     return update_user_fields(uid, password_hash=password_hash, password_salt=password_salt, password_reset_token=None, password_reset_expires=None)
 
 
+def delete_user(uid):
+    if _use_mongo():
+        import mongo_db
+        return mongo_db.delete_user(uid)
+    conn = _sqlite_conn()
+    try:
+        c = conn.cursor()
+        c.execute('DELETE FROM sessions WHERE user_id = ?', (uid,))
+        c.execute('DELETE FROM settings WHERE user_id = ?', (uid,))
+        c.execute('DELETE FROM users WHERE id = ?', (uid,))
+        conn.commit()
+        return c.rowcount > 0
+    finally:
+        conn.close()
+
 # ─── Admin / listings ───────────────────────────────────────────────────
 
 def list_users_for_admin():
