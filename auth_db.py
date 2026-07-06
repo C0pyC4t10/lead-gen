@@ -243,24 +243,36 @@ def update_password(uid, password_hash, password_salt):
 def delete_user(uid):
     if _use_mongo():
         import mongo_db
-        return mongo_db.delete_user(uid)
+        return mongo_db.soft_delete_user(uid)
     conn = _sqlite_conn()
     try:
         c = conn.cursor()
+        from datetime import datetime, timezone
+        now = datetime.now(timezone.utc).isoformat()
+        c.execute('UPDATE users SET deleted_at = ?, email = email || \'--deleted-\' || ? WHERE id = ?', (now, uid, uid))
         c.execute('DELETE FROM sessions WHERE user_id = ?', (uid,))
-        c.execute('DELETE FROM settings WHERE user_id = ?', (uid,))
-        c.execute('DELETE FROM users WHERE id = ?', (uid,))
         conn.commit()
         return c.rowcount > 0
     finally:
         conn.close()
 
-# ─── Admin / listings ───────────────────────────────────────────────────
-
-def list_users_for_admin():
+def restore_user(uid):
     if _use_mongo():
         import mongo_db
-        users = mongo_db.list_users()
+        return mongo_db.restore_user(uid)
+    conn = _sqlite_conn()
+    try:
+        c = conn.cursor()
+        c.execute("UPDATE users SET deleted_at = NULL, email = REPLACE(email, '--deleted-' || ?, '') WHERE id = ? AND deleted_at IS NOT NULL", (uid, uid))
+        conn.commit()
+        return c.rowcount > 0
+    finally:
+        conn.close()
+
+def list_trashed_users():
+    if _use_mongo():
+        import mongo_db
+        users = mongo_db.list_trashed_users()
         out = []
         for u in users:
             d = mongo_db.serialize(u)
@@ -272,7 +284,29 @@ def list_users_for_admin():
     conn = _sqlite_conn()
     try:
         c = conn.cursor()
-        c.execute('SELECT id, name, email, role, COALESCE(email_verified, 0) AS email_verified, COALESCE(leads_used, 0) AS leads_used, COALESCE(subscription_tier, "free") AS subscription_tier, created_at, COALESCE(telegram_notifications, 1) AS telegram_notifications FROM users ORDER BY id')
+        c.execute("SELECT id, name, email, role, deleted_at FROM users WHERE deleted_at IS NOT NULL ORDER BY deleted_at DESC")
+        return [_user_row_to_dict(r) for r in c.fetchall()]
+    finally:
+        conn.close()
+
+# ─── Admin / listings ───────────────────────────────────────────────────
+
+def list_users_for_admin():
+    if _use_mongo():
+        import mongo_db
+        users = mongo_db.list_users(exclude_trashed=True)
+        out = []
+        for u in users:
+            d = mongo_db.serialize(u)
+            d.setdefault('id', str(u.get('_id')))
+            d.pop('password_hash', None)
+            d.pop('password_salt', None)
+            out.append(d)
+        return out
+    conn = _sqlite_conn()
+    try:
+        c = conn.cursor()
+        c.execute("SELECT id, name, email, role, COALESCE(email_verified, 0) AS email_verified, COALESCE(leads_used, 0) AS leads_used, COALESCE(subscription_tier, 'free') AS subscription_tier, created_at, COALESCE(telegram_notifications, 1) AS telegram_notifications FROM users WHERE deleted_at IS NULL ORDER BY id")
         return [_user_row_to_dict(r) for r in c.fetchall()]
     finally:
         conn.close()

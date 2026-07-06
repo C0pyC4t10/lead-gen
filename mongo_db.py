@@ -243,6 +243,38 @@ def update_user(user_id, update):
     update['updated_at'] = now_iso()
     db.users.update_one({'_id': to_object_id(user_id)}, {'$set': update})
 
+def soft_delete_user(user_id):
+    db = get_db()
+    if db is None:
+        return False
+    try:
+        oid = to_object_id(user_id)
+        user = db.users.find_one({'_id': oid})
+        if user:
+            new_email = (user.get('email', '') or '') + '--deleted--' + str(user_id)
+            db.users.update_one({'_id': oid}, {'$set': {'deleted_at': now_iso(), 'email': new_email}})
+        db.sessions.delete_many({'user_id': str(user_id)})
+        return True
+    except Exception:
+        return False
+
+def restore_user(user_id):
+    db = get_db()
+    if db is None:
+        return False
+    try:
+        oid = to_object_id(user_id)
+        db.users.update_one({'_id': oid}, {'$set': {'deleted_at': None}})
+        return True
+    except Exception:
+        return False
+
+def list_trashed_users():
+    db = get_db()
+    if db is None:
+        return []
+    return list(db.users.find({'deleted_at': {'$ne': None}}, {'password_hash': 0, 'password_salt': 0}).sort('deleted_at', DESCENDING))
+
 def delete_user(user_id):
     db = get_db()
     if db is None:
@@ -256,11 +288,14 @@ def delete_user(user_id):
     except Exception:
         return False
 
-def list_users():
+def list_users(exclude_trashed=False):
     db = get_db()
     if db is None:
         return []
-    cursor = db.users.find({}, {'password_hash': 0, 'password_salt': 0}).sort('created_at', DESCENDING)
+    q = {}
+    if exclude_trashed:
+        q['deleted_at'] = None
+    cursor = db.users.find(q, {'password_hash': 0, 'password_salt': 0}).sort('created_at', DESCENDING)
     return list(cursor)
 
 def count_users_grouped_by_role():

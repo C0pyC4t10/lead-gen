@@ -112,7 +112,22 @@
         </table>
       </div>
     </div>
-  </div>
+    </div>
+
+    <div class="card" id="trashSection" style="display:none">
+      <div class="card-header" style="cursor:pointer;display:flex;align-items:center;justify-content:space-between" onclick="toggleTrash()">
+        <span>Trash &mdash; Deleted Users</span>
+        <span id="trashToggle" style="font-size:12px;color:#64748B">▼</span>
+      </div>
+      <div id="trashBody" style="display:none">
+        <div class="scroll-x">
+          <table>
+            <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Deleted</th><th>Restore</th></tr></thead>
+            <tbody id="trashUsersBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
 
   <script>
     const API_BASE = window.location.origin;
@@ -178,11 +193,17 @@
             if (ml && statsText.month_label) ml.textContent = statsText.month_label;
             document.getElementById('statQualified').textContent = statsText.statuses?.qualified ?? 0;
           } else { hasError = true; showStatus('Invalid stats response', 'error'); }
-        } else { hasError = true; showStatus('Stats API error (' + statsResp.status + ')', 'error'); }
+        } else {
+            const errBody = await statsResp.json().catch(() => ({}));
+            hasError = true; showStatus('Stats API error (' + statsResp.status + '): ' + (errBody?.error || errBody?.detail || 'unknown'), 'error');
+          }
         if (usersResp.ok) {
           const usersText = await usersResp.json().catch(() => null);
           renderUsers(Array.isArray(usersText) ? usersText : []);
-        } else { hasError = true; showStatus('Users API error (' + usersResp.status + ')', 'error'); }
+        } else {
+            const errBody = await usersResp.json().catch(() => ({}));
+            hasError = true; showStatus('Users API error (' + usersResp.status + '): ' + (errBody?.error || 'unknown'), 'error');
+          }
         setLoading(false);
         if (hasError) addRetryButton();
       } catch (e) {
@@ -259,6 +280,60 @@
 
     function showStatus(msg, type) { const el = document.getElementById('statusMsg'); el.textContent = msg; el.className = 'status-msg show ' + type; setTimeout(() => el.classList.remove('show'), 4000); }
     function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+    function toggleTrash() {
+      const body = document.getElementById('trashBody');
+      const toggle = document.getElementById('trashToggle');
+      if (body.style.display === 'none') {
+        body.style.display = 'block';
+        toggle.textContent = '\u25B2';
+        loadTrashUsers();
+      } else {
+        body.style.display = 'none';
+        toggle.textContent = '\u25BC';
+      }
+    }
+
+    async function loadTrashUsers() {
+      const tbody = document.getElementById('trashUsersBody');
+      try {
+        const resp = await fetch(API_BASE + '/api/admin/users/trash?token=' + encodeURIComponent(token));
+        if (!resp.ok) { tbody.innerHTML = '<tr><td colspan="5" style="color:#EF4444;text-align:center;padding:16px">Failed to load</td></tr>'; return; }
+        const users = await resp.json();
+        if (!Array.isArray(users) || users.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="5" style="color:#475569;text-align:center;padding:16px">No deleted users</td></tr>';
+          return;
+        }
+        tbody.innerHTML = users.map(u => '<tr>' +
+          '<td><strong style="color:#E2E8F0">' + esc(u.name) + '</strong></td>' +
+          '<td style="color:#94A3B8">' + esc(u.email) + '</td>' +
+          '<td><span class="badge ' + (u.role || 'user') + '">' + esc(u.role || 'user') + '</span></td>' +
+          '<td style="color:#64748B;font-size:12px">' + (u.deleted_at ? u.deleted_at.split('T')[0] : '--') + '</td>' +
+          '<td><button class="btn-sm" style="border-color:rgba(16,185,129,0.2);color:#6EE7B7" onclick="restoreUser(\'' + u.id + '\')">Restore</button></td>' +
+          '</tr>').join('');
+        document.getElementById('trashSection').style.display = 'block';
+      } catch (e) {
+        tbody.innerHTML = '<tr><td colspan="5" style="color:#EF4444;text-align:center;padding:16px">Connection error</td></tr>';
+      }
+    }
+
+    async function restoreUser(userId) {
+      if (!(await scravenConfirm('Restore this user?'))) return;
+      try {
+        const resp = await fetch(API_BASE + '/api/admin/users/restore', {
+          method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+          body: JSON.stringify({ user_id: userId }),
+        });
+        if (resp.ok) {
+          showStatus('User restored', 'success');
+          loadData();
+          loadTrashUsers();
+        } else {
+          const r = await resp.json().catch(() => ({}));
+          showStatus(r.error || 'Restore failed', 'error');
+        }
+      } catch (e) { showStatus('Connection error', 'error'); }
+    }
   </script>
   <script>
     (function(){

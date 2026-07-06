@@ -4067,6 +4067,32 @@ class Handler(BaseHTTPRequestHandler):
                 return
             auth_db.delete_user(user_id)
             self._json(200, {'status': 'deleted'})
+        elif parsed.path == '/api/admin/users/trash':
+            user = require_auth(self)
+            if not user: return
+            if user['role'] not in ('admin', 'super_admin'):
+                self._json(403, {'error': 'Forbidden'})
+                return
+            try:
+                users = auth_db.list_trashed_users()
+                self._json(200, users or [])
+            except Exception:
+                self._json(200, [])
+        elif parsed.path == '/api/admin/users/restore':
+            user = require_auth(self)
+            if not user: return
+            if user['role'] not in ('admin', 'super_admin'):
+                self._json(403, {'error': 'Forbidden'})
+                return
+            if data is None:
+                self._json(400, {'error': 'Invalid JSON'})
+                return
+            user_id = data.get('user_id')
+            if not user_id:
+                self._json(400, {'error': 'user_id required'})
+                return
+            auth_db.restore_user(user_id)
+            self._json(200, {'status': 'restored'})
         elif parsed.path == '/api/admin/users/role':
             user = require_auth(self)
             if not user: return
