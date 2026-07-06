@@ -279,6 +279,7 @@ def list_trashed_users():
             d.setdefault('id', str(u.get('_id')))
             d.pop('password_hash', None)
             d.pop('password_salt', None)
+            d.pop('avatar_data', None)
             out.append(d)
         return out
     conn = _sqlite_conn()
@@ -301,6 +302,7 @@ def list_users_for_admin():
             d.setdefault('id', str(u.get('_id')))
             d.pop('password_hash', None)
             d.pop('password_salt', None)
+            d.pop('avatar_data', None)
             out.append(d)
         return out
     conn = _sqlite_conn()
@@ -396,7 +398,9 @@ def count_users():
     if _use_mongo():
         import mongo_db
         db = mongo_db.get_db()
-        return db.users.count_documents({}) if db else 0
+        if db is None:
+            return 0
+        return db.users.count_documents({})
     conn = _sqlite_conn()
     try:
         c = conn.cursor()
