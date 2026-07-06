@@ -73,6 +73,11 @@
     var loggedIn = !!(u && u.id);
     var role = u && u.role;
     var isAdmin = role === "admin" || role === "super_admin";
+    // Logout is intentionally only shown on the Profile page (and inside
+    // the mountProfile dropdown on every page) so the user has one clear
+    // place to sign out — the profile page — instead of a Logout button
+    // on every nav.
+    var onProfile = window.location.pathname === "/profile" || window.location.pathname === "/profile.html";
     var items = [
       { href: "/",         icon: "home",    label: "Home" },
       { href: "/extract",  icon: "extract", label: "Extract", primary: true },
@@ -85,7 +90,7 @@
       items.push({ divider: true, label: "Account" });
       items.push({ href: "/profile", icon: "account", label: "Profile" });
       if (isAdmin) items.push({ href: "/admin", icon: "admin", label: "Admin" });
-      items.push({ action: "logout", icon: "logout", label: "Logout" });
+      if (onProfile) items.push({ action: "logout", icon: "logout", label: "Logout" });
     } else {
       items.push({ divider: true });
       items.push({ href: "/login",    icon: "login",    label: "Sign In", cta: true });
@@ -117,6 +122,10 @@
 
     var role = u.role;
     var isAdmin = role === "admin" || role === "super_admin";
+    // Logout lives only on the Profile page. The mountProfile dropdown
+    // otherwise only shows Profile (+ Admin for admins) so it doesn't
+    // duplicate the Logout button on every page.
+    var onProfile = window.location.pathname === "/profile" || window.location.pathname === "/profile.html";
 
     var profile = document.createElement("div");
     profile.id = "navProfile";
@@ -140,7 +149,7 @@
         '</div>' +
         '<a href="/profile" class="nav-profile-menu-item" role="menuitem"><span class="di">' + iconSVG("account") + '</span><span class="dl">Profile</span></a>' +
         (isAdmin ? '<a href="/admin" class="nav-profile-menu-item" role="menuitem"><span class="di">' + iconSVG("admin") + '</span><span class="dl">Admin</span></a>' : '') +
-        '<button type="button" class="nav-profile-menu-item is-logout" data-action="logout" role="menuitem"><span class="di">' + iconSVG("logout") + '</span><span class="dl">Logout</span></button>' +
+        (onProfile ? '<button type="button" class="nav-profile-menu-item is-logout" data-action="logout" role="menuitem"><span class="di">' + iconSVG("logout") + '</span><span class="dl">Logout</span></button>' : '') +
       '</div>';
 
     topNav.appendChild(profile);
