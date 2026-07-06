@@ -17,12 +17,16 @@ AUTH_DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'auth.db
 
 
 def _use_mongo():
-    """Runtime check: MongoDB configured AND connected."""
+    """Runtime check: MongoDB configured AND connected.
+
+    Uses is_ready() — never triggers a connect from a request thread.
+    Mongo init is owned by the background thread in server.py.
+    """
     if not os.environ.get('MONGODB_URI', '').strip():
         return False
     try:
         import mongo_db
-        return mongo_db.get_db() is not None
+        return mongo_db.is_ready()
     except Exception:
         return False
 

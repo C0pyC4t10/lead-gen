@@ -25,20 +25,22 @@ DB_NAME = os.environ.get('MONGODB_DB', 'scraven')
 _client = None
 _db = None
 _lock = threading.Lock()
+_mongo_ready = False  # Set True ONLY after a successful connect (and indexes)
 
 
-def _connect_with_retry(max_attempts=5, base_delay=1.5):
+def _connect_with_retry(max_attempts=3, base_delay=1.0):
     """Connect to MongoDB with exponential backoff.
 
-    Atlas free M0 clusters can take 30-60s to wake from idle pause.
-    Repeated SSL handshake failures on the first attempt are common.
+    Tighter budget than before: max ~7s total. We only block the
+    init thread on this — request threads short-circuit via
+    _mongo_ready and fall back to SQLite until this returns.
     """
     last_err = None
     for attempt in range(1, max_attempts + 1):
         try:
             kwargs = dict(
-                serverSelectionTimeoutMS=8000,
-                connectTimeoutMS=8000,
+                serverSelectionTimeoutMS=6000,
+                connectTimeoutMS=6000,
                 socketTimeoutMS=15000,
                 retryWrites=False,
                 appname='scraven-render',
@@ -62,24 +64,46 @@ def _connect_with_retry(max_attempts=5, base_delay=1.5):
                 pass
             _client = None
             if attempt < max_attempts:
-                time.sleep(base_delay * (2 ** (attempt - 1)))  # 1.5s, 3s, 6s, 12s
+                time.sleep(base_delay * (2 ** (attempt - 1)))  # 1s, 2s, 4s
     print(f"[mongo] giving up after {max_attempts} attempts; last error: {str(last_err).split(chr(10))[0][:200]}", flush=True)
     return None
 
 
 def get_db():
-    """Lazy-init the MongoDB client. Returns pymongo database handle or None."""
-    global _client, _db
+    """Return the cached pymongo database handle, or None if not yet connected.
+
+    NOTE: This NEVER triggers a connect. Connection is owned by the
+    background init thread in server.py. Request threads must call
+    is_ready() first; if False, they should use the SQLite fallback.
+    """
+    global _db
+    if not MONGO_URI or not _mongo_ready:
+        return None
+    return _db
+
+
+def is_ready():
+    """True only after a successful connect + index creation."""
+    return _mongo_ready
+
+
+def init_and_get_db():
+    """Connect synchronously, mark ready, return db. Called ONCE by the
+    background init thread in server.py."""
+    global _client, _db, _mongo_ready
     if not MONGO_URI:
         return None
     with _lock:
-        if _db is None:
-            client = _connect_with_retry()
-            if client is None:
-                return None
-            _client = client
-            _db = _client[DB_NAME]
-            _ensure_indexes(_db)
+        if _mongo_ready:
+            return _db
+        client = _connect_with_retry()
+        if client is None:
+            _mongo_ready = False
+            return None
+        _client = client
+        _db = _client[DB_NAME]
+        _ensure_indexes(_db)
+        _mongo_ready = True
         return _db
 
 def _ensure_indexes(db):

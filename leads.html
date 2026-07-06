@@ -866,11 +866,17 @@
         const resp = await fetch(API_BASE + '/api/lead', {
           method: 'POST', headers: authHeaders(), body: JSON.stringify(payload),
         });
-        const result = await resp.json();
+        const rawText = await resp.text();
+        let result = null;
+        try { result = rawText ? JSON.parse(rawText) : null; } catch (e) { result = null; }
         hideLoading();
         document.getElementById('results').style.display = 'block';
         if (!resp.ok) {
-          showStatus('Save failed: ' + (result.error || resp.status), 'error');
+          showStatus('Save failed: ' + (result?.error || resp.status) + (rawText ? '' : ' (server returned no data)'), 'error');
+          return;
+        }
+        if (!result) {
+          showStatus('Save failed: server returned no response. Render may be suspending — try again in 10s.', 'error');
           return;
         }
         const rows = document.querySelectorAll('.lead-select');

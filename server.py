@@ -33,11 +33,16 @@ USE_MONGO = bool(mongo_db and os.environ.get('MONGODB_URI', '').strip())
 
 
 def _mongo_alive():
-    """True only if the Mongo client is reachable. False-safe."""
+    """True only if Mongo has been initialized by the background thread.
+
+    Request threads NEVER trigger a Mongo connect. They check this flag
+    and fall back to SQLite when False. This keeps Render's 30s proxy
+    timeout safe — we don't block on Mongo initialization.
+    """
     if not USE_MONGO or mongo_db is None:
         return False
     try:
-        return mongo_db.get_db() is not None
+        return mongo_db.is_ready()
     except Exception:
         return False
 
@@ -4009,7 +4014,7 @@ if __name__ == '__main__':
         """Mongo + auth + leads init that doesn't block the HTTP listener."""
         try:
             if USE_MONGO:
-                db = mongo_db.get_db() if mongo_db else None
+                db = mongo_db.init_and_get_db() if mongo_db else None
                 if db is not None:
                     print(f"MongoDB layer active (DB: {os.environ.get('MONGODB_DB','scraven')})", flush=True)
                     try:
