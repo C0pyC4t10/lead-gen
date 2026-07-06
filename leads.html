@@ -490,6 +490,7 @@
     <div class="nav-links">
       <a href="/">Extract</a>
       <a href="/leads">Leads</a>
+      <a href="/qualified">Qualified</a>
       <a href="/trash" id="trashNav">Trash <span id="trashBadge" style="display:none;background:#EF4444;color:#fff;font-size:10px;padding:1px 6px;border-radius:8px;margin-left:4px">0</span></a>
       <a href="/pricing">Pricing</a>
     </div>
@@ -1353,11 +1354,11 @@
     async function updateStatus(pageUrl, status) {
       try {
         const resp = await fetch(API_BASE + '/api/lead/status', {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (token || APP_TOKEN || '') },
           body: JSON.stringify({ page_url: pageUrl, status }),
         });
         const result = await resp.json();
-        showStatus(result.message || 'Updated', resp.ok ? 'success' : 'error');
+        showStatus(result.message || result.error || 'Updated', resp.ok ? 'success' : 'error');
         if (resp.ok) loadHistory();
       } catch (err) { showStatus('Failed: ' + err.message, 'error'); }
     }

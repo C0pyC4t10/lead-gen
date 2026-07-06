@@ -3442,6 +3442,8 @@ class Handler(BaseHTTPRequestHandler):
             except Exception as e:
                 self._json(500, {'status': 'error', 'error': 'Save failed: ' + str(e)})
         elif parsed.path == '/api/lead/status':
+            user = require_auth(self)
+            if not user: return
             if data is None:
                 self._json(400, {'error': 'Invalid JSON'})
                 return
