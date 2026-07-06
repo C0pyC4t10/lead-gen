@@ -26,6 +26,7 @@ except ImportError:
     mongo_db = None
     cloudinary_storage = None
 import leads_db
+import auth_db  # unified user storage (mongo or sqlite dispatch)
 
 # Auto-detect: use MongoDB if MONGODB_URI is present (Render envs set it).
 USE_MONGO = bool(mongo_db and os.environ.get('MONGODB_URI', '').strip())
@@ -362,22 +363,14 @@ def _verify_token(token):
 def create_session(user_id, conn=None):
     """Create a stateless JWT token containing user info (no DB sessions table)."""
     try:
-        if conn is None:
-            own = True
-            conn = sqlite3.connect(AUTH_DB_PATH, timeout=30)
-        else:
-            own = False
-        c = conn.cursor()
-        c.execute('SELECT name, email, role, COALESCE(email_verified, 0), COALESCE(leads_used, 0), COALESCE(subscription_tier, "free") FROM users WHERE id = ?', (user_id,))
-        row = c.fetchone()
-        if not row:
-            if own: conn.close()
+        user = auth_db.get_user_by_id(user_id)
+        if not user:
             return None
         payload = {
-            'uid': user_id, 'name': row[0], 'email': row[1], 'role': row[2],
-            'ev': bool(row[3]), 'lu': row[4], 'st': row[5],
+            'uid': user['id'], 'name': user['name'], 'email': user['email'], 'role': user['role'],
+            'ev': bool(user.get('email_verified')), 'lu': int(user.get('leads_used') or 0),
+            'st': user.get('subscription_tier') or 'free',
         }
-        if own: conn.close()
         token = _make_token(payload)
         return token
     except Exception as e:
@@ -398,42 +391,30 @@ def get_user_from_token(token):
 
 
 def init_auth_db():
-    from db import init_auth_db as _init
-    _init()
-    try:
-        conn = sqlite3.connect(AUTH_DB_PATH, timeout=30)
-        conn.execute('PRAGMA journal_mode=WAL')
-        conn.close()
-    except Exception:
-        pass
+    import auth_db
+    auth_db.init_auth_db()
     _seed_default_users()
 
 
 def _seed_default_users():
-    """Seed default admin users if the users table is empty."""
+    """Seed default admin users if no users exist yet."""
     try:
-        conn = sqlite3.connect(AUTH_DB_PATH, timeout=30)
-        c = conn.cursor()
-        c.execute('SELECT COUNT(*) FROM users')
-        if c.fetchone()[0] > 0:
-            conn.close()
+        if auth_db.count_users() > 0:
             return
         now = datetime.now().isoformat()
         users = [
             ('Jahid', 'jahid.skarbol@gmail.com', 'Jahid@17', 'super_admin'),
             ('Xahid Joy', 'xahidjoy1@gmail.com', 'Jahid@17', 'admin'),
         ]
+        seeded = 0
         for name, email, pw, role in users:
+            if auth_db.email_exists(email):
+                continue
             h, salt = hash_password(pw)
-            c.execute('''INSERT INTO users (name, email, password_hash, password_salt, role,
-                         email_verified, created_at, updated_at)
-                         VALUES (?, ?, ?, ?, ?, 1, ?, ?)''',
-                      (name, email, h, salt, role, now, now))
-            uid = c.lastrowid
-            c.execute('INSERT INTO settings (user_id) VALUES (?)', (uid,))
-        conn.commit()
-        conn.close()
-        print(f'[seed] Seeded {len(users)} default users', flush=True)
+            auth_db.create_user(name, email, h, salt, role=role)
+            seeded += 1
+        if seeded:
+            print(f'[seed] Seeded {seeded} default users', flush=True)
     except Exception as e:
         print(f'[seed] Error: {e}', flush=True)
 
@@ -2587,15 +2568,22 @@ class Handler(BaseHTTPRequestHandler):
             if not user: return
             self._json(200, user)
         elif parsed.path == '/api/debug/sessions':
-            conn = sqlite3.connect(AUTH_DB_PATH, timeout=30)
-            conn.row_factory = sqlite3.Row
-            c = conn.cursor()
-            c.execute('SELECT * FROM sessions ORDER BY id DESC LIMIT 10')
-            rows = [dict(r) for r in c.fetchall()]
-            c.execute('SELECT COUNT(*) as cnt FROM sessions')
-            total = c.fetchone()['cnt']
-            conn.close()
-            self._json(200, {'total_sessions': total, 'sessions': rows, 'db_path': AUTH_DB_PATH})
+            # Sessions are stateless JWTs — only the SQLite fallback persists this old table.
+            rows = []
+            total = 0
+            try:
+                import sqlite3 as _sq
+                conn = _sq.connect(AUTH_DB_PATH, timeout=30)
+                conn.row_factory = _sq.Row
+                c = conn.cursor()
+                c.execute('SELECT * FROM sessions ORDER BY id DESC LIMIT 10')
+                rows = [dict(r) for r in c.fetchall()]
+                c.execute('SELECT COUNT(*) as cnt FROM sessions')
+                total = c.fetchone()['cnt']
+                conn.close()
+            except Exception:
+                pass
+            self._json(200, {'total_sessions': total, 'sessions': rows, 'db_path': AUTH_DB_PATH, 'note': 'Sessions are stateless JWTs (not stored on Mongo).'})
         elif parsed.path == '/api/auth/leads-remaining':
             user = require_auth(self)
             if not user: return
@@ -2608,11 +2596,7 @@ class Handler(BaseHTTPRequestHandler):
             if user['role'] not in ('admin', 'super_admin'):
                 self._json(403, {'error': 'Forbidden'})
                 return
-            conn = sqlite3.connect(AUTH_DB_PATH, timeout=30)
-            c = conn.cursor()
-            c.execute('SELECT id, name, email, role, created_at FROM users ORDER BY id')
-            users = [{'id': r[0], 'name': r[1], 'email': r[2], 'role': r[3], 'created_at': r[4]} for r in c.fetchall()]
-            conn.close()
+            users = auth_db.list_users_for_admin()
             self._json(200, users)
         elif parsed.path == '/api/admin/stats':
             user = require_auth(self)
@@ -2621,13 +2605,8 @@ class Handler(BaseHTTPRequestHandler):
                 self._json(403, {'error': 'Forbidden'})
                 return
             leads = read_all_leads(include_all_users=True)
-            conn = sqlite3.connect(AUTH_DB_PATH, timeout=30)
-            c = conn.cursor()
-            c.execute('SELECT COUNT(*) FROM users')
-            user_count = c.fetchone()[0]
-            c.execute('SELECT role, COUNT(*) FROM users GROUP BY role')
-            role_counts = {r: cnt for r, cnt in c.fetchall()}
-            conn.close()
+            user_count = auth_db.count_users()
+            role_counts = auth_db.count_users_by_role()
             statuses = {}
             this_month = 0
             now = datetime.now()
@@ -2687,13 +2666,9 @@ class Handler(BaseHTTPRequestHandler):
             user = require_auth(self)
             if not user: return
             config = leads_db.get_telegram_config(user['id'])
-            conn = sqlite3.connect(AUTH_DB_PATH, timeout=30)
-            c = conn.cursor()
-            c.execute('SELECT COALESCE(telegram_notifications, 1) FROM users WHERE id = ?', (user['id'],))
-            row = c.fetchone()
-            conn.close()
+            tg_enabled = auth_db.get_telegram_notifications(user['id'])
             self._json(200, {
-                'telegram_notifications': (str(row[0]) == '1') if row else True,
+                'telegram_notifications': tg_enabled,
                 'telegram_bot_token': config.get('bot_token') or '',
                 'telegram_chat_id': config.get('chat_id') or '',
             })
@@ -2835,12 +2810,7 @@ class Handler(BaseHTTPRequestHandler):
                 if 'notify_telegram' in data:
                     user_notify = bool(data.get('notify_telegram'))
                 else:
-                    conn_pref = sqlite3.connect(AUTH_DB_PATH, timeout=30)
-                    c_pref = conn_pref.cursor()
-                    c_pref.execute('SELECT COALESCE(telegram_notifications, 1) FROM users WHERE id = ?', (user['id'],))
-                    pref_row = c_pref.fetchone()
-                    conn_pref.close()
-                    user_notify = (str(pref_row[0]) == '1') if pref_row else True
+                    user_notify = auth_db.get_telegram_notifications(user['id'])
             else:
                 user_notify = False
             data['_saved_by_name'] = user.get('name', '') or ''
@@ -2851,11 +2821,7 @@ class Handler(BaseHTTPRequestHandler):
             if msg == 'duplicate':
                 self._json(200, {'status': 'duplicate', 'message': 'Lead already exists, skipped'})
             elif is_new:
-                conn = sqlite3.connect(AUTH_DB_PATH, timeout=30)
-                c = conn.cursor()
-                c.execute('UPDATE users SET leads_used = leads_used + 1 WHERE id = ?', (user['id'],))
-                conn.commit()
-                conn.close()
+                auth_db.increment_leads_used(user['id'])
                 self._json(201, {'status': 'saved', 'message': msg, 'leads_remaining': remaining - 1})
             else:
                 self._json(400, {'status': 'error', 'message': msg})
@@ -3350,31 +3316,21 @@ class Handler(BaseHTTPRequestHandler):
                 if len(password) < 6:
                     self._json(400, {'error': 'Password must be at least 6 characters'})
                     return
-                conn = sqlite3.connect(AUTH_DB_PATH, timeout=30)
-                c = conn.cursor()
-                c.execute('SELECT id FROM users WHERE email = ?', (email,))
-                if c.fetchone():
-                    conn.close()
+                if auth_db.email_exists(email):
                     self._json(409, {'error': 'Email already registered'})
                     return
                 h, salt = hash_password(password)
-                now = datetime.now().isoformat()
                 role = 'admin' if os.environ.get('ADMIN_EMAIL', '').lower() == email else 'user'
-                c.execute('''INSERT INTO users (name, email, password_hash, password_salt, role,
-                             email_verified, created_at, updated_at)
-                             VALUES (?, ?, ?, ?, ?, ?, ?, ?)''',
-                          (name, email, h, salt, role, 1, now, now))
-                user_id = c.lastrowid
-                c.execute('INSERT INTO settings (user_id) VALUES (?)', (user_id,))
-                token = create_session(user_id, conn)
+                user_id = auth_db.create_user(name, email, h, salt, role=role)
+                if not user_id:
+                    self._json(500, {'error': 'Failed to create user'})
+                    return
+                token = create_session(user_id)
                 if not token:
-                    conn.close()
                     self._json(500, {'error': 'Failed to create session'})
                     return
-                conn.commit()
-                conn.close()
                 self._json(201, {'token': token,
-                                 'user': {'id': user_id, 'name': name, 'email': email, 'role': role,
+                                 'user': {'id': str(user_id), 'name': name, 'email': email, 'role': role,
                                           'email_verified': True},
                                  'message': 'Account created.'})
             except Exception as e:
@@ -3392,30 +3348,24 @@ class Handler(BaseHTTPRequestHandler):
             if not code:
                 self._json(400, {'error': 'Verification code required'})
                 return
-            conn = sqlite3.connect(AUTH_DB_PATH, timeout=30)
-            c = conn.cursor()
-            c.execute('SELECT verification_code, verification_expires FROM users WHERE id = ?', (user['id'],))
-            row = c.fetchone()
-            if not row:
-                conn.close()
+            stored_code, expires_str = auth_db.get_verification_code(user['id'])
+            if not stored_code:
                 self._json(400, {'error': 'No verification pending'})
                 return
-            stored_code, expires_str = row
             if stored_code == 'verified':
-                conn.close()
                 self._json(200, {'status': 'already_verified'})
                 return
             if stored_code != code:
-                conn.close()
                 self._json(400, {'error': 'Invalid verification code'})
                 return
-            if expires_str and float(expires_str) < time.time():
-                conn.close()
-                self._json(400, {'error': 'Verification code expired. Request a new one.'})
-                return
-            c.execute('UPDATE users SET email_verified = 1, verification_code = ? WHERE id = ?', ('verified', user['id']))
-            conn.commit()
-            conn.close()
+            if expires_str:
+                try:
+                    if float(expires_str) < time.time():
+                        self._json(400, {'error': 'Verification code expired. Request a new one.'})
+                        return
+                except Exception:
+                    pass
+            auth_db.update_user_fields(user['id'], email_verified=1, verification_code='verified')
             self._json(200, {'status': 'verified'})
         elif parsed.path == '/api/auth/resend-verification':
             user = require_auth(self)
@@ -3425,12 +3375,7 @@ class Handler(BaseHTTPRequestHandler):
                 return
             code = ''.join(secrets.choice(string.digits) for _ in range(6))
             exp = str(datetime.now().timestamp() + 600)
-            conn = sqlite3.connect(AUTH_DB_PATH, timeout=30)
-            c = conn.cursor()
-            c.execute('UPDATE users SET verification_code = ?, verification_expires = ? WHERE id = ?',
-                      (code, exp, user['id']))
-            conn.commit()
-            conn.close()
+            auth_db.set_verification_code(user['id'], code, exp)
             sent = send_verification_email(user['email'], code)
             self._json(200, {'status': 'resent' if sent else 'failed', 'message': 'Check your email' if sent else 'Failed to send. Try again later.'})
         elif parsed.path == '/api/auth/leads-remaining':
@@ -3461,30 +3406,27 @@ class Handler(BaseHTTPRequestHandler):
             if not email or not password:
                 self._json(400, {'error': 'Email and password required'})
                 return
-            conn = sqlite3.connect(AUTH_DB_PATH, timeout=30)
-            c = conn.cursor()
-            c.execute('SELECT id, name, email, role, password_hash, password_salt, COALESCE(email_verified, 0), COALESCE(leads_used, 0), COALESCE(subscription_tier, "free") FROM users WHERE email = ?', (email,))
-            row = c.fetchone()
+            row = auth_db.get_user_by_email(email)
             if not row:
-                conn.close()
                 self._json(401, {'error': 'Invalid email or password'})
                 return
-            if not verify_password(password, row[4], row[5]):
-                conn.close()
+            if not verify_password(password, row.get('password_hash', ''), row.get('password_salt', '')):
                 self._json(401, {'error': 'Invalid email or password'})
                 return
             _login_attempts.pop(client_ip, None)
-            print(f"[auth] LOGIN success: user={row[0]} email={email}", flush=True)
-            token = create_session(row[0], conn)
+            print(f"[auth] LOGIN success: user={row['id']} email={email}", flush=True)
+            token = create_session(row['id'])
             if not token:
-                conn.close()
                 print(f"[auth] Login FAILED: session creation returned None", flush=True)
                 self._json(500, {'error': 'Failed to create session'})
                 return
-            conn.commit()
-            conn.close()
-            print(f"[auth] Login response: token={token[:20]}... user={row[1]}", flush=True)
-            self._json(200, {'token': token, 'user': {'id': row[0], 'name': row[1], 'email': row[2], 'role': row[3], 'email_verified': bool(row[6]), 'leads_used': row[7], 'subscription_tier': row[8]}})
+            print(f"[auth] Login response: token={token[:20]}... user={row.get('name')}", flush=True)
+            self._json(200, {'token': token, 'user': {
+                'id': row['id'], 'name': row.get('name'), 'email': row.get('email'),
+                'role': row.get('role'), 'email_verified': bool(row.get('email_verified')),
+                'leads_used': int(row.get('leads_used') or 0),
+                'subscription_tier': row.get('subscription_tier') or 'free',
+            }})
         elif parsed.path == '/api/auth/refresh':
             user = require_auth(self)
             if not user: return
@@ -3510,11 +3452,7 @@ class Handler(BaseHTTPRequestHandler):
             if tg is None:
                 self._json(400, {'error': 'telegram_notifications required'})
                 return
-            conn = sqlite3.connect(AUTH_DB_PATH, timeout=30)
-            c = conn.cursor()
-            c.execute('UPDATE users SET telegram_notifications = ? WHERE id = ?', (1 if tg else 0, user['id']))
-            conn.commit()
-            conn.close()
+            auth_db.update_user_fields(user['id'], telegram_notifications=1 if tg else 0)
             self._json(200, {'telegram_notifications': bool(tg)})
         elif parsed.path == '/api/user/telegram-bot':
             user = require_auth(self)
@@ -3556,22 +3494,15 @@ class Handler(BaseHTTPRequestHandler):
             if not name:
                 self._json(400, {'error': 'Name is required'})
                 return
-            conn = sqlite3.connect(AUTH_DB_PATH, timeout=30)
-            c = conn.cursor()
-            if email and email != user['email']:
-                c.execute('SELECT id FROM users WHERE email = ? AND id != ?', (email, user['id']))
-                if c.fetchone():
-                    conn.close()
+            if email and email != user.get('email', '').lower():
+                if auth_db.email_exists(email, exclude_uid=user['id']):
                     self._json(409, {'error': 'Email already in use'})
                     return
-            now = datetime.now().isoformat()
+            fields = {'name': name}
             if email:
-                c.execute('UPDATE users SET name = ?, email = ?, updated_at = ? WHERE id = ?', (name, email, now, user['id']))
-            else:
-                c.execute('UPDATE users SET name = ?, updated_at = ? WHERE id = ?', (name, now, user['id']))
-            conn.commit()
-            conn.close()
-            self._json(200, {'status': 'updated', 'user': {'name': name, 'email': email or user['email']}})
+                fields['email'] = email
+            auth_db.update_user_fields(user['id'], **fields)
+            self._json(200, {'status': 'updated', 'user': {'name': name, 'email': email or user.get('email')}})
         elif parsed.path == '/api/auth/forgot-password':
             if data is None:
                 self._json(400, {'error': 'Invalid JSON'})
@@ -3580,19 +3511,13 @@ class Handler(BaseHTTPRequestHandler):
             if not email:
                 self._json(400, {'error': 'Email required'})
                 return
-            conn = sqlite3.connect(AUTH_DB_PATH, timeout=30)
-            c = conn.cursor()
-            c.execute('SELECT id FROM users WHERE email = ?', (email,))
-            row = c.fetchone()
+            row = auth_db.get_user_by_email(email)
             if not row:
-                conn.close()
                 self._json(200, {'status': 'sent', 'message': 'If that email is registered, a reset link has been sent.'})
                 return
             token = secrets.token_hex(32)
             exp = str(time.time() + 3600)
-            c.execute('UPDATE users SET password_reset_token = ?, password_reset_expires = ? WHERE id = ?', (token, exp, row[0]))
-            conn.commit()
-            conn.close()
+            auth_db.update_user_fields(row['id'], password_reset_token=token, password_reset_expires=exp)
             host = self.headers.get('Host', 'localhost:8800')
             sent = send_reset_email(email, token, host)
             self._json(200, {'status': 'sent' if sent else 'failed', 'message': 'If that email is registered, a reset link has been sent.' if sent else 'Failed to send email. Try again later.'})
@@ -3608,23 +3533,20 @@ class Handler(BaseHTTPRequestHandler):
             if len(new_password) < 6:
                 self._json(400, {'error': 'Password must be at least 6 characters'})
                 return
-            conn = sqlite3.connect(AUTH_DB_PATH, timeout=30)
-            c = conn.cursor()
-            c.execute('SELECT id, password_reset_expires FROM users WHERE password_reset_token = ?', (token,))
-            row = c.fetchone()
+            row = auth_db.get_user_by_reset_token(token)
             if not row:
-                conn.close()
                 self._json(400, {'error': 'Invalid or expired reset token'})
                 return
-            if not row[1] or float(row[1]) < time.time():
-                conn.close()
-                self._json(400, {'error': 'Reset token expired. Request a new one.'})
+            expires = row.get('password_reset_expires')
+            try:
+                if not expires or float(expires) < time.time():
+                    self._json(400, {'error': 'Reset token expired. Request a new one.'})
+                    return
+            except Exception:
+                self._json(400, {'error': 'Invalid token expiry'})
                 return
             h, salt = hash_password(new_password)
-            c.execute('UPDATE users SET password_hash = ?, password_salt = ?, password_reset_token = NULL, password_reset_expires = NULL, updated_at = ? WHERE id = ?',
-                      (h, salt, datetime.now().isoformat(), row[0]))
-            conn.commit()
-            conn.close()
+            auth_db.update_password(row['id'], h, salt)
             self._json(200, {'status': 'reset', 'message': 'Password updated successfully.'})
         elif parsed.path == '/api/auth/change-password':
             user = require_auth(self)
@@ -3640,19 +3562,12 @@ class Handler(BaseHTTPRequestHandler):
             if len(new_password) < 6:
                 self._json(400, {'error': 'New password must be at least 6 characters'})
                 return
-            conn = sqlite3.connect(AUTH_DB_PATH, timeout=30)
-            c = conn.cursor()
-            c.execute('SELECT password_hash, password_salt FROM users WHERE id = ?', (user['id'],))
-            row = c.fetchone()
-            if not verify_password(old_password, row[0], row[1]):
-                conn.close()
+            row = auth_db.get_user_by_id(user['id'])
+            if not row or not verify_password(old_password, row.get('password_hash', ''), row.get('password_salt', '')):
                 self._json(401, {'error': 'Current password is incorrect'})
                 return
             h, salt = hash_password(new_password)
-            now = datetime.now().isoformat()
-            c.execute('UPDATE users SET password_hash = ?, password_salt = ?, updated_at = ? WHERE id = ?', (h, salt, now, user['id']))
-            conn.commit()
-            conn.close()
+            auth_db.update_password(user['id'], h, salt)
             self._json(200, {'status': 'password_updated'})
         elif parsed.path == '/api/admin/users/delete':
             user = require_auth(self)
@@ -3670,24 +3585,42 @@ class Handler(BaseHTTPRequestHandler):
             if int(user_id) == user['id']:
                 self._json(400, {'error': 'Cannot delete yourself'})
                 return
-            conn = sqlite3.connect(AUTH_DB_PATH, timeout=30)
-            c = conn.cursor()
-            c.execute('SELECT role FROM users WHERE id = ?', (user_id,))
-            target_row = c.fetchone()
-            if not target_row:
-                conn.close()
+            target = auth_db.get_user_by_id(user_id)
+            if not target:
                 self._json(404, {'error': 'User not found'})
                 return
-            target_role = target_row[0]
+            target_role = target.get('role')
             if user['role'] == 'admin' and target_role not in ('user', 'pro'):
-                conn.close()
                 self._json(403, {'error': 'Admins can only remove regular users'})
                 return
-            c.execute('DELETE FROM sessions WHERE user_id = ?', (user_id,))
-            c.execute('DELETE FROM settings WHERE user_id = ?', (user_id,))
-            c.execute('DELETE FROM users WHERE id = ?', (user_id,))
-            conn.commit()
-            conn.close()
+            if mongo_db and _mongo_alive():
+                mongo_db.delete_session = getattr(mongo_db, 'delete_session', None)
+                mongo_db.delete_sessions_for_user(user_id)
+            auth_db.update_user_fields(user_id, deleted_at=str(datetime.now(timezone.utc))) if False else None
+            # Hard delete from Mongo (no soft-delete in Mongo implementation)
+            try:
+                if mongo_db and _mongo_alive():
+                    db = mongo_db.get_db()
+                    from bson import ObjectId
+                    try:
+                        db.users.delete_one({'_id': ObjectId(user_id)})
+                        db.sessions.delete_many({'user_id': ObjectId(user_id)})
+                    except Exception:
+                        pass
+            except Exception:
+                pass
+            # SQLite hard delete
+            try:
+                import sqlite3 as _sq
+                conn = _sq.connect(AUTH_DB_PATH, timeout=30)
+                c = conn.cursor()
+                c.execute('DELETE FROM sessions WHERE user_id = ?', (user_id,))
+                c.execute('DELETE FROM settings WHERE user_id = ?', (user_id,))
+                c.execute('DELETE FROM users WHERE id = ?', (user_id,))
+                conn.commit()
+                conn.close()
+            except Exception:
+                pass
             self._json(200, {'status': 'deleted'})
         elif parsed.path == '/api/admin/users/role':
             user = require_auth(self)
@@ -3706,23 +3639,16 @@ class Handler(BaseHTTPRequestHandler):
             if int(target_id) == user['id']:
                 self._json(400, {'error': 'Cannot change your own role'})
                 return
-            conn = sqlite3.connect(AUTH_DB_PATH, timeout=30)
-            c = conn.cursor()
-            c.execute('SELECT role FROM users WHERE id = ?', (target_id,))
-            target_row = c.fetchone()
-            if not target_row:
-                conn.close()
+            target = auth_db.get_user_by_id(target_id)
+            if not target:
                 self._json(404, {'error': 'User not found'})
                 return
-            target_curr_role = target_row[0]
+            target_curr_role = target.get('role')
             if user['role'] == 'admin':
                 if target_curr_role not in ('user', 'pro') or new_role not in ('user', 'pro'):
-                    conn.close()
                     self._json(403, {'error': 'Admins can only toggle users between user and pro'})
                     return
-            c.execute('UPDATE users SET role = ? WHERE id = ?', (new_role, target_id))
-            conn.commit()
-            conn.close()
+            auth_db.update_user_fields(target_id, role=new_role)
             self._json(200, {'status': 'updated'})
         else:
             self._json(404, {'error': 'Not found'})
