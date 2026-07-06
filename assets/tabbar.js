@@ -292,6 +292,9 @@
       if (it.primary) cls += " is-primary";
       if (it.cta)     cls += " is-cta";
       if (it.action === "logout") cls += " is-logout";
+      // Mark current page as active so the mobile drawer reflects where
+      // the user is right now (matches the desktop top-nav + bottom tab).
+      if (it.href && isCurrentPath(it.href)) cls += " is-current";
       if (it.action) {
         return '<button type="button" class="' + cls + '" data-action="' + it.action + '"><span class="di">' + iconSVG(it.icon) + '</span><span class="dl">' + escAttr(it.label) + '</span></button>';
       }
@@ -364,6 +367,17 @@
     if (p === "/index.html") p = "/";
     p = p.replace(/\/+$/, "");
     return p || "/";
+  }
+
+  // True when the given href matches the current path. Used by the mobile
+  // drawer to mark the current page (so the user can see which section
+  // they're in even when the drawer is open).
+  function isCurrentPath(href) {
+    if (!href) return false;
+    var h = href.split("#")[0].replace(/\/+$/, "") || "/";
+    var p = currentPath();
+    if (h === "/") return p === "/";
+    return p === h || p.indexOf(h + "/") === 0;
   }
 
   function syncActive() {

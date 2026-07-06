@@ -284,6 +284,34 @@ body.has-tab-bar {
   border-color: rgba(0, 229, 255, 0.45);
   color: #67E8F9;
 }
+/* Current page in the mobile drawer — same treatment as the top-nav
+   .active state so the user always knows which page they're on. */
+.nav-drawer a.is-current,
+.nav-drawer button.is-current {
+  background: rgba(0, 229, 255, 0.12);
+  border-color: rgba(0, 229, 255, 0.5);
+  color: #67E8F9;
+  position: relative;
+}
+.nav-drawer a.is-current::before,
+.nav-drawer button.is-current::before {
+  content: "";
+  position: absolute;
+  left: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 4px;
+  height: 24px;
+  background: linear-gradient(180deg, #0A4FD9, #00E5FF);
+  border-radius: 2px;
+  box-shadow: 0 0 8px rgba(0, 229, 255, 0.6);
+}
+.nav-drawer a.is-current .di,
+.nav-drawer button.is-current .di {
+  background: linear-gradient(135deg, #0A4FD9, #00E5FF);
+  border-color: transparent;
+  color: #fff;
+}
 .nav-drawer a.is-cta {
   background: linear-gradient(135deg, #0A4FD9, #00E5FF);
   color: #fff;
