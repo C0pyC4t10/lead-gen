@@ -175,7 +175,8 @@
     .nav-links{display:flex;align-items:center;gap:12px}
     .nav-links a,.nav-links button{color:#94A3B8;text-decoration:none;font-size:14px;padding:8px 14px;border-radius:8px;transition:all .2s;background:none;border:none;cursor:pointer;font-family:inherit}
     .nav-links a:hover,.nav-links button:hover{color:#F8FAFC;background:rgba(148,163,184,0.08)}
-    .nav-links a.active{color:#00E5FF;background:rgba(0,229,255,0.1);border:1px solid rgba(0,229,255,0.3)}
+    .nav-links a.active{color:#00E5FF;background:rgba(0,229,255,0.1);border:1px solid rgba(0,229,255,0.3);box-shadow:0 0 16px rgba(0,229,255,0.18);position:relative}
+    .nav-links a.active::after{content:"";position:absolute;left:50%;bottom:-7px;transform:translateX(-50%);width:24px;height:2px;background:linear-gradient(90deg,#0A4FD9,#00E5FF);border-radius:2px;box-shadow:0 0 8px rgba(0,229,255,0.6)}
     #auth-nav{display:flex;align-items:center;gap:8px;margin-left:auto}
     @media(max-width:600px){.nav{flex-wrap:wrap;gap:8px;padding:8px 12px}.nav-links{flex-wrap:wrap;gap:4px}.nav-links a,.nav-links button{font-size:12px;padding:6px 10px}.auth-btn{font-size:12px!important;padding:6px 10px!important}}
     @media(max-width:480px){.nav{flex-wrap:wrap;gap:6px;padding:8px 12px}.nav-links{flex-wrap:wrap;gap:4px}.nav-links a,.nav-links button{font-size:11px;padding:4px 8px}.auth-btn{font-size:11px!important;padding:4px 8px!important}}
