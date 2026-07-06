@@ -565,6 +565,19 @@ def get_last_lead(user_id):
     )
 
 # ── Qualified leads ──────────────────────────────────────────────────
+def disqualify_lead(page_url):
+    """Remove a lead from the qualified pipeline without touching the leads collection."""
+    db = get_db()
+    if db is None:
+        return False
+    q_removed = db.qualified_leads.delete_many({'page_url': page_url})
+    db.qualified_remarks.delete_many({'page_url': page_url})
+    db.leads.update_one(
+        {'page_url': page_url, 'deleted_at': None},
+        {'$set': {'status': 'new', 'updated_at': now_iso()}},
+    )
+    return q_removed.deleted_count > 0
+
 def save_qualified_lead(lead, qualified_by_user_id):
     db = get_db()
     if db is None:

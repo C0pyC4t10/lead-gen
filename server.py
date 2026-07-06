@@ -3647,6 +3647,21 @@ class Handler(BaseHTTPRequestHandler):
                 self._json(200, {'status': 'trashed', 'message': 'Moved to Trash', 'page_url': page_url})
             else:
                 self._json(400, {'error': msg})
+        elif parsed.path == '/api/lead/disqualify':
+            if data is None:
+                self._json(400, {'error': 'Invalid JSON'})
+                return
+            user = require_auth(self)
+            if not user: return
+            page_url = data.get('page_url', '').strip()
+            if not page_url:
+                self._json(400, {'error': 'page_url required'})
+                return
+            ok = mongo_db.disqualify_lead(page_url) if _mongo_alive() else False
+            if ok:
+                self._json(200, {'status': 'disqualified', 'message': 'Removed from qualified pipeline, still in History'})
+            else:
+                self._json(400, {'error': 'Lead not found in qualified pipeline'})
         elif parsed.path == '/api/lead/restore':
             if data is None:
                 self._json(400, {'error': 'Invalid JSON'})

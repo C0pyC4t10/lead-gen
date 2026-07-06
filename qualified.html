@@ -625,7 +625,7 @@
     <div class="dp-foot">
       <button class="btn btn-ghost" id="dpOpenOutreach">📞 Outreach</button>
       <button class="btn btn-ghost" id="dpOpenRemark">📝 Remark</button>
-      <button class="btn btn-danger" id="dpTrash">🗑 Trash</button>
+      <button class="btn btn-ghost" id="dpDisqualify" style="color:#FBBF24;border-color:rgba(251,191,36,0.3)">✕ Disqualify</button>
     </div>
   </div>
 
@@ -1423,18 +1423,18 @@
           openRemarks(pageUrl, name);
         }, 220);
       });
-      document.getElementById('dpTrash').addEventListener('click', async function() {
+      document.getElementById('dpDisqualify').addEventListener('click', async function() {
         if (!detailLead) return;
         const pageUrl = detailLead.page_url;
         const name = detailLead.business_name || 'this lead';
-        const ok = await scravenConfirm('Move "' + name + '" to Trash?', { title: 'Move to Trash' });
+        const ok = await scravenConfirm('Disqualify "' + name + '"? It will be removed from the Qualified pipeline but stay in your History.', { title: 'Disqualify' });
         if (!ok) return;
         this.classList.add('is-working');
         try {
-          const resp = await fetch(API_BASE + '/api/lead/trash', { method: 'POST', headers: authHeaders(), body: JSON.stringify({ page_url: pageUrl }) });
-          if (resp.ok) { showToast('✓ Moved to trash', 'success'); closeDetail(); await load(); }
-          else { const r = await resp.json().catch(() => ({})); showToast('Trash failed: ' + (r.error || 'HTTP ' + resp.status), 'error'); }
-        } catch (e) { showToast('Trash failed: ' + e.message, 'error'); }
+          const resp = await fetch(API_BASE + '/api/lead/disqualify', { method: 'POST', headers: authHeaders(), body: JSON.stringify({ page_url: pageUrl }) });
+          if (resp.ok) { showToast('✓ Removed from qualified pipeline', 'success'); closeDetail(); await load(); }
+          else { const r = await resp.json().catch(() => ({})); showToast('Disqualify failed: ' + (r.error || 'HTTP ' + resp.status), 'error'); }
+        } catch (e) { showToast('Disqualify failed: ' + e.message, 'error'); }
         finally { this.classList.remove('is-working'); }
       });
 
