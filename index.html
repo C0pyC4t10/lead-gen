@@ -27,6 +27,25 @@
 
     /* Nav */
     .nav{width:100%;display:flex;align-items:center;gap:12px;padding:14px 24px;background:rgba(5,10,20,0.85);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);border-bottom:1px solid rgba(226,232,240,0.06);position:sticky;top:0;z-index:100}
+    .nav-burger{display:none;width:40px;height:40px;border-radius:10px;border:1px solid rgba(226,232,240,0.12);background:rgba(14,24,37,0.5);color:#E2E8F0;cursor:pointer;align-items:center;justify-content:center;font-family:inherit;margin-left:auto;flex-shrink:0;-webkit-tap-highlight-color:transparent;transition:border-color .2s,background .2s}
+    .nav-burger:hover,.nav-burger[aria-expanded="true"]{border-color:rgba(0,229,255,0.4);background:rgba(10,79,217,0.18);color:#67E8F9}
+    .nav-burger .bar{display:block;width:18px;height:2px;background:currentColor;border-radius:2px;margin:3px auto;transition:transform .25s cubic-bezier(0.34,1.56,0.64,1), opacity .2s}
+    .nav-burger[aria-expanded="true"] .bar:nth-child(1){transform:translateY(5px) rotate(45deg)}
+    .nav-burger[aria-expanded="true"] .bar:nth-child(2){opacity:0}
+    .nav-burger[aria-expanded="true"] .bar:nth-child(3){transform:translateY(-5px) rotate(-45deg)}
+
+    .nav-drawer{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(5,10,20,0.96);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);z-index:99;padding:84px 24px 24px;transform:translateY(-100%);opacity:0;pointer-events:none;transition:transform .3s cubic-bezier(0.4,0,0.2,1),opacity .25s;overflow-y:auto;display:flex;flex-direction:column;gap:8px}
+    .nav-drawer.is-open{transform:translateY(0);opacity:1;pointer-events:auto}
+    .nav-drawer .drawer-eyebrow{font-size:11px;font-weight:700;color:#00E5FF;text-transform:uppercase;letter-spacing:1.5px;margin:8px 0 4px;padding:0 4px}
+    .nav-drawer a,.nav-drawer button{display:flex;align-items:center;gap:12px;padding:14px 16px;color:#E2E8F0;text-decoration:none;border-radius:12px;background:rgba(14,24,37,0.7);border:1px solid rgba(226,232,240,0.08);font-size:15px;font-weight:600;width:100%;cursor:pointer;font-family:inherit;text-align:left;background-origin:border-box;transition:transform .15s,border-color .2s,background .2s,color .2s}
+    .nav-drawer a:active,.nav-drawer button:active{transform:scale(.98)}
+    .nav-drawer a:hover,.nav-drawer button:hover{border-color:rgba(0,229,255,0.4);color:#67E8F9;background:rgba(10,79,217,0.18)}
+    .nav-drawer a.is-cta{background:linear-gradient(135deg,#0A4FD9,#00E5FF);color:#fff;border-color:transparent;box-shadow:0 8px 24px rgba(10,79,217,.4)}
+    .nav-drawer a.is-cta:hover{transform:translateY(-1px);box-shadow:0 12px 28px rgba(10,79,217,.5);color:#fff}
+    .nav-drawer a.is-admin{background:linear-gradient(135deg,rgba(139,92,246,.25),rgba(109,40,217,.18));border-color:rgba(139,92,246,.5);color:#C4B5FD}
+    .nav-drawer a.is-logout{color:#FCA5A5;border-color:rgba(239,68,68,.3)}
+    .nav-drawer a.is-logout:hover{background:rgba(239,68,68,.12);color:#FECACA;border-color:rgba(239,68,68,.5)}
+    .nav-drawer .di{font-size:20px;width:32px;height:32px;display:inline-flex;align-items:center;justify-content:center;border-radius:8px;background:linear-gradient(135deg,rgba(10,79,217,.18),rgba(0,229,255,.12));border:1px solid rgba(0,229,255,.18);flex-shrink:0}
     .logo{display:flex;align-items:center;gap:10px;text-decoration:none;color:#F8FAFC;font-size:18px;font-weight:700;transition:transform .2s;flex-shrink:0}
     .logo:hover{transform:scale(1.03)}
     .logo-icon{width:36px;height:36px;border-radius:10px;object-fit:contain;flex-shrink:0;display:block}
@@ -61,6 +80,43 @@
     .btn-glow:hover{transform:translateY(-1px);box-shadow:0 12px 28px rgba(10,79,217,0.4)}
     .btn-ghost{background:transparent;color:#F8FAFC;border:1px solid rgba(226,232,240,0.15)}
     .btn-ghost:hover{background:rgba(226,232,240,0.05);border-color:rgba(226,232,240,0.3)}
+
+    /* ── Facebook-style inline button variants ──
+       Pattern: transparent base + thin brand border, label color
+       matches icon (cyan/blue/amber/purple). Padded for touch ≥44px. */
+    .btn-inline{
+      display:inline-flex;align-items:center;gap:8px;
+      padding:11px 22px;border-radius:999px;
+      font-size:14px;font-weight:700;letter-spacing:.2px;
+      text-decoration:none;font-family:inherit;cursor:pointer;
+      transition:transform .15s, background .2s, border-color .2s, color .2s;
+      border:1px solid currentColor;
+      background:transparent;
+      -webkit-tap-highlight-color:transparent;
+    }
+    .btn-inline:hover{transform:translateY(-1px)}
+    .btn-inline:active{transform:translateY(0) scale(.98)}
+    .btn-inline-primary{
+      color:#FFFFFF;
+      background:linear-gradient(135deg,#0A4FD9,#00E5FF);
+      border:1px solid rgba(0,229,255,.55);
+      box-shadow:0 8px 22px rgba(10,79,217,.35);
+    }
+    .btn-inline-primary:hover{box-shadow:0 12px 28px rgba(10,79,217,.5);transform:translateY(-2px)}
+    .btn-inline-cyan{color:#00E5FF;border-color:rgba(0,229,255,.45);background:rgba(0,229,255,.06)}
+    .btn-inline-cyan:hover{color:#67E8F9;border-color:rgba(0,229,255,.75);background:rgba(0,229,255,.12)}
+    .btn-inline-blue{color:#93C5FD;border-color:rgba(147,197,253,.45);background:rgba(59,130,246,.06)}
+    .btn-inline-blue:hover{color:#BFDBFE;border-color:rgba(147,197,253,.75);background:rgba(59,130,246,.12)}
+    .btn-inline-amber{color:#FCD34D;border-color:rgba(252,211,77,.45);background:rgba(245,158,11,.06)}
+    .btn-inline-amber:hover{color:#FDE68A;border-color:rgba(252,211,77,.75);background:rgba(245,158,11,.12)}
+    .btn-inline-purple{color:#C4B5FD;border-color:rgba(196,181,253,.45);background:rgba(139,92,246,.06)}
+    .btn-inline-purple:hover{color:#DDD6FE;border-color:rgba(196,181,253,.75);background:rgba(139,92,246,.12)}
+    .btn-inline-green{color:#6EE7B7;border-color:rgba(110,231,183,.45);background:rgba(16,185,129,.06)}
+    .btn-inline-green:hover{color:#A7F3D0;border-color:rgba(110,231,183,.75);background:rgba(16,185,129,.12)}
+    .btn-inline-red{color:#FCA5A5;border-color:rgba(239,68,68,.45);background:rgba(239,68,68,.06)}
+    .btn-inline-red:hover{color:#FECACA;border-color:rgba(239,68,68,.75);background:rgba(239,68,68,.12)}
+
+    .hero-cta{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:32px}
     .hero-stats{display:flex;gap:32px;flex-wrap:wrap}
     .stat{display:flex;flex-direction:column;gap:2px}
     .stat-num{font-size:24px;font-weight:800;background:linear-gradient(135deg,#F8FAFC,#00E5FF);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
@@ -208,21 +264,21 @@
     }
 
     /* Phones */
-    @media (max-width: 600px) {
+    @media (max-width: 768px) {
+      /* Mobile mode: header nav hidden, hamburger button visible,
+         footer takes over as primary navigation surface. */
+      body{padding-bottom:140px}
       .nav{padding:10px 16px;flex-wrap:wrap;gap:8px}
       .logo{font-size:16px}
       .logo-icon{width:32px;height:32px}
-      .nav-links{gap:4px;flex-wrap:wrap;justify-content:flex-end}
-      .nav-links a,.nav-links button{font-size:12px;padding:6px 10px}
-      .auth-btn{font-size:12px!important;padding:6px 12px!important}
-      .admin-btn{font-size:12px!important;padding:6px 10px!important}
-      .avatar-circle{width:32px;height:32px;font-size:12px}
+      .nav-links{display:none}
+      .nav-burger{display:inline-flex}
       .hero{padding:32px 16px 24px}
       .hero h1{font-size:32px;letter-spacing:-0.8px;margin-bottom:16px}
       .hero p.lead{font-size:15px;margin-bottom:24px}
       .hero-tag{font-size:11px;padding:5px 12px;margin-bottom:16px}
-      .hero-cta{flex-direction:column;margin-bottom:24px}
-      .hero-cta .btn{width:100%;padding:13px 20px;font-size:14px}
+      .hero-cta{flex-direction:row;flex-wrap:wrap;margin-bottom:24px;gap:10px}
+      .hero-cta .btn-inline{flex:1 1 auto;min-width:160px;padding:12px 18px;font-size:14px;justify-content:center}
       .btn{padding:13px 20px;font-size:14px}
       .hero-stats{gap:20px;justify-content:center;width:100%}
       .hero-stats .stat{align-items:center;text-align:center}
@@ -265,8 +321,6 @@
       /* Show the collapse toggle only on mobile */
       .footer-toggle{display:inline-flex}
 
-      /* Bottom padding to body so footer doesn't cover content */
-      body{padding-bottom:140px}
       .feature-grid{grid-template-columns:1fr;gap:14px}
       .feature-card{padding:22px 20px}
       .feature-icon{width:40px;height:40px;font-size:20px}
@@ -327,7 +381,10 @@
       <img src="/assets/icon32.png" alt="Scraven" class="logo-icon">
       <span><span class="brand-navy">Scra</span><span class="brand-white">ven</span></span>
     </a>
-    <div class="nav-links">
+    <button class="nav-burger" id="navBurger" type="button" aria-label="Open menu" aria-controls="navDrawer" aria-expanded="false">
+      <span class="bar"></span><span class="bar"></span><span class="bar"></span>
+    </button>
+    <div class="nav-links" id="navLinks">
       <a href="/leads">Leads</a>
       <a href="/pricing">Pricing</a>
       <a href="/login" id="loginLink" class="auth-btn">Sign In</a>
@@ -338,6 +395,19 @@
     </div>
   </nav>
 
+  <div class="nav-drawer" id="navDrawer" role="dialog" aria-modal="true" aria-label="Mobile navigation">
+    <div class="drawer-eyebrow">Browse</div>
+    <a href="/" class="drawer-item"><span class="di">🏠</span>Home</a>
+    <a href="/extract" class="drawer-item is-cta"><span class="di">⚡</span>Open App</a>
+    <a href="/leads" class="drawer-item"><span class="di">📊</span>Leads</a>
+    <a href="/pricing" class="drawer-item"><span class="di">💰</span>Pricing</a>
+    <div class="drawer-eyebrow">Account</div>
+    <a href="/login" id="drawerAccount" class="drawer-item"><span class="di">🔑</span>Sign In</a>
+    <a href="/admin" id="drawerAdmin" class="drawer-item is-admin" style="display:none"><span class="di">🛡</span>Admin</a>
+    <a href="/profile" id="drawerProfile" class="drawer-item" style="display:none"><span class="di">👤</span>Profile</a>
+    <button id="drawerLogout" class="drawer-item is-logout" style="display:none"><span class="di">🚪</span>Logout</button>
+  </div>
+
   <section class="hero">
     <div class="hero-grid">
       <div>
@@ -345,8 +415,8 @@
         <h1>Turn social pages into <span class="grad">qualified leads</span></h1>
         <p class="lead">Extract phone, email, website, category, and followers from any Facebook or Instagram business page — in seconds, not hours.</p>
         <div class="hero-cta">
-          <a href="/extract" class="btn btn-glow">Start Extracting →</a>
-          <a href="/pricing" class="btn btn-ghost">See Pricing</a>
+          <a href="/extract" class="btn-inline btn-inline-primary">Start Extracting →</a>
+          <a href="/pricing" class="btn-inline btn-inline-cyan">See Pricing</a>
         </div>
         <div class="hero-stats">
           <div class="stat">
@@ -411,7 +481,7 @@
   <section class="cta-banner">
     <h2>Ready to find your next 100 leads?</h2>
     <p>Free tier includes 25 extractions per month. No credit card required.</p>
-    <a href="/register" class="btn">Create Free Account</a>
+    <a href="/register" class="btn-inline btn-inline-primary">Create Free Account</a>
   </section>
 
   <footer class="site-footer" id="siteFooter">
@@ -547,6 +617,77 @@
 
       applyFooterMode();
       window.addEventListener('resize', applyFooterMode, { passive: true });
+    })();
+
+    // ── Mobile hamburger drawer (≤768px) ────────────────────────────────
+    (function setupBurger() {
+      var burger   = document.getElementById('navBurger');
+      var drawer   = document.getElementById('navDrawer');
+      var navLinks = document.getElementById('navLinks');
+      if (!burger || !drawer) return;
+
+      function open() {
+        drawer.classList.add('is-open');
+        burger.setAttribute('aria-expanded', 'true');
+        burger.setAttribute('aria-label', 'Close menu');
+        document.body.style.overflow = 'hidden';
+      }
+      function close() {
+        drawer.classList.remove('is-open');
+        burger.setAttribute('aria-expanded', 'false');
+        burger.setAttribute('aria-label', 'Open menu');
+        document.body.style.overflow = '';
+      }
+      burger.addEventListener('click', function() {
+        if (drawer.classList.contains('is-open')) close();
+        else open();
+      });
+      // Close drawer after any link tap (small delay to allow nav)
+      drawer.querySelectorAll('a, button').forEach(function(el) {
+        el.addEventListener('click', function() { setTimeout(close, 80); });
+      });
+      // Escape closes
+      document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && drawer.classList.contains('is-open')) close();
+      });
+      // Resize past 768px closes drawer
+      window.addEventListener('resize', function() {
+        if (!window.matchMedia('(max-width: 768px)').matches &&
+            drawer.classList.contains('is-open')) close();
+      });
+
+      // Sync drawer account/admin/logout button state with auth state
+      function syncAuthState() {
+        var drawerAccount = document.getElementById('drawerAccount');
+        var drawerProfile = document.getElementById('drawerProfile');
+        var drawerAdmin   = document.getElementById('drawerAdmin');
+        var drawerLogout  = document.getElementById('drawerLogout');
+        var profileLink   = document.getElementById('profileLink');
+        var logoutBtn     = document.getElementById('logoutBtn');
+        var userSignedIn = profileLink && profileLink.style.display !== 'none';
+        if (drawerAccount) drawerAccount.style.display = userSignedIn ? 'none' : 'flex';
+        if (drawerProfile) drawerProfile.style.display = userSignedIn ? 'flex' : 'none';
+        if (drawerLogout && logoutBtn) {
+          drawerLogout.style.display = logoutBtn.style.display;
+          if (!drawerLogout.dataset.wired && userSignedIn) {
+            drawerLogout.addEventListener('click', function() { logoutBtn.click(); });
+            drawerLogout.dataset.wired = '1';
+          }
+        }
+        if (drawerAdmin) {
+          var navAdmin = document.getElementById('adminLink');
+          drawerAdmin.style.display = (navAdmin && navAdmin.style.display !== 'none') ? 'flex' : 'none';
+        }
+      }
+      // Hook into the existing auth-sync path: poll once after auth resolves
+      var mo = new MutationObserver(syncAuthState);
+      var p = document.getElementById('profileLink');
+      if (p) mo.observe(p, { attributes: true, attributeFilter: ['style'] });
+      var a = document.getElementById('adminLink');
+      if (a) mo.observe(a, { attributes: true, attributeFilter: ['style'] });
+      var l = document.getElementById('logoutBtn');
+      if (l) mo.observe(l, { attributes: true, attributeFilter: ['style'] });
+      syncAuthState();
     })();
   </script>
 </body>
