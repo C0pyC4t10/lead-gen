@@ -2973,8 +2973,11 @@ class Handler(BaseHTTPRequestHandler):
             if user['role'] not in ('admin', 'super_admin'):
                 self._json(403, {'error': 'Forbidden'})
                 return
-            users = auth_db.list_users_for_admin()
-            self._json(200, users)
+            try:
+                users = auth_db.list_users_for_admin()
+                self._json(200, users or [])
+            except Exception:
+                self._json(200, [])
         elif parsed.path == '/api/admin/stats':
             user = require_auth(self)
             if not user: return
@@ -3238,42 +3241,43 @@ class Handler(BaseHTTPRequestHandler):
         data = self._read_body()
 
         if parsed.path == '/api/lead':
-            if data is None:
-                self._json(400, {'error': 'Invalid JSON'})
-                return
-            user = require_auth(self)
-            if not user:
-                return
-            if not user.get('email_verified'):
-                self._json(403, {'error': 'Please verify your email before saving leads', 'verify_required': True})
-                return
-            ok, remaining = can_extract_lead(user)
-            if not ok:
-                self._json(403, {'error': f'Lead limit reached ({get_lead_limit(user)}). Upgrade to Pro for unlimited leads.', 'limit_reached': True, 'tier': user.get('subscription_tier', 'free')})
-                return
-            ensure_csv()
-            # Only admin / super_admin may trigger Telegram notifications.
-            # Regular users and 'pro' users always save DB-only, regardless of payload or preference.
-            is_admin_or_super = user.get('role') in ('admin', 'super_admin')
-            if is_admin_or_super:
-                if 'notify_telegram' in data:
-                    user_notify = bool(data.get('notify_telegram'))
+            try:
+                if data is None:
+                    self._json(400, {'error': 'Invalid JSON'})
+                    return
+                user = require_auth(self)
+                if not user:
+                    return
+                if not user.get('email_verified'):
+                    self._json(403, {'error': 'Please verify your email before saving leads', 'verify_required': True})
+                    return
+                ok, remaining = can_extract_lead(user)
+                if not ok:
+                    self._json(403, {'error': f'Lead limit reached ({get_lead_limit(user)}). Upgrade to Pro for unlimited leads.', 'limit_reached': True, 'tier': user.get('subscription_tier', 'free')})
+                    return
+                ensure_csv()
+                is_admin_or_super = user.get('role') in ('admin', 'super_admin')
+                if is_admin_or_super:
+                    if 'notify_telegram' in data:
+                        user_notify = bool(data.get('notify_telegram'))
+                    else:
+                        user_notify = auth_db.get_telegram_notifications(user['id'])
                 else:
-                    user_notify = auth_db.get_telegram_notifications(user['id'])
-            else:
-                user_notify = False
-            data['_saved_by_name'] = user.get('name', '') or ''
-            data['_saved_by_id'] = user.get('id', 0)
-            data['saved_by_user_name'] = data['_saved_by_name']
-            data['saved_by_user_id'] = data['_saved_by_id']
-            is_new, msg = append_lead(data, notify_telegram=user_notify, user_id=user['id'])
-            if msg == 'duplicate':
-                self._json(200, {'status': 'duplicate', 'message': 'Lead already exists, skipped'})
-            elif is_new:
-                auth_db.increment_leads_used(user['id'])
-                self._json(201, {'status': 'saved', 'message': msg, 'leads_remaining': remaining - 1})
-            else:
-                self._json(400, {'status': 'error', 'message': msg})
+                    user_notify = False
+                data['_saved_by_name'] = user.get('name', '') or ''
+                data['_saved_by_id'] = user.get('id', 0)
+                data['saved_by_user_name'] = data['_saved_by_name']
+                data['saved_by_user_id'] = data['_saved_by_id']
+                is_new, msg = append_lead(data, notify_telegram=user_notify, user_id=user['id'])
+                if msg == 'duplicate':
+                    self._json(200, {'status': 'duplicate', 'message': 'Lead already exists, skipped'})
+                elif is_new:
+                    auth_db.increment_leads_used(user['id'])
+                    self._json(201, {'status': 'saved', 'message': msg, 'leads_remaining': remaining - 1})
+                else:
+                    self._json(400, {'status': 'error', 'message': msg})
+            except Exception as e:
+                self._json(500, {'status': 'error', 'error': 'Save failed: ' + str(e)})
         elif parsed.path == '/api/lead/status':
             if data is None:
                 self._json(400, {'error': 'Invalid JSON'})
