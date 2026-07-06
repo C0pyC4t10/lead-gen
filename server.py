@@ -1252,17 +1252,12 @@ _FB_COOKIES_CACHE = None
 
 
 def _load_fb_cookies():
-    """Load FB cookies from fb_cookies.json if present. Returns Playwright-format cookie list or None."""
+    """Load FB cookies. Tries local file first, then Mongo (Render disk is ephemeral)."""
     global _FB_COOKIES_CACHE
-    if _FB_COOKIES_CACHE is not None:
-        return _FB_COOKIES_CACHE
-    cookies_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'fb_cookies.json')
-    if not os.path.exists(cookies_path):
-        _FB_COOKIES_CACHE = False
-        return None
-    try:
-        with open(cookies_path, 'r') as f:
-            raw = json.load(f)
+    if _FB_COOKIES_CACHE is not None and _FB_COOKIES_CACHE is not False:
+        return _FB_COOKIES_CACHE if _FB_COOKIES_CACHE else None
+
+    def _parse_cookies(raw):
         out = []
         for c in raw:
             pc = {
@@ -1286,13 +1281,42 @@ def _load_fb_cookies():
             elif ss == 'strict':
                 pc['sameSite'] = 'Strict'
             out.append(pc)
-        _FB_COOKIES_CACHE = out
-        print(f"[cookies] loaded {len(out)} FB cookies", flush=True)
         return out
-    except Exception as e:
-        print(f"[cookies] load failed: {e}", flush=True)
-        _FB_COOKIES_CACHE = False
-        return None
+
+    # 1) Try local file
+    cookies_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'fb_cookies.json')
+    if os.path.exists(cookies_path):
+        try:
+            with open(cookies_path, 'r') as f:
+                raw = json.load(f)
+            parsed = _parse_cookies(raw)
+            _FB_COOKIES_CACHE = parsed
+            print(f"[cookies] loaded {len(parsed)} FB cookies from disk", flush=True)
+            return parsed
+        except Exception as e:
+            print(f"[cookies] local load failed: {e}", flush=True)
+
+    # 2) Fallback to Mongo (handles Render ephemeral disk)
+    if USE_MONGO and _mongo_alive():
+        try:
+            db = mongo_db.get_db()
+            doc = db.kv_store.find_one({'_id': 'fb_cookies'})
+            if doc and doc.get('value'):
+                parsed = _parse_cookies(doc['value'])
+                # Also restore local file so subsequent reads are fast
+                try:
+                    with open(cookies_path, 'w') as f:
+                        json.dump(doc['value'], f)
+                except Exception:
+                    pass
+                _FB_COOKIES_CACHE = parsed
+                print(f"[cookies] restored {len(parsed)} FB cookies from Mongo", flush=True)
+                return parsed
+        except Exception as e:
+            print(f"[cookies] mongo load failed: {e}", flush=True)
+
+    _FB_COOKIES_CACHE = False
+    return None
 
 
 def _stealth_init_script():
@@ -2687,9 +2711,20 @@ class Handler(BaseHTTPRequestHandler):
                         count = len(json.load(f))
                 except Exception:
                     pass
+            # Mongo fallback (Render disk is ephemeral)
+            if count == 0 and USE_MONGO and _mongo_alive():
+                try:
+                    db = mongo_db.get_db()
+                    doc = db.kv_store.find_one({'_id': 'fb_cookies'})
+                    if doc and doc.get('value'):
+                        count = len(doc['value'])
+                        exists = True
+                except Exception:
+                    pass
             self._json(200, {'cookies_exists': exists, 'cookies_count': count})
         elif parsed.path.startswith('/api/avatars/'):
             fname = os.path.basename(parsed.path)
+            # Cloudinary first (URL redirect)
             if USE_MONGO and cloudinary_storage and cloudinary_storage.is_configured():
                 user_id = fname.rsplit('.', 1)[0]
                 url = cloudinary_storage.get_avatar_url(user_id)
@@ -2700,16 +2735,33 @@ class Handler(BaseHTTPRequestHandler):
                     self._cors_headers()
                     self.end_headers()
                     return
-                self._json(404, {'error': 'Not found'})
-                return
+            # Local file
             fpath = os.path.join(AVATAR_DIR, fname)
-            if not os.path.exists(fpath):
+            content = None
+            mime = 'image/jpeg'
+            if os.path.exists(fpath):
+                try:
+                    with open(fpath, 'rb') as f:
+                        content = f.read()
+                except Exception:
+                    content = None
+            # Mongo fallback — survives Render restarts
+            if content is None and USE_MONGO and _mongo_alive():
+                try:
+                    user_id = fname.rsplit('.', 1)[0]
+                    u = mongo_db.get_user_by_id(user_id)
+                    if u and u.get('avatar_data'):
+                        import base64 as _b64
+                        content = _b64.b64decode(u['avatar_data'])
+                        mime = u.get('avatar_mime') or 'image/jpeg'
+                        print(f'[avatar] served from Mongo for user {user_id} ({len(content)} bytes)', flush=True)
+                except Exception as e:
+                    print(f'[avatar] mongo fallback failed: {e}', flush=True)
+            if content is None:
                 self._json(404, {'error': 'Not found'})
                 return
-            with open(fpath, 'rb') as f:
-                content = f.read()
             ext = fname.split('.')[-1].lower()
-            mime = {'jpg': 'image/jpeg', 'jpeg': 'image/jpeg', 'png': 'image/png', 'webp': 'image/webp'}.get(ext, 'image/jpeg')
+            mime = {'jpg': 'image/jpeg', 'jpeg': 'image/jpeg', 'png': 'image/png', 'webp': 'image/webp'}.get(ext, mime)
             self.send_response(200)
             self.send_header('Content-Type', mime)
             self.send_header('Content-Length', str(len(content)))
@@ -2772,16 +2824,46 @@ class Handler(BaseHTTPRequestHandler):
                 if idx > -1:
                     fdata = part[idx + 4:].rstrip(b'\r\n--')
                     public_url = None
+                    # 1) Try Cloudinary first
                     if USE_MONGO and cloudinary_storage and cloudinary_storage.is_configured():
                         public_url = cloudinary_storage.upload_avatar(user['id'], fdata)
                         if public_url and USE_MONGO:
                             mongo_db.update_user(user['id'], {'avatar_url': public_url})
+                    # 2) Local + Mongo persistence (Render disk is ephemeral,
+                    #    so we MUST persist to Mongo to survive restarts)
                     if not public_url:
-                        os.makedirs(AVATAR_DIR, exist_ok=True)
-                        fpath = os.path.join(AVATAR_DIR, f'{user["id"]}.jpg')
-                        with open(fpath, 'wb') as fout:
-                            fout.write(fdata)
-                        public_url = f'/api/avatars/{user["id"]}.jpg'
+                        local_url = f'/api/avatars/{user["id"]}.jpg'
+                        try:
+                            os.makedirs(AVATAR_DIR, exist_ok=True)
+                            fpath = os.path.join(AVATAR_DIR, f'{user["id"]}.jpg')
+                            with open(fpath, 'wb') as fout:
+                                fout.write(fdata)
+                        except Exception as e:
+                            print(f'[avatar] local save failed (non-fatal): {e}', flush=True)
+                        # Persist binary in Mongo as base64 so it survives restart
+                        if USE_MONGO and _mongo_alive():
+                            try:
+                                import base64
+                                mongo_db.update_user(str(user['id']), {
+                                    'avatar_url': local_url,
+                                    'avatar_data': base64.b64encode(fdata).decode('ascii'),
+                                    'avatar_mime': 'image/jpeg',
+                                    'avatar_updated_at': mongo_db.now_iso(),
+                                })
+                                print(f'[avatar] saved avatar to Mongo for user {user["id"]} ({len(fdata)} bytes)', flush=True)
+                            except Exception as e:
+                                print(f'[avatar] mongo persist failed: {e}', flush=True)
+                        elif auth_db and not USE_MONGO:
+                            # SQLite fallback — save base64 alongside avatar_url
+                            try:
+                                import base64
+                                auth_db.update_user_fields(user['id'],
+                                    avatar_url=local_url,
+                                    avatar_data=base64.b64encode(fdata).decode('ascii'),
+                                    avatar_mime='image/jpeg')
+                            except Exception as e:
+                                print(f'[avatar] sqlite persist failed (col may not exist): {e}', flush=True)
+                        public_url = local_url
                     self._json(200, {'status': 'uploaded', 'url': public_url})
                     return
         self._json(400, {'error': 'avatar field not found in upload'})
@@ -3480,8 +3562,27 @@ class Handler(BaseHTTPRequestHandler):
                 self._json(400, {'error': 'cookies must be a non-empty array'})
                 return
             path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'fb_cookies.json')
-            with open(path, 'w') as f:
-                json.dump(cookies, f)
+            # 1) Local file (fast path)
+            try:
+                with open(path, 'w') as f:
+                    json.dump(cookies, f)
+            except Exception as e:
+                print(f"[cookies] local save failed (will persist to Mongo): {e}", flush=True)
+            # 2) Mongo (survives Render restarts)
+            if USE_MONGO and _mongo_alive():
+                try:
+                    db = mongo_db.get_db()
+                    db.kv_store.update_one(
+                        {'_id': 'fb_cookies'},
+                        {'$set': {'value': cookies, 'updated_at': mongo_db.now_iso(), 'updated_by': user['id']}},
+                        upsert=True
+                    )
+                    print(f"[cookies] persisted {len(cookies)} FB cookies to Mongo", flush=True)
+                except Exception as e:
+                    print(f"[cookies] mongo persist failed: {e}", flush=True)
+            elif auth_db and auth_db.is_ready if hasattr(auth_db, 'is_ready') else True:
+                # SQLite fallback — would need a kv table, skip for now (data still saved locally)
+                pass
             global _FB_COOKIES_CACHE
             _FB_COOKIES_CACHE = None
             print(f"[cookies] saved {len(cookies)} cookies", flush=True)
