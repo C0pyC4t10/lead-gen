@@ -33,7 +33,7 @@
     var link = document.createElement("link");
     link.id = "scraven-tabbar-css";
     link.rel = "stylesheet";
-    link.href = "/assets/tabbar.css";
+    link.href = "/assets/tabbar.css?v=4";
     document.head.appendChild(link);
     document.body.classList.add("has-tab-bar");
   }

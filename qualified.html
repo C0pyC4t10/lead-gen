@@ -1335,31 +1335,21 @@
         }
       });
 
-      // Auth state
+      // Auth state — single source of truth is tabbar.js mountProfile.
+      // The legacy profileLink/adminLink/logoutBtn are hidden here so
+      // they don't show up as duplicates next to the injected profile
+      // dropdown. The Login link is also handled by tabbar.js.
       const user = getUser();
       const token = getToken();
-      if (user && token) {
-        document.getElementById('loginLink').style.display = 'none';
-        const link = document.getElementById('profileLink');
-        link.textContent = (user.name || '?').charAt(0).toUpperCase();
-        link.style.display = 'flex';
-        link.title = user.email || 'Profile';
-        if (user.role === 'admin' || user.role === 'super_admin') {
-          document.getElementById('adminLink').style.display = 'inline-flex';
-        }
-        document.getElementById('logoutBtn').style.display = 'inline-flex';
-        const badge = document.getElementById('leadBadge');
-        badge.style.display = 'inline-flex';
-        badge.textContent = (user.leads_used || 0) + '/' + (user.subscription_tier === 'pro' ? '∞' : (user.role && user.role !== 'user' ? '∞' : '20'));
-        (function(){
-          var i = new Image();
-          i.onload = function() { link.innerHTML = ''; link.style.background = 'none'; link.style.padding = '0'; link.appendChild(i); };
-          i.onerror = function() {};
-          i.src = API_BASE + '/api/avatars/' + user.id + '.jpg?t=' + Date.now();
-        })();
-      } else {
-        document.getElementById('loginLink').style.display = 'inline-flex';
-      }
+      const hide = function(id) {
+        var el = document.getElementById(id);
+        if (el) el.style.display = 'none';
+      };
+      hide('loginLink');
+      hide('profileLink');
+      hide('adminLink');
+      hide('logoutBtn');
+      hide('leadBadge');
       document.getElementById('logoutBtn').addEventListener('click', function() {
         if (token) fetch(API_BASE + '/api/auth/logout', { method: 'POST', headers: { 'Authorization': 'Bearer ' + token } }).catch(function(){});
         try { localStorage.removeItem('skarbol_token'); localStorage.removeItem('skarbol_user'); } catch (_) {}

@@ -279,10 +279,14 @@ body.has-tab-bar {
   color: #67E8F9;
   background: rgba(10, 79, 217, 0.18);
 }
+/* In the mobile drawer, is-primary (Extract) must look identical to
+   every other item when not active. It only earns its highlight when
+   the user is actually ON /extract (is-current). This prevents the
+   "stuck on Extract" visual bug. */
 .nav-drawer a.is-primary {
-  background: linear-gradient(135deg, rgba(10, 79, 217, 0.22), rgba(0, 229, 255, 0.12));
-  border-color: rgba(0, 229, 255, 0.45);
-  color: #67E8F9;
+  background: transparent;
+  border-color: transparent;
+  color: inherit;
 }
 /* Current page in the mobile drawer — same treatment as the top-nav
    .active state so the user always knows which page they're on. */
