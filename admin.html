@@ -264,12 +264,13 @@
         const isSelf = u.email === userData.email;
         const opts = roles.map(r => `<option value="${r}"${r === u.role ? ' selected' : ''}>${r}</option>`).join('');
         const canManage = userData.role === 'super_admin' || (userData.role === 'admin' && (u.role === 'user' || u.role === 'pro'));
+        const uidJs = JSON.stringify(String(u.id));
         return `<tr>
           <td><strong style="color:#E2E8F0">${esc(u.name)}</strong></td>
           <td style="color:#94A3B8">${esc(u.email)}</td>
-          <td>${isSelf || !canManage ? `<span class="badge ${u.role}">${esc(u.role)}</span>` : `<select class="role-select" data-uid="${u.id}" data-orig="${u.role}" onchange="changeRole(${u.id},this)">${opts}</select>`}</td>
+          <td>${isSelf || !canManage ? `<span class="badge ${u.role}">${esc(u.role)}</span>` : `<select class="role-select" data-uid="${esc(u.id)}" data-orig="${esc(u.role)}" onchange="changeRole(${uidJs},this)">${opts}</select>`}</td>
           <td style="color:#64748B;font-size:12px">${u.created_at ? u.created_at.split('T')[0] : '—'}</td>
-          <td>${isSelf || !canManage ? '' : `<button class="btn-sm" onclick="deleteUser(${u.id})">Remove</button>`}</td>
+          <td>${isSelf || !canManage ? '' : `<button class="btn-sm" data-uid="${esc(u.id)}" onclick="deleteUser(${uidJs})">Remove</button>`}</td>
         </tr>`;
       }).join('');
     }

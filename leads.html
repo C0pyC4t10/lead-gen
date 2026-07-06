@@ -957,8 +957,15 @@
         if (rows[idx]) { rows[idx].disabled = true; rows[idx].checked = false; }
         const btns = document.querySelectorAll('.lead-table tbody tr td:last-child');
         if (btns[idx]) btns[idx].innerHTML = '<span style="color:#10B981;font-size:12px">✓ Saved</span>';
-        const suffix = notifyTelegram ? ' (+ Telegram)' : ' (DB only)';
-        showStatus('Saved: ' + (lead.business_name || 'Unknown') + suffix, 'success');
+        const suffix = notifyTelegram ? ' + Telegram alert sent' : '';
+        const leadName = (lead.business_name || 'Lead').replace(/[<>&]/g, '');
+        const remaining = (result && typeof result.leads_remaining === 'number') ? result.leads_remaining : null;
+        const remainingTxt = remaining != null ? ` (${remaining} lead${remaining === 1 ? '' : 's'} left)` : '';
+        showStatus(`✓ Lead saved: ${leadName}${suffix}${remainingTxt}`, 'success');
+        // Refresh the leads-remaining badge in the top bar
+        if (remaining != null && typeof updateLeadsBadge === 'function') {
+          try { updateLeadsBadge(remaining); } catch (_) {}
+        }
       } catch (err) { hideLoading(); document.getElementById('results').style.display = 'block'; showStatus('Save failed: ' + err.message, 'error'); }
     }
 
@@ -1999,23 +2006,46 @@
       document.getElementById('logoutBtn').style.display = 'flex';
 
       const token = localStorage.getItem('skarbol_token');
-      fetch(API_BASE + '/api/auth/leads-remaining', { headers: { 'Authorization': 'Bearer ' + token } })
-        .then(r => r.json())
-        .then(data => {
+      window.updateLeadsBadge = function(remainingOverride) {
+        const apply = function(data) {
           const badge = document.getElementById('leadBadge');
+          if (!badge) return;
           badge.style.display = 'inline-flex';
-          badge.textContent = data.leads_used + '/' + (data.leads_limit >= 999999 ? '∞' : data.leads_limit);
-          if (data.leads_limit >= 999999) badge.className = 'lead-badge unlimited';
-          else if (data.leads_remaining <= 3) badge.className = 'lead-badge danger';
-          else if (data.leads_remaining <= 8) badge.className = 'lead-badge warning';
+          const used = data.leads_used;
+          const limit = data.leads_limit;
+          const remaining = remainingOverride != null ? remainingOverride : data.leads_remaining;
+          badge.textContent = used + '/' + (limit >= 999999 ? '∞' : limit);
+          if (limit >= 999999) badge.className = 'lead-badge unlimited';
+          else if (remaining <= 3) badge.className = 'lead-badge danger';
+          else if (remaining <= 8) badge.className = 'lead-badge warning';
           else badge.className = 'lead-badge';
+        };
+        if (remainingOverride != null) {
+          // Optimistic local update: derive counts from current badge + saved lead
+          const badge = document.getElementById('leadBadge');
+          const currentText = (badge && badge.textContent) || '0/0';
+          const used = parseInt((currentText.split('/')[0] || '0').trim(), 10) || 0;
+          const limitPart = currentText.split('/')[1] || '0';
+          const limit = limitPart === '∞' ? 999999 : (parseInt(limitPart, 10) || 0);
+          apply({ leads_used: used + 1, leads_limit: limit, leads_remaining: remainingOverride });
+          return;
+        }
+        fetch(API_BASE + '/api/auth/leads-remaining', { headers: { 'Authorization': 'Bearer ' + token } })
+          .then(r => r.json())
+          .then(apply)
+          .catch(() => {});
+      };
+      window.updateLeadsBadge();
 
-          const teaser = document.getElementById('proTeaser');
-          if (data.subscription_tier !== 'pro' && user.role !== 'admin' && user.role !== 'super_admin') {
-            teaser.style.display = 'block';
-          }
-        })
-        .catch(() => {});
+      const teaser = document.getElementById('proTeaser');
+      if (user.role !== 'admin' && user.role !== 'super_admin') {
+        fetch(API_BASE + '/api/auth/leads-remaining', { headers: { 'Authorization': 'Bearer ' + token } })
+          .then(r => r.json())
+          .then(data => {
+            if (data.subscription_tier !== 'pro') teaser.style.display = 'block';
+          })
+          .catch(() => {});
+      }
 
       document.getElementById('logoutBtn').addEventListener('click', async () => {
         await fetch(API_BASE + '/api/auth/logout', { method: 'POST', headers: { 'Authorization': 'Bearer ' + token } }).catch(() => {});

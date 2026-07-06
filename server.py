@@ -2993,6 +2993,17 @@ class Handler(BaseHTTPRequestHandler):
                 self._json(200, users or [])
             except Exception:
                 self._json(200, [])
+        elif parsed.path == '/api/admin/users/trash':
+            user = require_auth(self)
+            if not user: return
+            if user['role'] not in ('admin', 'super_admin'):
+                self._json(403, {'error': 'Forbidden'})
+                return
+            try:
+                users = auth_db.list_trashed_users()
+                self._json(200, users or [])
+            except Exception:
+                self._json(200, [])
         elif parsed.path == '/api/admin/stats':
             user = require_auth(self)
             if not user: return
@@ -4080,19 +4091,11 @@ class Handler(BaseHTTPRequestHandler):
             if user['role'] == 'admin' and target_role not in ('user', 'pro'):
                 self._json(403, {'error': 'Admins can only remove regular users'})
                 return
-            auth_db.delete_user(user_id)
-            self._json(200, {'status': 'deleted'})
-        elif parsed.path == '/api/admin/users/trash':
-            user = require_auth(self)
-            if not user: return
-            if user['role'] not in ('admin', 'super_admin'):
-                self._json(403, {'error': 'Forbidden'})
-                return
             try:
-                users = auth_db.list_trashed_users()
-                self._json(200, users or [])
-            except Exception:
-                self._json(200, [])
+                auth_db.delete_user(user_id)
+                self._json(200, {'status': 'deleted', 'message': 'User moved to trash'})
+            except Exception as e:
+                self._json(500, {'error': 'Delete failed: ' + str(e)})
         elif parsed.path == '/api/admin/users/restore':
             user = require_auth(self)
             if not user: return
@@ -4106,8 +4109,11 @@ class Handler(BaseHTTPRequestHandler):
             if not user_id:
                 self._json(400, {'error': 'user_id required'})
                 return
-            auth_db.restore_user(user_id)
-            self._json(200, {'status': 'restored'})
+            try:
+                auth_db.restore_user(user_id)
+                self._json(200, {'status': 'restored', 'message': 'User restored'})
+            except Exception as e:
+                self._json(500, {'error': 'Restore failed: ' + str(e)})
         elif parsed.path == '/api/admin/users/role':
             user = require_auth(self)
             if not user: return
@@ -4134,8 +4140,11 @@ class Handler(BaseHTTPRequestHandler):
                 if target_curr_role not in ('user', 'pro') or new_role not in ('user', 'pro'):
                     self._json(403, {'error': 'Admins can only toggle users between user and pro'})
                     return
-            auth_db.update_user_fields(target_id, role=new_role)
-            self._json(200, {'status': 'updated'})
+            try:
+                auth_db.update_user_fields(target_id, role=new_role)
+                self._json(200, {'status': 'updated', 'message': 'Role updated to ' + new_role})
+            except Exception as e:
+                self._json(500, {'error': 'Role change failed: ' + str(e)})
         else:
             self._json(404, {'error': 'Not found'})
 
