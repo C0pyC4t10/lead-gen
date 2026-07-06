@@ -1011,16 +1011,21 @@ def read_all_leads(filter_status=None, include_trashed=False, user_id=None, incl
 def read_all_leads_for_stats(limit=2000):
     """Bounded read for admin/stats — never returns > limit rows."""
     if _mongo_alive():
-        rows = mongo_db.list_leads(
-            user_id=None,
-            is_admin=True,
-            include_trashed=False,
-            limit=int(limit),
-        )
-        return mongo_db.serialize(rows)
-    # SQLite: monkey-patch to apply limit
-    rows = leads_db.get_leads(include_all_users=True)
-    return rows[:int(limit)] if limit else rows
+        try:
+            rows = mongo_db.list_leads(
+                user_id=None,
+                is_admin=True,
+                include_trashed=False,
+                limit=int(limit),
+            )
+            return mongo_db.serialize(rows)
+        except Exception:
+            return []
+    try:
+        rows = leads_db.get_leads(include_all_users=True)
+        return rows[:int(limit)] if limit else rows
+    except Exception:
+        return []
 
 
 def h(val):
@@ -2976,31 +2981,40 @@ class Handler(BaseHTTPRequestHandler):
             if user['role'] not in ('admin', 'super_admin'):
                 self._json(403, {'error': 'Forbidden'})
                 return
-            # Bound the lead query so a single huge result can't blow
-            # past Render's 30s proxy timeout. Mongo uses $facet /
-            # aggregation; SQLite truncates with LIMIT.
-            leads = read_all_leads_for_stats(limit=2000)
-            user_count = auth_db.count_users()
-            role_counts = auth_db.count_users_by_role()
-            statuses = {}
-            this_month = 0
-            now = datetime.now()
-            month_prefix = now.strftime('%Y-%m')
-            for l in leads:
-                s = l.get('status', 'unknown')
-                statuses[s] = statuses.get(s, 0) + 1
-                d = (l.get('date') or '').strip()
-                if d.startswith(month_prefix):
-                    this_month += 1
-            self._json(200, {
-                'total_leads': len(leads),
-                'total_users': user_count,
-                'role_counts': role_counts,
-                'statuses': statuses,
-                'this_month': this_month,
-                'month_label': now.strftime('%B %Y'),
-                'note': 'capped at 2000 for stats' if len(leads) >= 2000 else None,
-            })
+            try:
+                leads = read_all_leads_for_stats(limit=2000)
+                user_count = auth_db.count_users()
+                role_counts = auth_db.count_users_by_role()
+                statuses = {}
+                this_month = 0
+                now = datetime.now()
+                month_prefix = now.strftime('%Y-%m')
+                for l in (leads or []):
+                    s = l.get('status', 'unknown')
+                    statuses[s] = statuses.get(s, 0) + 1
+                    d = (l.get('date') or '').strip()
+                    if d.startswith(month_prefix):
+                        this_month += 1
+                self._json(200, {
+                    'total_leads': len(leads or []),
+                    'total_users': user_count,
+                    'role_counts': role_counts,
+                    'statuses': statuses,
+                    'this_month': this_month,
+                    'month_label': now.strftime('%B %Y'),
+                    'note': 'capped at 2000 for stats' if leads and len(leads) >= 2000 else None,
+                })
+            except Exception as e:
+                self._json(500, {
+                    'error': 'Stats query failed',
+                    'detail': str(e),
+                    'total_leads': 0,
+                    'total_users': 0,
+                    'role_counts': {},
+                    'statuses': {},
+                    'this_month': 0,
+                    'month_label': datetime.now().strftime('%B %Y'),
+                })
         elif parsed.path == '/api/bookmarklet-extract':
             self._serve_bookmarklet_js()
         elif parsed.path == '/api/qualified/daily-files':
