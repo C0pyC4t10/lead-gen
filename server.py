@@ -2798,35 +2798,139 @@ class Handler(BaseHTTPRequestHandler):
             params = parse_qs(parsed.query)
             status_filter = params.get('status', [None])[0]
             fmt = (params.get('format', ['xlsx'])[0] or 'xlsx').lower()
-            leads = read_all_leads(
-                filter_status=status_filter,
-                include_all_users=is_admin,
-                user_id=None if is_admin else user['id'],
-            )
+            include_activity = (params.get('include_activity', ['0'])[0] or '0').lower() in ('1', 'true', 'yes')
+
+            # ── Branch 1: POST — client sends pre-built rows (e.g. the
+            # qualified-leads page sends already-enriched rows with outreach
+            # + remarks summary inline so we can render a CRM-grade report).
+            client_rows = None
+            if self.command == 'POST':
+                try:
+                    length = int(self.headers.get('Content-Length') or 0)
+                    raw = self.rfile.read(length) if length else b''
+                    payload = json.loads(raw.decode('utf-8') or '{}')
+                    if isinstance(payload, dict) and isinstance(payload.get('leads'), list):
+                        client_rows = payload['leads']
+                except Exception:
+                    client_rows = None
+
+            if client_rows is not None and len(client_rows) > 0:
+                leads = client_rows
+            else:
+                if not client_rows:
+                    pass  # fall through to server-side fetch
+                leads = read_all_leads(
+                    filter_status=status_filter,
+                    include_all_users=is_admin,
+                    user_id=None if is_admin else user['id'],
+                )
+                # For qualified-status server-side fetch, also enrich each
+                # row with outreach + remarks so the export is professional.
+                if include_activity and status_filter == 'qualified' and leads:
+                    enriched = []
+                    for l in leads:
+                        page_url = l.get('page_url') or l.get('url')
+                        logs = mongo_db.list_outreach_logs(page_url=page_url, limit=500) if page_url else []
+                        remarks = mongo_db.list_qualified_remarks(page_url=page_url, limit=500) if page_url else []
+                        l['outreach_count'] = len(logs)
+                        l['outreach_logs'] = [mongo_db.serialize(x) for x in logs]
+                        l['remarks_count'] = len(remarks)
+                        l['remarks'] = [mongo_db.serialize(x) for x in remarks]
+                        if logs:
+                            last = logs[0]
+                            l['last_outreach_type'] = last.get('type')
+                            l['last_outreach_outcome'] = last.get('outcome')
+                            l['last_outreach_at'] = last.get('created_at')
+                            l['last_outreach_by'] = last.get('logged_by_name') or last.get('logged_by_user_id')
+                        if remarks:
+                            l['last_remark'] = (remarks[0].get('text') or '')[:200]
+                            l['last_remark_by'] = remarks[0].get('author_name') or remarks[0].get('author_user_id')
+                            l['last_remark_at'] = remarks[0].get('created_at')
+                        # Quality grade (mirrors qualified.html computeGrade)
+                        score = l.get('qualification_score') or 0
+                        has_contact = bool(l.get('phone') or l.get('email') or l.get('website'))
+                        try:
+                            score_n = int(score) if not isinstance(score, (int, float)) else score
+                        except Exception:
+                            score_n = 0
+                        if score_n >= 8 and has_contact:
+                            l['grade'] = 'A'
+                        elif score_n >= 7:
+                            l['grade'] = 'B'
+                        elif score_n >= 5:
+                            l['grade'] = 'C'
+                        else:
+                            l['grade'] = 'D'
+                        enriched.append(l)
+                    leads = enriched
+
             if not leads:
                 self._json(404, {'error': 'No leads to export'}); return
 
-            cols = [
-                'date', 'platform', 'business_name', 'page_url', 'category',
-                'followers', 'email', 'phone', 'website', 'has_website',
-                'address', 'last_post_date', 'qualification_score', 'status',
-                'notes', 'follow_up_date', 'saved_by_user_name',
-            ]
-            labels = {
-                'date': 'Date', 'platform': 'Platform', 'business_name': 'Business Name',
-                'page_url': 'Page URL', 'category': 'Category', 'followers': 'Followers',
-                'email': 'Email', 'phone': 'Phone', 'website': 'Website',
-                'has_website': 'Has Website', 'address': 'Address',
-                'last_post_date': 'Last Post', 'qualification_score': 'Score',
-                'status': 'Status', 'notes': 'Notes', 'follow_up_date': 'Follow-up',
-                'saved_by_user_name': 'Saved By',
-            }
+            # ── Column set: richer when activity is included (qualified
+            # leads page) so the export has CRM-grade outreach tracking.
+            if include_activity or status_filter == 'qualified':
+                cols = [
+                    'date', 'grade', 'platform', 'business_name', 'page_url',
+                    'category', 'qualification_score', 'followers',
+                    'phone', 'email', 'website', 'has_website', 'address',
+                    'outreach_count', 'last_outreach_type', 'last_outreach_outcome',
+                    'last_outreach_at', 'last_outreach_by',
+                    'remarks_count', 'last_remark', 'last_remark_by', 'last_remark_at',
+                    'status', 'notes', 'follow_up_date', 'saved_by',
+                ]
+                labels = {
+                    'date': 'Qualified Date', 'grade': 'Grade',
+                    'platform': 'Platform', 'business_name': 'Business Name',
+                    'page_url': 'Page URL', 'category': 'Category',
+                    'qualification_score': 'Score', 'followers': 'Followers',
+                    'phone': 'Phone', 'email': 'Email', 'website': 'Website',
+                    'has_website': 'Has Website', 'address': 'Address',
+                    'outreach_count': 'Outreach Attempts',
+                    'last_outreach_type': 'Last Channel',
+                    'last_outreach_outcome': 'Last Outcome',
+                    'last_outreach_at': 'Last Contacted',
+                    'last_outreach_by': 'Last Contacted By',
+                    'remarks_count': 'Remarks Count',
+                    'last_remark': 'Latest Remark',
+                    'last_remark_by': 'Remark By',
+                    'last_remark_at': 'Remark Date',
+                    'status': 'Status', 'notes': 'Notes',
+                    'follow_up_date': 'Follow-up',
+                    'saved_by': 'Saved By',
+                }
+            else:
+                cols = [
+                    'date', 'platform', 'business_name', 'page_url', 'category',
+                    'followers', 'email', 'phone', 'website', 'has_website',
+                    'address', 'last_post_date', 'qualification_score', 'status',
+                    'notes', 'follow_up_date', 'saved_by_user_name',
+                ]
+                labels = {
+                    'date': 'Date', 'platform': 'Platform', 'business_name': 'Business Name',
+                    'page_url': 'Page URL', 'category': 'Category', 'followers': 'Followers',
+                    'email': 'Email', 'phone': 'Phone', 'website': 'Website',
+                    'has_website': 'Has Website', 'address': 'Address',
+                    'last_post_date': 'Last Post', 'qualification_score': 'Score',
+                    'status': 'Status', 'notes': 'Notes', 'follow_up_date': 'Follow-up',
+                    'saved_by_user_name': 'Saved By',
+                }
+
             buf = io.StringIO()
             fieldnames = list(cols)
             writer = csv.DictWriter(buf, fieldnames=fieldnames, quoting=csv.QUOTE_ALL, extrasaction='ignore')
             writer.writeheader()
             for l in leads:
-                writer.writerow({k: (l.get(k) or '') for k in fieldnames})
+                row = {}
+                for k in fieldnames:
+                    v = l.get(k)
+                    if v is None:
+                        v = ''
+                    elif isinstance(v, list):
+                        # flatten activity lists to a single-line summary
+                        v = '; '.join(str(x) for x in v)[:300]
+                    row[k] = v
+                writer.writerow(row)
             csv_content = buf.getvalue()
 
             sheet_title = (
@@ -2837,6 +2941,10 @@ class Handler(BaseHTTPRequestHandler):
             timestamp = datetime.now().strftime('%Y%m%d_%H%M')
 
             if fmt == 'csv':
+                # Total = qualified + outreach contact rate for context
+                qualified_count = sum(1 for l in leads if l.get('grade') in ('A', 'B', 'C', 'D') or status_filter == 'qualified')
+                contacted_count = sum(1 for l in leads if (l.get('outreach_count') or 0) > 0)
+                replied_count = sum(1 for l in leads if l.get('last_outreach_outcome') == 'replied')
                 brand_block = (
                     'SKARBOL TECH\r\n'
                     "Building Tomorrow's Intelligence Today\r\n"
@@ -2845,8 +2953,12 @@ class Handler(BaseHTTPRequestHandler):
                     f'Generated,{datetime.now().strftime("%Y-%m-%d %H:%M")}\r\n'
                     f'Website,{BRAND_WEBSITE}\r\n'
                     f'Total Leads,{len(leads)}\r\n'
+                    f'Contacted,{contacted_count}\r\n'
+                    f'Replied,{replied_count}\r\n'
+                    f'Contact Rate,{(contacted_count * 100 // max(len(leads), 1))}%\r\n'
                     f'Saved By,"{user.get("name","")} ({user.get("email","")})"\r\n'
                     f'Status Filter,{status_filter or "all"}\r\n'
+                    f'Activity Included,{"Yes" if include_activity else "No"}\r\n'
                     '\r\n'
                 )
                 csv_text = brand_block + csv_content.lstrip() + f'\r\n# {BRAND_LINE}\r\n'
@@ -2854,7 +2966,7 @@ class Handler(BaseHTTPRequestHandler):
                 self.send_response(200)
                 self.send_header('Content-Type', 'text/csv; charset=utf-8')
                 self.send_header('Content-Disposition',
-                                 f'attachment; filename="scraven_leads_{timestamp}.csv"')
+                                 f'attachment; filename="scraven_{status_filter or "all"}_{timestamp}.csv"')
                 self.send_header('Content-Length', str(len(csv_bytes)))
                 self._cors_headers()
                 self.end_headers()
@@ -2869,13 +2981,14 @@ class Handler(BaseHTTPRequestHandler):
                 report_meta={
                     'Saved By': f"{user.get('name','')} ({user.get('email','')})",
                     'Status Filter': status_filter or 'all',
+                    'Activity Included': 'Yes' if include_activity else 'No',
                 },
                 field_labels=[labels.get(c, c.title()) for c in cols],
             )
             self.send_response(200)
             self.send_header('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
             self.send_header('Content-Disposition',
-                             f'attachment; filename="scraven_leads_{timestamp}.xlsx"')
+                             f'attachment; filename="scraven_{status_filter or "all"}_{timestamp}.xlsx"')
             self.send_header('Content-Length', str(len(xlsx_bytes)))
             self._cors_headers()
             self.end_headers()

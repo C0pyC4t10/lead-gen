@@ -1157,52 +1157,87 @@
       if (selectedOnly && SELECTED.size > 0) {
         leads = FILTERED.filter(l => SELECTED.has(String(l.id || l.page_url)));
       }
-      // Build a synthetic CSV with outreach + remarks summary
-      if (format === 'csv' || format === 'xlsx') {
-        const rows = leads.map(l => {
-          const logs = l.outreach_logs || [];
-          const remarks = l.remarks || [];
-          return {
-            date: (l.qualified_at || '').split('T')[0] || '',
-            platform: l.platform || '',
-            business_name: l.business_name || '',
-            page_url: l.page_url || '',
-            category: l.category || '',
-            qualification_score: l.qualification_score || '',
-            grade: computeGrade(l),
-            phone: l.phone || '',
-            email: l.email || '',
-            website: l.website || '',
-            followers: l.followers || '',
-            address: l.address || '',
-            outreach_count: logs.length,
-            last_outreach: logs.length ? logs[logs.length - 1].created_at : '',
-            last_outcome: logs.length ? logs[logs.length - 1].outcome : '',
-            remarks_count: remarks.length,
-            last_remark: remarks.length ? remarks[0].text.substring(0, 200) : '',
-            saved_by: l.qualified_by || l.saved_by_user_name || '',
-            status: l.status || 'qualified',
-          };
-        });
-        // Send JSON to server for proper XLSX/CSV formatting
-        if (format === 'xlsx') {
-          const t = getToken();
-          fetch(API_BASE + '/api/leads/export?status=qualified&format=xlsx&include_activity=1' + (t ? '&token=' + encodeURIComponent(t) : ''), { method: 'POST', headers: authHeaders(), body: JSON.stringify({ leads: rows }) })
-            .then(r => r.blob()).then(blob => {
-              const url = URL.createObjectURL(blob);
-              const a = document.createElement('a'); a.href = url; a.download = 'qualified_leads_' + Date.now() + '.xlsx'; a.click();
-              URL.revokeObjectURL(url);
-            }).catch(e => showToast('Export failed: ' + e.message, 'error'));
-        } else {
-          // CSV: build client-side
-          const cols = Object.keys(rows[0] || {});
-          const csv = [cols.join(',')].concat(rows.map(r => cols.map(c => '"' + String(r[c] || '').replace(/"/g, '""') + '"').join(','))).join('\n');
-          const blob = new Blob([csv], { type: 'text/csv' });
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement('a'); a.href = url; a.download = 'qualified_leads_' + Date.now() + '.csv'; a.click();
-          URL.revokeObjectURL(url);
-        }
+      if (!leads.length) {
+        showToast('No leads to export', 'error');
+        return;
       }
+      showToast('Preparing ' + leads.length + ' lead' + (leads.length === 1 ? '' : 's') + ' for export…', 'info');
+      // Build enriched rows (server receives the same data and applies
+      // brand styling, but pre-computing outreach/remarks on the client
+      // avoids a second round-trip).
+      const rows = leads.map(l => {
+        const logs = (l.outreach_logs || []).slice().sort((a, b) =>
+          new Date(b.created_at || 0) - new Date(a.created_at || 0)
+        );
+        const remarks = (l.remarks || []).slice().sort((a, b) =>
+          new Date(b.created_at || 0) - new Date(a.created_at || 0)
+        );
+        const lastLog = logs[0];
+        const lastRemark = remarks[0];
+        return {
+          date: (l.qualified_at || l.date || '').split('T')[0] || '',
+          grade: computeGrade(l),
+          platform: l.platform || '',
+          business_name: l.business_name || '',
+          page_url: l.page_url || '',
+          category: l.category || '',
+          qualification_score: l.qualification_score || '',
+          followers: l.followers || '',
+          phone: l.phone || '',
+          email: l.email || '',
+          website: l.website || '',
+          has_website: l.has_website ? 'Yes' : (l.website ? 'Yes' : 'No'),
+          address: l.address || '',
+          outreach_count: logs.length,
+          last_outreach_type: lastLog ? (lastLog.type || '').replace(/_/g, ' ') : '',
+          last_outreach_outcome: lastLog ? (lastLog.outcome || '').replace(/_/g, ' ') : '',
+          last_outreach_at: lastLog ? (lastLog.created_at || '').split('T').join(' ').slice(0, 16) : '',
+          last_outreach_by: lastLog ? (lastLog.logged_by_name || lastLog.logged_by_user_id || '') : '',
+          remarks_count: remarks.length,
+          last_remark: lastRemark ? (lastRemark.text || '').substring(0, 200) : '',
+          last_remark_by: lastRemark ? (lastRemark.author_name || lastRemark.author_user_id || '') : '',
+          last_remark_at: lastRemark ? (lastRemark.created_at || '').split('T').join(' ').slice(0, 16) : '',
+          status: l.status || 'qualified',
+          notes: l.notes || '',
+          follow_up_date: l.follow_up_date || '',
+          saved_by: l.qualified_by || l.saved_by_user_name || '',
+        };
+      });
+      const stamp = new Date().toISOString().slice(0, 19).replace(/[-:T]/g, '');
+      const base = 'scraven_qualified_leads_' + stamp;
+      // Always POST to the server — the server applies the brand
+      // styling, status counts, and produces a professional file.
+      const url = API_BASE + '/api/leads/export?status=qualified&format=' + format + '&include_activity=1';
+      fetch(url, { method: 'POST', headers: authHeaders(), body: JSON.stringify({ leads: rows }) })
+        .then(r => {
+          if (!r.ok) throw new Error('HTTP ' + r.status);
+          return r.blob();
+        })
+        .then(blob => {
+          const obj = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = obj;
+          a.download = base + '.' + format;
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          URL.revokeObjectURL(obj);
+          showToast('✓ ' + leads.length + ' lead' + (leads.length === 1 ? '' : 's') + ' exported', 'success');
+        })
+        .catch(e => {
+          showToast('Export failed: ' + e.message, 'error');
+          // Fallback: build a minimal CSV locally
+          if (format === 'csv') {
+            const cols = Object.keys(rows[0] || {});
+            const csv = [cols.join(',')].concat(rows.map(r => cols.map(c => '"' + String(r[c] || '').replace(/"/g, '""') + '"').join(','))).join('\n');
+            const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8' });
+            const obj = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = obj; a.download = base + '.csv'; a.click();
+            URL.revokeObjectURL(obj);
+            showToast('Saved local fallback CSV', 'info');
+          }
+        });
     }
     async function bulkTrash() {
       const ids = Array.from(SELECTED);
