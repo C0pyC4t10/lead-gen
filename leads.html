@@ -1694,7 +1694,9 @@
         'h1{font-size:18px;margin:6px 0 12px}',
       ].join('');
 
-      const html = '<html><head><meta charset="utf-8"><title>' + esc(name) + '</title><style>' + css + '</style></head><body><button class="btn-print noprint" onclick="window.print()">🖨 Print / Save as PDF</button>' + letterhead + '<h1>' + esc(REPORT_TITLE_DEFAULT) + '</h1>' + tableHtml + footer + '</body></html>';
+      const html = '<html><head><meta charset="utf-8"><title>' + esc(name) + '</title><style>' + css + '</style></head><body><button class="btn-print noprint" onclick="window.print()">🖨 Print / Save as PDF</button>' + letterhead + '<h1>' + esc(REPORT_TITLE_DEFAULT) + '</h1>' + tableHtml + footer + '  <!-- Shared Facebook-style tab bar (every page) -->
+  <script src="/assets/tabbar.js" defer></script>
+</body></html>';
 
       const win = window.open('', '_blank');
       if (!win) { showStatus('Popup blocked — allow popups for PDF export.', 'error'); return; }
