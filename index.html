@@ -39,7 +39,8 @@
     .auth-btn:hover{opacity:0.9!important;background:linear-gradient(135deg,#0A4FD9,#00E5FF)!important}
     .admin-btn{background:rgba(251,191,36,0.12)!important;color:#FBBF24!important;border:1px solid rgba(251,191,36,0.3)!important;font-weight:600!important;padding:8px 14px!important;border-radius:8px!important}
     .admin-btn:hover{background:rgba(251,191,36,0.2)!important;color:#FBBF24!important}
-    .logout-btn{color:#94A3B8!important;padding:8px 12px!important}
+    .logout-btn{color:#EF4444!important;padding:8px 12px!important;font-weight:600}
+    .logout-btn:hover{color:#F87171!important;background:rgba(239,68,68,0.1)!important}
     .avatar-circle img{width:36px;height:36px;border-radius:50%;object-fit:cover}
     .avatar-circle{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#0A4FD9,#00E5FF);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff!important;cursor:pointer;padding:0!important;text-decoration:none;flex-shrink:0}
     .avatar-circle:hover{transform:scale(1.05)}
@@ -139,7 +140,8 @@
       .hero-cta{flex-direction:column;margin-bottom:24px}
       .hero-cta .btn{width:100%;padding:13px 20px;font-size:14px}
       .btn{padding:13px 20px;font-size:14px}
-      .hero-stats{gap:20px}
+      .hero-stats{gap:20px;justify-content:center;width:100%}
+      .hero-stats .stat{align-items:center;text-align:center}
       .stat-num{font-size:20px}
       .stat-label{font-size:11px}
       .features{padding:48px 16px}
@@ -200,10 +202,10 @@
       <a href="/leads">Leads</a>
       <a href="/pricing">Pricing</a>
       <a href="/login" id="loginLink" class="auth-btn">Sign In</a>
+      <a href="/extract" id="extractLink" class="cta-primary">Open App</a>
       <a href="/profile" class="avatar-circle" id="profileLink" style="display:none" title="Profile">S</a>
       <a href="/admin" class="admin-btn" id="adminLink" style="display:none" title="Admin Panel">Admin</a>
       <button id="logoutBtn" class="logout-btn" style="display:none" title="Sign out">Logout</button>
-      <a href="/extract" id="extractLink" class="cta-primary">Open App</a>
     </div>
   </nav>
 
