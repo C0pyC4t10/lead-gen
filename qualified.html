@@ -597,6 +597,14 @@
       return t ? { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + t } : { 'Content-Type': 'application/json' };
     }
     function esc(s) { const d = document.createElement('div'); d.textContent = s == null ? '' : String(s); return d.innerHTML; }
+    function getPlatform(lead) {
+      const p = (lead.platform || '').toLowerCase();
+      if (p) return p;
+      const url = (lead.page_url || '').toLowerCase();
+      if (url.includes('facebook.com') || url.includes('fb.com')) return 'facebook';
+      if (url.includes('instagram.com')) return 'instagram';
+      return 'unknown';
+    }
     function showToast(msg, type) {
       const t = document.createElement('div');
       t.className = 'toast ' + (type || 'info');
@@ -738,7 +746,7 @@
       const outreachF = document.getElementById('filterOutreach').value;
       const sortKey = document.getElementById('filterSort').value;
       FILTERED = ALL_LEADS.filter(l => {
-        if (plat && l.platform !== plat) return false;
+        if (plat && getPlatform(l) !== plat) return false;
         if (scoreMin !== '') {
           const s = parseInt(l.qualification_score) || 0;
           if (parseInt(scoreMin) >= 9 && s < 9) return false;
@@ -796,17 +804,18 @@
         const lastAt = lastOutreachDate(l);
         const remarks = l.remarks || [];
         const lastRemark = remarks.length ? remarks[0] : null;
-        const platformCls = (l.platform || '').toLowerCase().indexOf('facebook') >= 0 ? 'fb'
-          : (l.platform || '').toLowerCase().indexOf('instagram') >= 0 ? 'ig'
-          : (l.platform || '').toLowerCase().indexOf('google') >= 0 ? 'gm'
-          : (l.platform || '').toLowerCase().indexOf('linkedin') >= 0 ? 'li' : '';
+        const plat = getPlatform(l);
+        const platformCls = plat.indexOf('facebook') >= 0 ? 'fb'
+          : plat.indexOf('instagram') >= 0 ? 'ig'
+          : plat.indexOf('google') >= 0 ? 'gm'
+          : plat.indexOf('linkedin') >= 0 ? 'li' : '';
         return `<tr data-id="${esc(id)}" data-idx="${i}">
           <td onclick="event.stopPropagation()"><input type="checkbox" class="checkbox row-sel" data-id="${esc(id)}" ${checked} /></td>
           <td>
             <div class="business-name">${esc(l.business_name || 'Unknown')}</div>
             <div class="biz-url">${esc((l.page_url || '').substring(0, 80))}</div>
           </td>
-          <td><span class="platform-tag ${platformCls}">${esc(l.platform || 'unknown')}</span></td>
+          <td><span class="platform-tag ${platformCls}">${esc(plat)}</span></td>
           <td>
             <div class="quality-cell">
               <span class="grade-badge ${grade}">${grade}</span>
@@ -868,7 +877,7 @@
       const hot = ALL_LEADS.filter(l => (parseInt(l.qualification_score) || 0) >= 8).length;
       const won = ALL_LEADS.filter(l => l.status === 'won').length;
       document.getElementById('statTotal').textContent = total;
-      document.getElementById('statTotalSub').textContent = 'Across ' + new Set(ALL_LEADS.map(l => l.platform)).size + ' platform' + (new Set(ALL_LEADS.map(l => l.platform)).size === 1 ? '' : 's');
+      document.getElementById('statTotalSub').textContent = 'Across ' + new Set(ALL_LEADS.map(l => getPlatform(l))).size + ' platform' + (new Set(ALL_LEADS.map(l => getPlatform(l))).size === 1 ? '' : 's');
       document.getElementById('statWeek').textContent = thisWeek;
       document.getElementById('statInProg').textContent = inProg;
       document.getElementById('statReplied').textContent = replied;
@@ -1074,7 +1083,7 @@
       const status = computeOutreachStatus(lead);
       document.getElementById('dpName').textContent = lead.business_name || 'Unknown';
       const sub = [];
-      sub.push('<span class="platform-tag" style="font-size:9px;padding:2px 6px">' + esc(lead.platform || '—') + '</span>');
+      sub.push('<span class="platform-tag" style="font-size:9px;padding:2px 6px">' + esc(getPlatform(lead)) + '</span>');
       sub.push('<span style="margin-left:6px;color:#94A3B8">Score</span> <b style="color:#F8FAFC">' + (parseInt(lead.qualification_score) || 0) + '</b>');
       sub.push('<span style="margin-left:10px">Grade <b style="color:' + (grade === 'A' ? '#6EE7B7' : grade === 'B' ? '#67E8F9' : grade === 'C' ? '#FCD34D' : '#FCA5A5') + '">' + grade + '</b></span>');
       document.getElementById('dpSub').innerHTML = sub.join('');

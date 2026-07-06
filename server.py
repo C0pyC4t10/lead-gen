@@ -2930,6 +2930,9 @@ class Handler(BaseHTTPRequestHandler):
                         # flatten activity lists to a single-line summary
                         v = '; '.join(str(x) for x in v)[:300]
                     row[k] = v
+                # fallback: infer platform from page_url for old leads
+                if not row.get('platform') and ('facebook.com' in (row.get('page_url') or '').lower() or 'fb.com' in (row.get('page_url') or '').lower()):
+                    row['platform'] = 'facebook'
                 writer.writerow(row)
             csv_content = buf.getvalue()
 

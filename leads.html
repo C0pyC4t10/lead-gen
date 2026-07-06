@@ -1301,24 +1301,24 @@
         const tr = document.createElement('tr');
         const dateDisp = day.date === 'unknown' ? 'Unknown' : (l.date && l.date.length > 10 ? l.date.slice(0, 16) : day.date);
         tr.innerHTML = `
-          <td><input type="checkbox" class="hist-select" data-url="${esc(l.page_url || '')}" /></td>
-          <td style="text-align:center;font-size:11px;color:#64748B">${i + 1}</td>
-          <td style="white-space:nowrap;font-size:11px;color:#64748B">${esc(dateDisp)}</td>
-          <td><span class="lead-name" onclick="openHistoryDetail('${esc(l.page_url || '')}')">${esc(l.business_name || '—')}</span></td>
-          <td><span class="badge">${esc(l.platform || '—')}</span></td>
-          <td style="font-size:12px;color:#94A3B8">${esc(l.category || '—')}</td>
-          <td><strong>${l.qualification_score || '?'}</strong></td>
-          <td><span class="badge ${(l.status || 'new').toLowerCase()}">${esc(l.status || 'new')}</span></td>
-          <td style="font-size:12px;word-break:break-all">${l.email ? esc(l.email) : '<span style="color:#64748B;font-style:italic">Not found</span>'}</td>
-          <td style="font-size:12px">${l.phone ? esc(l.phone) : '<span style="color:#64748B;font-style:italic">Not found</span>'}</td>
-          <td>
-            <div style="display:flex;gap:4px;flex-wrap:wrap">
-              <button class="btn-outline success sm" onclick="updateStatus('${esc(l.page_url)}','qualified')">Qualify</button>
-              <button class="btn-outline sm" onclick="updateStatus('${esc(l.page_url)}','contacted')">Contact</button>
-              ${l.page_url && (l.platform || '').toLowerCase() === 'facebook' ? `<button class="btn-outline sm" onclick="apifyHistoryLead('${esc(l.page_url)}')" title="Re-extract via Apify to fill missing phone/email">⚡</button>` : ''}
-              <button class="btn-outline danger sm" onclick="deleteLead('${esc(l.page_url)}')">Delete</button>
-            </div>
-          </td>
+           <td><input type="checkbox" class="hist-select" data-url="${esc(l.page_url || '')}" /></td>
+           <td style="text-align:center;font-size:11px;color:#64748B">${i + 1}</td>
+           <td style="white-space:nowrap;font-size:11px;color:#64748B">${esc(dateDisp)}</td>
+           <td><span class="lead-name" onclick="openHistoryDetail(decodeURIComponent('${ue(l.page_url)}'))">${esc(l.business_name || '—')}</span></td>
+           <td><span class="badge">${esc(l.platform || '—')}</span></td>
+           <td style="font-size:12px;color:#94A3B8">${esc(l.category || '—')}</td>
+           <td><strong>${l.qualification_score || '?'}</strong></td>
+           <td><span class="badge ${(l.status || 'new').toLowerCase()}">${esc(l.status || 'new')}</span></td>
+           <td style="font-size:12px;word-break:break-all">${l.email ? esc(l.email) : '<span style="color:#64748B;font-style:italic">Not found</span>'}</td>
+           <td style="font-size:12px">${l.phone ? esc(l.phone) : '<span style="color:#64748B;font-style:italic">Not found</span>'}</td>
+           <td>
+             <div style="display:flex;gap:4px;flex-wrap:wrap">
+               <button class="btn-outline success sm" onclick="updateStatus(decodeURIComponent('${ue(l.page_url)}'),'qualified')">Qualify</button>
+               <button class="btn-outline sm" onclick="updateStatus(decodeURIComponent('${ue(l.page_url)}'),'contacted')">Contact</button>
+               ${l.page_url && (l.platform || '').toLowerCase() === 'facebook' ? `<button class="btn-outline sm" onclick="apifyHistoryLead(decodeURIComponent('${ue(l.page_url)}'))" title="Re-extract via Apify to fill missing phone/email">⚡</button>` : ''}
+               <button class="btn-outline danger sm" onclick="deleteLead(decodeURIComponent('${ue(l.page_url)}'))">Delete</button>
+             </div>
+           </td>
         `;
         tbody.appendChild(tr);
       });
@@ -1960,7 +1960,8 @@
     }
 
     // ── Helpers ──
-    function esc(s) { if (!s) return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+    function esc(s) { if (!s) return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+    function ue(s) { return encodeURIComponent(s || ''); }
     function showStatus(msg, type) {
       const el = document.getElementById('error');
       if (!el) return;

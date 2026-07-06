@@ -572,6 +572,7 @@ def save_qualified_lead(lead, qualified_by_user_id):
         'business_name': lead.get('business_name', ''),
         'phone': lead.get('phone', ''),
         'email': lead.get('email', ''),
+        'platform': lead.get('platform', ''),
         'category': lead.get('category', ''),
         'qualification_score': str(lead.get('qualification_score', '')),
         'qualified_at': lead.get('qualified_at') or now_iso(),
