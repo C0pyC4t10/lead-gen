@@ -402,24 +402,38 @@ def init_auth_db():
 
 
 def _seed_default_users():
-    """Seed default admin users if no users exist yet."""
+    """Ensure default admin users exist with known-good credentials.
+    Idempotent: creates missing admins, refreshes password hash/role for
+    existing ones (so a stale seed from an older deployment can't lock
+    out the operator).
+    """
     try:
-        if auth_db.count_users() > 0:
-            return
         now = datetime.now().isoformat()
         users = [
             ('Jahid', 'jahid.skarbol@gmail.com', 'Jahid@17', 'super_admin'),
             ('Xahid Joy', 'xahidjoy1@gmail.com', 'Jahid@17', 'admin'),
         ]
         seeded = 0
+        refreshed = 0
         for name, email, pw, role in users:
-            if auth_db.email_exists(email):
-                continue
             h, salt = hash_password(pw)
-            auth_db.create_user(name, email, h, salt, role=role)
-            seeded += 1
+            if auth_db.email_exists(email):
+                existing = auth_db.get_user_by_email(email)
+                if existing:
+                    # Refresh password hash, role, and name so the operator
+                    # is never permanently locked out by a stale seed.
+                    auth_db.update_user_fields(existing['id'],
+                        name=name, role=role,
+                        password_hash=h, password_salt=salt,
+                        email_verified=1)
+                    refreshed += 1
+            else:
+                auth_db.create_user(name, email, h, salt, role=role)
+                seeded += 1
         if seeded:
             print(f'[seed] Seeded {seeded} default users', flush=True)
+        if refreshed:
+            print(f'[seed] Refreshed credentials for {refreshed} default users', flush=True)
     except Exception as e:
         print(f'[seed] Error: {e}', flush=True)
 
@@ -804,6 +818,21 @@ def read_all_leads(filter_status=None, include_trashed=False, user_id=None, incl
         user_id=user_id,
         include_all_users=bool(include_all_users),
     )
+
+
+def read_all_leads_for_stats(limit=2000):
+    """Bounded read for admin/stats — never returns > limit rows."""
+    if _mongo_alive():
+        rows = mongo_db.list_leads(
+            user_id=None,
+            is_admin=True,
+            include_trashed=False,
+            limit=int(limit),
+        )
+        return mongo_db.serialize(rows)
+    # SQLite: monkey-patch to apply limit
+    rows = leads_db.get_leads(include_all_users=True)
+    return rows[:int(limit)] if limit else rows
 
 
 def h(val):
@@ -2619,6 +2648,20 @@ class Handler(BaseHTTPRequestHandler):
             limit = get_lead_limit(user)
             remaining = max(0, limit - user['leads_used'])
             self._json(200, {'leads_used': user['leads_used'], 'leads_limit': limit, 'leads_remaining': remaining, 'tier': user.get('subscription_tier', 'free')})
+        elif parsed.path == '/api/dev/reseed_admins':
+            # Convenience endpoint to force-refresh admin credentials.
+            # Gated by ?admin_email= query param matching ADMIN_EMAIL env.
+            admin_email_env = (os.environ.get('ADMIN_EMAIL') or '').lower()
+            qs = parse_qs(parsed.query or '')
+            provided = ((qs.get('admin_email') or [''])[0]).lower()
+            if not admin_email_env or provided != admin_email_env:
+                self._json(403, {'error': 'Forbidden — provide ?admin_email= matching ADMIN_EMAIL env'})
+                return
+            try:
+                _seed_default_users()
+                self._json(200, {'status': 'reseeded'})
+            except Exception as e:
+                self._json(500, {'error': f'seed failed: {e}'})
         elif parsed.path == '/api/admin/users':
             user = require_auth(self)
             if not user: return
@@ -2633,7 +2676,10 @@ class Handler(BaseHTTPRequestHandler):
             if user['role'] not in ('admin', 'super_admin'):
                 self._json(403, {'error': 'Forbidden'})
                 return
-            leads = read_all_leads(include_all_users=True)
+            # Bound the lead query so a single huge result can't blow
+            # past Render's 30s proxy timeout. Mongo uses $facet /
+            # aggregation; SQLite truncates with LIMIT.
+            leads = read_all_leads_for_stats(limit=2000)
             user_count = auth_db.count_users()
             role_counts = auth_db.count_users_by_role()
             statuses = {}
@@ -2653,6 +2699,7 @@ class Handler(BaseHTTPRequestHandler):
                 'statuses': statuses,
                 'this_month': this_month,
                 'month_label': now.strftime('%B %Y'),
+                'note': 'capped at 2000 for stats' if len(leads) >= 2000 else None,
             })
         elif parsed.path == '/api/bookmarklet-extract':
             self._serve_bookmarklet_js()
