@@ -85,19 +85,19 @@
       border-bottom: 1px solid rgba(226, 232, 240, 0.06);
     }
 
-    .tab-bar {
+    .ltab-bar {
       display: flex; gap: 0; margin-bottom: 20px;
       border-bottom: 1px solid rgba(226, 232, 240, 0.06);
     }
-    .tab {
+    .ltab {
       padding: 12px 20px; font-size: 14px; font-weight: 500; color: #64748B;
       cursor: pointer; border-bottom: 2px solid transparent; font-family: 'Inter', sans-serif;
       transition: all 250ms cubic-bezier(0.4, 0, 0.2, 1); background: none;
     }
-    .tab.active { color: #00E5FF; border-bottom-color: #00E5FF; }
-    .tab:hover:not(.active) { color: #94A3B8; }
-    .tab-content { display: none; }
-    .tab-content.active { display: block; animation: fadeSlideIn 300ms cubic-bezier(0.34, 1.56, 0.64, 1); }
+    .ltab.active { color: #00E5FF; border-bottom-color: #00E5FF; }
+    .ltab:hover:not(.active) { color: #94A3B8; }
+    .ltab-content { display: none; }
+    .ltab-content.active { display: block; animation: fadeSlideIn 300ms cubic-bezier(0.34, 1.56, 0.64, 1); }
     @keyframes fadeSlideIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
 
     .platform-grid { display: flex; gap: 6px; margin-bottom: 16px; flex-wrap: wrap; }
@@ -402,7 +402,7 @@
       .auth-btn{font-size:12px!important;padding:5px 10px!important}
       .lead-badge { font-size: 10px; padding: 2px 6px; }
       .header h1 { font-size: 24px; }
-      .tab { padding: 10px 14px; font-size: 13px; }
+      .ltab { padding: 10px 14px; font-size: 13px; }
       .platform-grid { gap: 4px; }
       .plat-btn { min-width: 70px; padding: 10px; font-size: 12px; }
       .input-row { flex-direction: column; }
@@ -484,12 +484,12 @@
       <a href="/pricing" class="pro-btn">See Plans &rarr;</a>
     </div>
 
-    <div class="tab-bar">
-      <button class="tab active" data-tab="extract">Extract</button>
-      <button class="tab" data-tab="history">History</button>
+    <div class="ltab-bar">
+      <button class="ltab active" data-tab="extract">Extract</button>
+      <button class="ltab" data-tab="history">History</button>
     </div>
 
-    <div id="tab-extract" class="tab-content active">
+    <div id="tab-extract" class="ltab-content active">
       <div class="card">
         <div class="card-header">Platform</div>
         <div class="platform-grid" id="platformTabs">
@@ -574,7 +574,7 @@
       </div>
     </div>
 
-    <div id="tab-history" class="tab-content">
+    <div id="tab-history" class="ltab-content">
       <div class="card">
         <div class="card-header">Lead Vault</div>
         <div class="filter-row">
@@ -684,13 +684,29 @@
     function userIsAdmin() { return APP_USER && (APP_USER.role === 'admin' || APP_USER.role === 'super_admin'); }
 
     // ── Tab switching ──
-    document.querySelectorAll('.tab').forEach(t => {
-      t.addEventListener('click', () => {
-        document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
-        document.querySelectorAll('.tab-content').forEach(x => x.classList.remove('active'));
-        t.classList.add('active');
-        document.getElementById('tab-' + t.dataset.tab).classList.add('active');
-        if (t.dataset.tab === 'history') { loadHistory(); refreshTrashBadge(); }
+    function switchLtab(id) {
+      document.querySelectorAll('.ltab').forEach(x => x.classList.remove('active'));
+      document.querySelectorAll('.ltab-content').forEach(x => x.classList.remove('active'));
+      var btn = document.querySelector('.ltab[data-tab="' + id + '"]');
+      if (btn) btn.classList.add('active');
+      document.getElementById('tab-' + id).classList.add('active');
+      if (id === 'history') { loadHistory(); refreshTrashBadge(); }
+    }
+    // Handle hash-driven navigation (e.g. History tab from bottom nav → /leads#history)
+    if (window.location.hash === '#history') switchLtab('history');
+    window.addEventListener('hashchange', function () {
+      if (window.location.hash === '#history') switchLtab('history');
+      else switchLtab('extract');
+    });
+    document.querySelectorAll('.ltab').forEach(t => {
+      t.addEventListener('click', function () {
+        var id = this.dataset.tab;
+        switchLtab(id);
+        if (id === 'history') {
+          if (window.location.hash !== '#history') window.location.hash = 'history';
+        } else {
+          if (window.location.hash) history.replaceState(null, '', window.location.pathname);
+        }
       });
     });
 
@@ -989,7 +1005,6 @@
         } catch (_) {}
       }
       hideLoading();
-      renderResults(currentResults);
       renderResults(currentResults);
       showStatus(`Apify done. ${updated} fields filled across ${targets.length} leads.`, 'success');
     });
@@ -1694,9 +1709,7 @@
         'h1{font-size:18px;margin:6px 0 12px}',
       ].join('');
 
-      const html = '<html><head><meta charset="utf-8"><title>' + esc(name) + '</title><style>' + css + '</style></head><body><button class="btn-print noprint" onclick="window.print()">🖨 Print / Save as PDF</button>' + letterhead + '<h1>' + esc(REPORT_TITLE_DEFAULT) + '</h1>' + tableHtml + footer + '  <!-- Shared Facebook-style tab bar (every page) -->
-  <script src="/assets/tabbar.js" defer></script>
-</body></html>';
+      const html = '<html><head><meta charset="utf-8"><title>' + esc(name) + '</title><style>' + css + '</style></head><body><button class="btn-print noprint" onclick="window.print()">🖨 Print / Save as PDF</button>' + letterhead + '<h1>' + esc(REPORT_TITLE_DEFAULT) + '</h1>' + tableHtml + footer + '</body></html>';
 
       const win = window.open('', '_blank');
       if (!win) { showStatus('Popup blocked — allow popups for PDF export.', 'error'); return; }
@@ -1955,6 +1968,7 @@
     }
   </script>
   <script>document.querySelectorAll('.nav-links > a').forEach(function(a){var h=a.getAttribute('href');if(h===location.pathname||(h!=='/'&&location.pathname.startsWith(h))){a.style.color='#F8FAFC';a.style.background='rgba(148,163,184,0.08)';a.style.fontWeight='600'}})</script>
+<script src="/assets/tabbar.js" defer></script>
 <script src="/assets/scraven-modal.js"></script>
 </body>
 </html>

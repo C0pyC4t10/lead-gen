@@ -19,7 +19,7 @@
     { id: "home",    href: "/",         svg: SVGS.home,    label: "Home" },
     { id: "extract", href: "/extract",  svg: SVGS.extract, label: "Extract", primary: true },
     { id: "leads",   href: "/leads",    svg: SVGS.leads,   label: "Leads" },
-    { id: "history", href: "/trash",    svg: SVGS.history, label: "History" },
+    { id: "history", href: "/leads#history", svg: SVGS.history, label: "History" },
     { id: "account", href: "/profile",  svg: SVGS.account, label: "Account", elemId: "tabBarAccount" },
   ];
 
@@ -64,14 +64,19 @@
     var bar = document.getElementById("tabBar");
     if (!bar) return;
     var path = currentPath();
+    var hash = window.location.hash || "";
     var tabs = bar.querySelectorAll(".tab");
     var matched = false;
     for (var i = 0; i < tabs.length; i++) {
       var t = tabs[i];
-      var href = (t.getAttribute("href") || "/").replace(/\/+$/, "") || "/";
+      var href = t.getAttribute("href") || "/";
+      // Split href into path + hash for matching
+      var hParts = href.split("#");
+      var hPath = (hParts[0] || "/").replace(/\/+$/, "") || "/";
+      var hHash = hParts[1] ? "#" + hParts[1] : "";
       t.classList.remove("is-active");
       t.removeAttribute("aria-current");
-      if (!matched && href === path) {
+      if (!matched && hPath === path && hHash === hash) {
         t.classList.add("is-active");
         t.setAttribute("aria-current", "page");
         matched = true;
@@ -122,6 +127,7 @@
     syncActive();
     setupScrollHide();
     window.addEventListener("popstate", syncActive);
+    window.addEventListener("hashchange", syncActive);
     document.addEventListener("click", function (e) {
       var a = e.target && e.target.closest && e.target.closest(".tab");
       if (a) setTimeout(syncActive, 80);
