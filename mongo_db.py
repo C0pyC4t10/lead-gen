@@ -138,6 +138,10 @@ def _ensure_indexes(db):
         db.qualified_leads.create_index([('qualified_at', DESCENDING)])
         db.daily_qualified.create_index([('date', DESCENDING)])
         db.daily_qualified.create_index([('page_url', ASCENDING), ('date', ASCENDING)], unique=True)
+        # Outreach tracking: one collection per outreach log entry
+        db.outreach_logs.create_index([('page_url', ASCENDING), ('created_at', DESCENDING)])
+        db.outreach_logs.create_index([('logged_by_user_id', ASCENDING), ('created_at', DESCENDING)])
+        db.outreach_logs.create_index([('qualified_lead_id', ASCENDING)])
         db.fcommerce_leads.create_index([('page_url', ASCENDING)], unique=True)
         db.linkedin_leads.create_index([('url', ASCENDING)])
         db.maps_leads.create_index([('page_url', ASCENDING)])
@@ -633,6 +637,75 @@ def get_today_qualified():
         return []
     today = datetime.date.today().isoformat()
     return list(db.daily_qualified.find({'date': today}).sort('qualified_at', DESCENDING))
+
+
+# ── Outreach tracking ─────────────────────────────────────────────────
+# Each outreach log is one attempt to reach a qualified lead via a channel
+# (phone call, WhatsApp call/message, FB message, email) with an outcome
+# (replied, no_reply, voicemail, busy) and free-form notes.
+VALID_OUTREACH_TYPES = {'phone_call', 'whatsapp_call', 'whatsapp_message', 'facebook_message', 'email'}
+VALID_OUTREACH_OUTCOMES = {'replied', 'no_reply', 'voicemail', 'busy'}
+
+def save_outreach_log(page_url, outreach_type, outcome, notes, user_id, user_name, qualified_lead_id=None):
+    """Save a new outreach log. Returns the inserted document (with _id) or None on failure."""
+    db = get_db()
+    if db is None:
+        return None
+    if outreach_type not in VALID_OUTREACH_TYPES:
+        return None
+    if outcome not in VALID_OUTREACH_OUTCOMES:
+        return None
+    if not page_url:
+        return None
+    try:
+        doc = {
+            'page_url': page_url,
+            'type': outreach_type,
+            'outcome': outcome,
+            'notes': (notes or '').strip(),
+            'logged_by_user_id': user_id,
+            'logged_by_name': user_name or '',
+            'qualified_lead_id': qualified_lead_id,
+            'created_at': now_iso(),
+        }
+        result = db.outreach_logs.insert_one(doc)
+        doc['_id'] = str(result.inserted_id)
+        return doc
+    except Exception:
+        return None
+
+def list_outreach_logs(page_url=None, user_id=None, limit=200):
+    """List outreach logs. Filter by page_url (for a single lead) or user_id (for current user's logs)."""
+    db = get_db()
+    if db is None:
+        return []
+    query = {}
+    if page_url:
+        query['page_url'] = page_url
+    if user_id:
+        query['logged_by_user_id'] = user_id
+    try:
+        return list(db.outreach_logs.find(query).sort('created_at', DESCENDING).limit(limit))
+    except Exception:
+        return []
+
+def delete_outreach_log(log_id, user_id=None, is_admin=False):
+    """Delete an outreach log. If user_id is given, only the owner can delete
+    (admins can delete anyone's)."""
+    db = get_db()
+    if db is None:
+        return False
+    try:
+        oid = to_object_id(log_id)
+        if not oid:
+            return False
+        query = {'_id': oid}
+        if user_id and not is_admin:
+            query['logged_by_user_id'] = user_id
+        result = db.outreach_logs.delete_one(query)
+        return result.deleted_count > 0
+    except Exception:
+        return False
 
 # ── F-commerce leads ─────────────────────────────────────────────────
 def save_fcommerce_lead(data):

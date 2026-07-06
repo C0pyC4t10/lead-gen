@@ -124,6 +124,42 @@
       .page-title{font-size:24px}
       .qstat-val{font-size:20px}
     }
+
+    /* Outreach modal + button */
+    .row-outreach{background:rgba(0,229,255,0.10);color:#67E8F9;border:1px solid rgba(0,229,255,0.3);font-size:11px;display:inline-flex;align-items:center;gap:4px;padding:6px 10px;border-radius:5px;cursor:pointer;font-weight:600}
+    .row-outreach:hover{background:rgba(0,229,255,0.20);border-color:rgba(0,229,255,0.5)}
+    .outreach-modal{position:fixed;inset:0;background:rgba(5,10,20,0.7);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);z-index:300;display:none;align-items:center;justify-content:center;padding:20px}
+    .outreach-modal.open{display:flex}
+    .outreach-panel{background:#0E1825;border:1px solid rgba(0,229,255,0.18);border-radius:14px;max-width:560px;width:100%;max-height:90vh;overflow-y:auto;padding:24px;position:relative;box-shadow:0 24px 60px rgba(0,0,0,0.6)}
+    .outreach-panel h3{font-size:18px;font-weight:800;color:#F8FAFC;margin-bottom:4px}
+    .outreach-panel .sub{color:#94A3B8;font-size:13px;margin-bottom:18px}
+    .outreach-types{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:16px}
+    .outreach-type{padding:14px 12px;border-radius:10px;background:rgba(5,10,20,0.5);border:1.5px solid rgba(226,232,240,0.10);color:#E2E8F0;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px;transition:all .15s;text-align:center;font-family:inherit}
+    .outreach-type:hover{border-color:rgba(0,229,255,0.4);background:rgba(0,229,255,0.06)}
+    .outreach-type.selected{border-color:#00E5FF;background:rgba(0,229,255,0.12);color:#67E8F9;box-shadow:0 0 0 3px rgba(0,229,255,0.15)}
+    .outreach-type .ic{font-size:22px;line-height:1}
+    .outreach-type .lb{font-size:12px;font-weight:700}
+    .outreach-status{margin-bottom:14px;display:flex;flex-direction:column;gap:8px}
+    .outreach-status-row{display:flex;align-items:center;gap:8px;font-size:13px}
+    .outreach-status-row label{color:#94A3B8;font-weight:600;min-width:80px}
+    .outreach-status-row select,.outreach-status-row input{flex:1;padding:8px 10px;border-radius:6px;background:rgba(5,10,20,0.5);border:1px solid rgba(226,232,240,0.15);color:#E2E8F0;font-size:13px;outline:none;font-family:inherit}
+    .outreach-notes{width:100%;min-height:60px;padding:10px;border-radius:8px;background:rgba(5,10,20,0.5);border:1px solid rgba(226,232,240,0.15);color:#E2E8F0;font-size:13px;outline:none;font-family:inherit;resize:vertical;margin-bottom:14px}
+    .outreach-history{margin-top:20px;border-top:1px solid rgba(226,232,240,0.08);padding-top:16px}
+    .outreach-history h4{font-size:13px;font-weight:700;color:#94A3B8;text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px}
+    .outreach-log{padding:10px 12px;background:rgba(5,10,20,0.4);border:1px solid rgba(226,232,240,0.06);border-radius:8px;margin-bottom:8px;display:flex;gap:10px;align-items:flex-start;font-size:12.5px;line-height:1.5}
+    .outreach-log .ic{font-size:18px;flex-shrink:0;margin-top:1px}
+    .outreach-log .body{flex:1;min-width:0}
+    .outreach-log .meta{color:#64748B;font-size:11px;margin-top:2px}
+    .outreach-log .notes{color:#94A3B8;margin-top:4px;word-break:break-word}
+    .outreach-log .del{background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.25);color:#FCA5A5;font-size:11px;padding:3px 8px;border-radius:4px;cursor:pointer;font-family:inherit}
+    .outreach-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:8px}
+    .btn-close-x{position:absolute;top:14px;right:14px;background:transparent;border:1px solid rgba(226,232,240,0.12);color:#94A3B8;width:32px;height:32px;border-radius:8px;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;transition:all .15s}
+    .btn-close-x:hover{background:rgba(239,68,68,0.15);border-color:rgba(239,68,68,0.4);color:#FCA5A5}
+    .status-pill{display:inline-block;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:700;text-transform:uppercase;margin-left:6px}
+    .status-pill.replied{background:rgba(16,185,129,0.18);color:#6EE7B7;border:1px solid rgba(16,185,129,0.3)}
+    .status-pill.no-reply{background:rgba(245,158,11,0.15);color:#FCD34D;border:1px solid rgba(245,158,11,0.3)}
+    .status-pill.voicemail{background:rgba(139,92,246,0.15);color:#C4B5FD;border:1px solid rgba(139,92,246,0.3)}
+    .status-pill.busy{background:rgba(239,68,68,0.12);color:#FCA5A5;border:1px solid rgba(239,68,68,0.25)}
   </style>
 </head>
 <body>
@@ -135,8 +171,9 @@
     <div class="nav-links">
       <a href="/extract">Extract</a>
       <a href="/leads">Leads</a>
+      <a href="/leads#history" id="navHistory">History</a>
       <a href="/qualified" class="active">Qualified</a>
-      <a href="/trash">Trash</a>
+      <a href="/trash" id="navTrash">Trash</a>
       <a href="/pricing">Pricing</a>
     </div>
     <div id="auth-nav">
@@ -219,6 +256,7 @@
               <th>Contact</th>
               <th>Category</th>
               <th>Followers</th>
+              <th>Outreach</th>
               <th>Qualified</th>
               <th>Actions</th>
             </tr>
@@ -237,6 +275,58 @@
     <div class="footer">
       <span style="color:#0A4FD9;font-weight:700">Scraven</span> — The Hunter &middot; Powered by <a href="https://skarboltech.com" target="_blank" rel="noopener noreferrer">Skarbol Tech</a>
     </div>
+  </div>
+
+  <!-- Outreach tracking modal -->
+  <div class="outreach-modal" id="outreachModal">
+    <div class="outreach-panel" id="outreachPanel">
+      <button class="btn-close-x" id="outreachClose" type="button" aria-label="Close">×</button>
+      <h3 id="outreachTitle">Log Outreach</h3>
+      <div class="sub" id="outreachSub">Pick a channel, add notes, save.</div>
+
+      <div class="outreach-types" id="outreachTypes">
+        <button class="outreach-type" data-type="phone_call" type="button">
+          <span class="ic">📞</span><span class="lb">Phone Call</span>
+        </button>
+        <button class="outreach-type" data-type="whatsapp_call" type="button">
+          <span class="ic">📱</span><span class="lb">WhatsApp Call</span>
+        </button>
+        <button class="outreach-type" data-type="whatsapp_message" type="button">
+          <span class="ic">💬</span><span class="lb">WhatsApp Msg</span>
+        </button>
+        <button class="outreach-type" data-type="facebook_message" type="button">
+          <span class="ic">📘</span><span class="lb">FB Message</span>
+        </button>
+        <button class="outreach-type" data-type="email" type="button">
+          <span class="ic">✉️</span><span class="lb">Email</span>
+        </button>
+      </div>
+
+      <div class="outreach-status">
+        <div class="outreach-status-row">
+          <label>Outcome</label>
+          <select id="outreachOutcome">
+            <option value="replied">Replied</option>
+            <option value="no_reply" selected>No reply</option>
+            <option value="voicemail">Voicemail</option>
+            <option value="busy">Busy / no answer</option>
+          </select>
+        </div>
+      </div>
+
+      <textarea class="outreach-notes" id="outreachNotes" placeholder="What was discussed? Follow-up notes? Next step?"></textarea>
+
+      <div class="outreach-actions">
+        <button class="btn btn-ghost" id="outreachCancel" type="button">Cancel</button>
+        <button class="btn btn-glow" id="outreachSave" type="button">Save Outreach</button>
+      </div>
+
+      <div class="outreach-history" id="outreachHistory" style="display:none">
+        <h4>Past Outreach</h4>
+        <div id="outreachHistoryList"></div>
+      </div>
+    </div>
+  </div>
   </div>
 
   <script>
@@ -267,19 +357,175 @@
       setTimeout(() => el.classList.remove('show'), 4000);
     }
 
+    // ── Outreach tracking ──────────────────────────────────────────
+    // Icon for each outreach channel (shown in the table cell + history).
+    const OUTREACH_TYPES = {
+      phone_call:        { icon: '📞', label: 'Phone Call' },
+      whatsapp_call:     { icon: '📱', label: 'WhatsApp Call' },
+      whatsapp_message:  { icon: '💬', label: 'WhatsApp Message' },
+      facebook_message:  { icon: '📘', label: 'Facebook Message' },
+      email:             { icon: '✉️', label: 'Email' },
+    };
+    const OUTREACH_OUTCOMES = {
+      replied:   { label: 'Replied',     cls: 'replied' },
+      no_reply:  { label: 'No reply',    cls: 'no-reply' },
+      voicemail: { label: 'Voicemail',   cls: 'voicemail' },
+      busy:      { label: 'Busy / no answer', cls: 'busy' },
+    };
+    function outreachIcon(t) {
+      const def = OUTREACH_TYPES[t];
+      return def ? def.icon : '📨';
+    }
+    function outcomePill(o) {
+      const def = OUTREACH_OUTCOMES[o];
+      if (!def) return '';
+      return '<span class="status-pill ' + def.cls + '">' + esc(def.label) + '</span>';
+    }
+    function formatDate(iso) {
+      if (!iso) return '';
+      const d = new Date(iso);
+      if (isNaN(d.getTime())) return iso;
+      const now = new Date();
+      const diffMs = now - d;
+      const days = Math.floor(diffMs / 86400000);
+      if (days === 0) return 'today, ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      if (days === 1) return 'yesterday';
+      if (days < 7) return days + ' days ago';
+      return d.toISOString().split('T')[0];
+    }
+    let outreachModalLead = null; // current lead being edited
+    let outreachModalType = null;
+    function openOutreach(pageUrl, name) {
+      if (!pageUrl) { showToast('Lead has no page_url — cannot log outreach', 'error'); return; }
+      outreachModalLead = ALL_LEADS.find(l => l.page_url === pageUrl) || null;
+      if (!outreachModalLead) { showToast('Lead not found', 'error'); return; }
+      outreachModalType = null;
+      document.getElementById('outreachTitle').textContent = 'Log Outreach — ' + (name || 'Lead');
+      document.getElementById('outreachSub').textContent = 'Pick a channel, set outcome, add notes.';
+      document.getElementById('outreachNotes').value = '';
+      document.getElementById('outreachOutcome').value = 'no_reply';
+      document.querySelectorAll('.outreach-type').forEach(b => b.classList.remove('selected'));
+      renderOutreachHistory(outreachModalLead);
+      document.getElementById('outreachModal').classList.add('open');
+    }
+    function closeOutreach() {
+      document.getElementById('outreachModal').classList.remove('open');
+      outreachModalLead = null; outreachModalType = null;
+    }
+    function renderOutreachHistory(lead) {
+      const hist = lead.outreach_logs || [];
+      const box = document.getElementById('outreachHistory');
+      const list = document.getElementById('outreachHistoryList');
+      if (hist.length === 0) { box.style.display = 'none'; return; }
+      box.style.display = 'block';
+      list.innerHTML = hist.slice().reverse().map((h, i) => {
+        const idx = hist.length - 1 - i; // original index in logs array
+        return '<div class="outreach-log">' +
+          '<div class="ic">' + outreachIcon(h.type) + '</div>' +
+          '<div class="body">' +
+            '<div><b>' + esc((OUTREACH_TYPES[h.type] || {label: h.type}).label) + '</b>' + outcomePill(h.outcome) + '</div>' +
+            '<div class="meta">' + esc(formatDate(h.created_at)) + ' &middot; by ' + esc(h.logged_by_name || 'You') + '</div>' +
+            (h.notes ? '<div class="notes">' + esc(h.notes) + '</div>' : '') +
+          '</div>' +
+          '<button class="del" data-idx="' + idx + '" type="button">Delete</button>' +
+        '</div>';
+      }).join('');
+      list.querySelectorAll('.del').forEach(btn => {
+        btn.addEventListener('click', function() {
+          const idx = parseInt(btn.dataset.idx, 10);
+          deleteOutreachLog(idx);
+        });
+      });
+    }
+    async function submitOutreach() {
+      if (!outreachModalLead || !outreachModalType) {
+        showToast('Pick a channel first', 'error');
+        return;
+      }
+      const notes = document.getElementById('outreachNotes').value.trim();
+      const outcome = document.getElementById('outreachOutcome').value;
+      const btn = document.getElementById('outreachSave');
+      btn.disabled = true; btn.textContent = 'Saving…';
+      try {
+        const resp = await fetch(API_BASE + '/api/outreach', {
+          method: 'POST', headers: authHeaders(),
+          body: JSON.stringify({
+            page_url: outreachModalLead.page_url,
+            type: outreachModalType,
+            outcome: outcome,
+            notes: notes,
+          }),
+        });
+        const r = await resp.json().catch(() => ({}));
+        if (!resp.ok) throw new Error(r.error || 'HTTP ' + resp.status);
+        // Update local lead
+        if (!outreachModalLead.outreach_logs) outreachModalLead.outreach_logs = [];
+        outreachModalLead.outreach_logs.push(r.log);
+        renderOutreachHistory(outreachModalLead);
+        applyFilters(); // refresh the table cell
+        showToast('✓ Outreach logged', 'success');
+        document.getElementById('outreachNotes').value = '';
+      } catch (e) {
+        showToast('Save failed: ' + e.message, 'error');
+      } finally {
+        btn.disabled = false; btn.textContent = 'Save Outreach';
+      }
+    }
+    async function deleteOutreachLog(idx) {
+      if (!outreachModalLead) return;
+      const log = outreachModalLead.outreach_logs && outreachModalLead.outreach_logs[idx];
+      if (!log) return;
+      const ok = await scravenConfirm('Delete this outreach log?', { title: 'Delete Outreach' });
+      if (!ok) return;
+      try {
+        const resp = await fetch(API_BASE + '/api/outreach/delete', {
+          method: 'POST', headers: authHeaders(),
+          body: JSON.stringify({ id: log._id || log.id || '' }),
+        });
+        if (!resp.ok) {
+          const r = await resp.json().catch(() => ({}));
+          throw new Error(r.error || 'HTTP ' + resp.status);
+        }
+        outreachModalLead.outreach_logs.splice(idx, 1);
+        renderOutreachHistory(outreachModalLead);
+        applyFilters();
+        showToast('✓ Log deleted', 'success');
+      } catch (e) {
+        showToast('Delete failed: ' + e.message, 'error');
+      }
+    }
+
     async function load() {
       const tbody = document.getElementById('qualifiedTbody');
-      tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:40px;color:#64748B">Loading qualified leads…</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:40px;color:#64748B">Loading qualified leads…</td></tr>';
       try {
         const resp = await fetch(API_BASE + '/api/leads/qualified', { headers: authHeaders() });
         if (!resp.ok) throw new Error('HTTP ' + resp.status);
         const data = await resp.json();
         ALL_LEADS = Array.isArray(data) ? data : [];
+        // Fetch outreach for each lead (batched) — best-effort, non-blocking
+        try {
+          await enrichWithOutreach();
+        } catch (_) { /* ignore — table still renders */ }
         applyFilters();
       } catch (e) {
-        tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:40px;color:#FCA5A5">Failed to load: ' + esc(e.message) + '</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:40px;color:#FCA5A5">Failed to load: ' + esc(e.message) + '</td></tr>';
         showStatus('Load failed: ' + e.message, 'error');
       }
+    }
+
+    async function enrichWithOutreach() {
+      // Fetch outreach logs for all qualified leads in parallel.
+      const tasks = ALL_LEADS.map(async (l) => {
+        if (!l.page_url) return;
+        try {
+          const r = await fetch(API_BASE + '/api/outreach?page_url=' + encodeURIComponent(l.page_url), { headers: authHeaders() });
+          if (!r.ok) return;
+          const data = await r.json();
+          l.outreach_logs = Array.isArray(data) ? data : [];
+        } catch (_) {}
+      });
+      await Promise.allSettled(tasks);
     }
 
     function applyFilters() {
@@ -326,6 +572,9 @@
         const checked = SELECTED.has(String(id)) ? 'checked' : '';
         const qualifiedAt = l.qualified_at ? l.qualified_at.split('T')[0] : '—';
         const by = l.qualified_by || l.saved_by_user_name || '—';
+        const outreachLogs = (l.outreach_logs || []);
+        const lastOutreach = outreachLogs.length ? outreachLogs[outreachLogs.length - 1] : null;
+        const outreachCount = outreachLogs.length;
         return `<tr data-id="${esc(id)}">
           <td><input type="checkbox" class="checkbox row-sel" data-id="${esc(id)}" ${checked} /></td>
           <td>
@@ -341,6 +590,13 @@
           </td>
           <td style="color:#94A3B8;font-size:12px">${esc(l.category || '—')}</td>
           <td style="color:#94A3B8;font-size:12px">${esc(l.followers || '—')}</td>
+          <td>
+            <button class="row-btn row-outreach" onclick="openOutreach('${esc(l.page_url || '')}', '${esc(l.business_name || 'Unknown')}')" title="Log outreach attempts">
+              ${outreachCount > 0
+                ? outreachIcon(lastOutreach.type) + ' <span style="color:#94A3B8;font-size:11px">×' + outreachCount + '</span>'
+                : '<span style="color:#64748B">+ Log</span>'}
+            </button>
+          </td>
           <td class="q-meta">${esc(qualifiedAt)}<br><span style="color:#64748B">by ${esc(by)}</span></td>
           <td>
             <div class="row-actions">
@@ -456,6 +712,24 @@
         if (cb.checked) SELECTED.add(id);
         else SELECTED.delete(id);
         updateSelectAll();
+      });
+
+      // Outreach modal wiring
+      document.querySelectorAll('.outreach-type').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          outreachModalType = btn.dataset.type;
+          document.querySelectorAll('.outreach-type').forEach(b => b.classList.remove('selected'));
+          btn.classList.add('selected');
+        });
+      });
+      document.getElementById('outreachClose').addEventListener('click', closeOutreach);
+      document.getElementById('outreachCancel').addEventListener('click', closeOutreach);
+      document.getElementById('outreachSave').addEventListener('click', submitOutreach);
+      document.getElementById('outreachModal').addEventListener('click', function(e) {
+        if (e.target.id === 'outreachModal') closeOutreach();
+      });
+      document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && document.getElementById('outreachModal').classList.contains('open')) closeOutreach();
       });
 
       // Auth state

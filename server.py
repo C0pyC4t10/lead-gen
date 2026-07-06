@@ -2764,6 +2764,17 @@ class Handler(BaseHTTPRequestHandler):
             self._json(200, get_funnel_stats(user_id=user['id'], include_all_users=is_admin))
         elif parsed.path == '/api/leads/qualified':
             self._json(200, get_qualified_leads())
+        elif parsed.path == '/api/outreach':
+            # List outreach logs (filterable by ?page_url=... and ?user_id=...)
+            user = require_auth(self)
+            if not user: return
+            params = parse_qs(parsed.query or '')
+            page_url = (params.get('page_url', [None])[0]) or None
+            # Admins can see everyone's logs; non-admins only their own
+            is_admin = user.get('role') in ('admin', 'super_admin')
+            user_filter = None if is_admin else user.get('id')
+            logs = mongo_db.list_outreach_logs(page_url=page_url, user_id=user_filter, limit=500)
+            self._json(200, [mongo_db.serialize(x) for x in logs])
         elif parsed.path == '/api/last-lead':
             url = get_last_lead_url()
             if url:
@@ -3267,6 +3278,65 @@ class Handler(BaseHTTPRequestHandler):
             self._handle_avatar_upload()
             return
         data = self._read_body()
+
+        if parsed.path == '/api/outreach':
+            # Log a new outreach attempt (phone/WhatsApp/FB/email)
+            user = require_auth(self)
+            if not user: return
+            if data is None:
+                self._json(400, {'error': 'Invalid JSON'}); return
+            page_url = (data.get('page_url') or '').strip()
+            otype = (data.get('type') or '').strip()
+            outcome = (data.get('outcome') or 'no_reply').strip()
+            notes = (data.get('notes') or '').strip()
+            if not page_url:
+                self._json(400, {'error': 'page_url is required'}); return
+            if otype not in mongo_db.VALID_OUTREACH_TYPES:
+                self._json(400, {'error': 'Invalid type. Must be one of: ' + ', '.join(sorted(mongo_db.VALID_OUTREACH_TYPES))}); return
+            if outcome not in mongo_db.VALID_OUTREACH_OUTCOMES:
+                self._json(400, {'error': 'Invalid outcome. Must be one of: ' + ', '.join(sorted(mongo_db.VALID_OUTREACH_OUTCOMES))}); return
+            # Find qualified_lead_id for the page_url (so we can link logs → leads)
+            qlead_id = None
+            try:
+                db = mongo_db.get_db()
+                if db is not None:
+                    qlead = db.qualified_leads.find_one({'page_url': page_url}, {'_id': 1})
+                    if qlead and qlead.get('_id'):
+                        qlead_id = str(qlead['_id'])
+            except Exception:
+                pass
+            log = mongo_db.save_outreach_log(
+                page_url=page_url,
+                outreach_type=otype,
+                outcome=outcome,
+                notes=notes,
+                user_id=user.get('id'),
+                user_name=user.get('name', ''),
+                qualified_lead_id=qlead_id,
+            )
+            if not log:
+                self._json(500, {'error': 'Failed to save outreach log'}); return
+            self._json(201, {'status': 'saved', 'log': mongo_db.serialize(log)})
+            return
+        if parsed.path == '/api/outreach/delete':
+            # Delete an outreach log (owner-only unless admin)
+            user = require_auth(self)
+            if not user: return
+            if data is None:
+                self._json(400, {'error': 'Invalid JSON'}); return
+            log_id = (data.get('id') or data.get('_id') or '').strip()
+            if not log_id:
+                self._json(400, {'error': 'id is required'}); return
+            is_admin = user.get('role') in ('admin', 'super_admin')
+            ok = mongo_db.delete_outreach_log(
+                log_id,
+                user_id=None if is_admin else user.get('id'),
+                is_admin=is_admin,
+            )
+            if not ok:
+                self._json(404, {'error': 'Log not found or not authorized'}); return
+            self._json(200, {'status': 'deleted'})
+            return
 
         if parsed.path == '/api/lead':
             try:
