@@ -6,7 +6,25 @@ from http.server import ThreadingHTTPServer, BaseHTTPRequestHandler
 from urllib.parse import urlparse, parse_qs
 import requests
 import openpyxl
-from openpyxl.styles import Alignment
+from openpyxl.styles import Alignment, Font, PatternFill, Border, Side
+from openpyxl.utils import get_column_letter
+
+# Skarbol Tech brand colors (canonical, per kelvin_kb brand guidelines)
+BRAND_PRIMARY       = '0A4FD9'   # Skarbol Neural Blue
+BRAND_ACCENT        = '00E5FF'   # Fusion Cyan
+BRAND_DARK          = '050A14'   # Deep Space
+BRAND_SURFACE       = '0E1825'   # Stellar Void
+BRAND_TEXT          = 'F8FAFC'   # Photon White
+BRAND_TEXT_MUTED    = '94A3B8'   # Steel Vapor
+BRAND_FOOTER_TEXT   = '64748B'   # Nebula Gray (footer)
+BRAND_ROW_STRIPE    = 'F1F5F9'   # soft slate-50 (light row stripe)
+BRAND_QUALIFIED     = '10B981'   # Success Pulse
+BRAND_LOST          = 'EF4444'   # Error Signal
+BRAND_NEW           = '3B82F6'   # Info Beam
+BRAND_CONTACT       = 'FBBF24'   # Warning Amber (used for admin marker)
+
+BRAND_LINE = 'Scraven · Skarbol Tech · Confidential — for internal use only'
+BRAND_WEBSITE = 'https://skarboltech.com'
 
 # Load .env FIRST so mongo_db picks up MONGODB_URI/MONGODB_DB at import time.
 env_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '.env')
@@ -479,19 +497,189 @@ def require_auth(self):
         return None
     return user
 
-def csv_to_xlsx_bytes(csv_content):
+def csv_to_xlsx_bytes(csv_content, *, sheet_name='Leads', report_title=None,
+                      report_meta=None, field_labels=None, source_label=None):
+    """Convert a CSV string to a brand-styled XLSX.
+
+    Layout (Skarbol Tech brand guidelines, 2026):
+      Row 1   — Brand title            (Skarbol Neural Blue fill · Photon White bold 18)
+      Row 2   — Tagline                (Deep Space fill · Photon White italic 11)
+      Row 3   — divider (Fusion Cyan)
+      Rows 4-7 — metadata (Report, Generated, Website, Total)
+      Row 8   — divider (Neural Blue)
+      Row 9   — column headers         (Neural Blue fill · Photon White bold 12)
+      Rows 10+ — alternating stripes   (white / soft slate-50)
+      last row — footer (Photon White / Nebula Gray italic 10)
+      Auto-filter on header row, header frozen, optimal column widths.
+
+    Args:
+        csv_content: CSV text starting at column-header row.
+        sheet_name:  Worksheet tab name.
+        report_title: Optional explicit report name (defaults to sheet_name).
+        report_meta:  Optional dict of extra meta rows to insert (e.g.
+                      {"Source": "all_leads.csv", "Saved By": "jahid@..."}).
+        field_labels: Optional override of column-header labels (must match
+                      CSV column count).
+        source_label: Short label for the source file (shown in metadata).
+    """
     wb = openpyxl.Workbook()
     ws = wb.active
-    center = Alignment(horizontal='center', vertical='center')
+    ws.title = (sheet_name or 'Leads')[:31]  # Excel sheet-name limit
+
+    # ── Body data (skip the CSV header row; we'll add our own styled one) ──
     reader = csv.reader(io.StringIO(csv_content))
-    for row_idx, row in enumerate(reader, 1):
-        for col_idx, val in enumerate(row, 1):
-            cell = ws.cell(row=row_idx, column=col_idx, value=val)
-            cell.alignment = center
-    for col_cells in ws.columns:
-        col_letter = col_cells[0].column_letter
-        max_len = max((len(str(c.value or '')) for c in col_cells), default=0)
-        ws.column_dimensions[col_letter].width = min(max_len + 4, 55)
+    rows = list(reader)
+    if not rows:
+        buf = io.BytesIO(); wb.save(buf); return buf.getvalue()
+
+    raw_headers = rows[0]
+    data_rows  = rows[1:]
+    headers    = list(field_labels) if field_labels else list(raw_headers)
+    ncols      = max(len(headers), 1)
+
+    thin        = Side(style='thin', color='CBD5E1')
+    cell_border = Border(left=thin, right=thin, top=thin, bottom=thin)
+
+    # ── Row 1: brand title (full-width merge) ──
+    ws.merge_cells(start_row=1, start_column=1, end_row=1, end_column=ncols)
+    c = ws.cell(row=1, column=1, value='SKARBOL TECH')
+    c.font = Font(name='Inter', size=18, bold=True, color=BRAND_TEXT)
+    c.fill = PatternFill('solid', fgColor=BRAND_PRIMARY)
+    c.alignment = Alignment(horizontal='center', vertical='center')
+
+    # ── Row 2: tagline ──
+    ws.merge_cells(start_row=2, start_column=1, end_row=2, end_column=ncols)
+    c = ws.cell(row=2, column=1, value='Building Tomorrow\'s Intelligence Today')
+    c.font = Font(name='Inter', size=11, italic=True, color=BRAND_TEXT)
+    c.fill = PatternFill('solid', fgColor=BRAND_DARK)
+    c.alignment = Alignment(horizontal='center', vertical='center')
+
+    # ── Row 3: divider ──
+    ws.merge_cells(start_row=3, start_column=1, end_row=3, end_column=ncols)
+    c = ws.cell(row=3, column=1, value=None)
+    c.fill = PatternFill('solid', fgColor=BRAND_ACCENT)
+
+    # ── Rows 4-7: metadata ──
+    title = report_title or sheet_name
+    generated_at = datetime.now().strftime('%Y-%m-%d %H:%M')
+    meta_pairs = [
+        ('Report',      title),
+        ('Generated',   generated_at),
+        ('Website',     BRAND_WEBSITE),
+        ('Source',      source_label or sheet_name),
+        ('Total Leads', len(data_rows)),
+    ]
+    if report_meta:
+        meta_pairs.extend(list(report_meta.items())[:5])
+
+    meta_start = 4
+    meta_end   = meta_start + len(meta_pairs) - 1
+    for i, (k, v) in enumerate(meta_pairs):
+        r = meta_start + i
+        # Label cell (col A, bold brand-color)
+        cl = ws.cell(row=r, column=1, value=k)
+        cl.font = Font(name='Inter', size=11, bold=True, color=BRAND_PRIMARY)
+        cl.alignment = Alignment(horizontal='left', vertical='center', indent=1)
+        # Value cell (cols B..ncols merged)
+        if ncols > 1:
+            ws.merge_cells(start_row=r, start_column=2, end_row=r, end_column=ncols)
+        cv = ws.cell(row=r, column=2, value=v)
+        cv.font = Font(name='Inter', size=11, color='1E293B')
+        cv.alignment = Alignment(horizontal='left', vertical='center', indent=1)
+
+    # ── Divider row ──
+    div_row = meta_end + 1
+    ws.merge_cells(start_row=div_row, start_column=1, end_row=div_row, end_column=ncols)
+    c = ws.cell(row=div_row, column=1, value=None)
+    c.fill = PatternFill('solid', fgColor=BRAND_PRIMARY)
+
+    # ── Header row (bold, white text on Neural Blue) ──
+    header_row = div_row + 1
+    for j, h in enumerate(headers, 1):
+        c = ws.cell(row=header_row, column=j, value=h)
+        c.font = Font(name='Inter', size=11, bold=True, color=BRAND_TEXT)
+        c.fill = PatternFill('solid', fgColor=BRAND_PRIMARY)
+        c.alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
+        c.border = cell_border
+
+    # ── Body rows: alternating stripe + status color hint ──
+    for i, row in enumerate(data_rows):
+        r = header_row + 1 + i
+        odd = (i % 2 == 1)
+        for j in range(ncols):
+            val = row[j] if j < len(row) else ''
+            c = ws.cell(row=r, column=j + 1, value=val if val != '' else None)
+            c.font = Font(name='Inter', size=10, color='1E293B')
+            c.alignment = Alignment(horizontal='left' if j in (0, 1) else 'left',
+                                    vertical='center', wrap_text=False)
+            if odd:
+                c.fill = PatternFill('solid', fgColor=BRAND_ROW_STRIPE)
+            c.border = cell_border
+        # Color-code status cell if known column index
+        try:
+            from openpyxl.utils import column_index_from_string
+            status_col = column_index_from_string('L')  # 'status' assumed at L if no override
+            for j, h in enumerate(headers):
+                if h and h.strip().lower() == 'status':
+                    status_col = j + 1
+                    break
+            cell = ws.cell(row=r, column=status_col)
+            v = (cell.value or '').lower() if isinstance(cell.value, str) else ''
+            color = None
+            if v in ('qualified', 'won'): color = BRAND_QUALIFIED
+            elif v in ('lost',): color = BRAND_LOST
+            elif v in ('new',): color = BRAND_NEW
+            elif v in ('contacted', 'meeting', 'proposal'): color = BRAND_CONTACT
+            if color:
+                cell.font = Font(name='Inter', size=10, bold=True, color='FFFFFF')
+                cell.fill = PatternFill('solid', fgColor=color)
+                cell.alignment = Alignment(horizontal='center', vertical='center')
+        except Exception:
+            pass
+
+    # ── Footer row: brand line + footer link ──
+    footer_row = header_row + 1 + len(data_rows) + 1
+    ws.merge_cells(start_row=footer_row, start_column=1, end_row=footer_row, end_column=ncols)
+    c = ws.cell(row=footer_row, column=1,
+                value=f'{BRAND_LINE} · {BRAND_WEBSITE} · {generated_at}')
+    c.font = Font(name='Inter', size=9, italic=True, color=BRAND_FOOTER_TEXT)
+    c.fill = PatternFill('solid', fgColor='F8FAFC')
+    c.alignment = Alignment(horizontal='center', vertical='center')
+
+    # ── Column widths (auto, capped) ──
+    width_overrides = {
+        'page_url': 36, 'business_name': 30, 'address': 28,
+        'email': 28, 'phone': 18, 'website': 24, 'category': 18,
+        'notes': 32, 'follow_up_date': 16, 'qualified_at': 18,
+        'deleted_at': 16, 'saved_by_user_name': 20, 'user_id': 14,
+        'last_post_date': 14, 'qualification_score': 12, 'has_website': 12,
+    }
+    for j, h in enumerate(headers, 1):
+        col_letter = get_column_letter(j)
+        h_low = (h or '').strip().lower()
+        if h_low in width_overrides:
+            ws.column_dimensions[col_letter].width = width_overrides[h_low]
+        else:
+            max_len = 14
+            for r in data_rows:
+                if j - 1 < len(r):
+                    max_len = max(max_len, len(str(r[j - 1] or '')))
+            ws.column_dimensions[col_letter].width = min(max_len + 3, 50)
+
+    # ── Row heights for the title/tagline rows ──
+    ws.row_dimensions[1].height = 32
+    ws.row_dimensions[2].height = 22
+    ws.row_dimensions[div_row].height = 4
+    ws.row_dimensions[header_row].height = 32
+    ws.row_dimensions[footer_row].height = 22
+
+    # ── Freeze header row + auto-filter ──
+    ws.freeze_panes = ws.cell(row=header_row + 1, column=1)
+    ws.auto_filter.ref = f'A{header_row}:{get_column_letter(ncols)}{header_row + len(data_rows)}'
+
+    # ── Sheet view: hide gridlines for cleaner look ──
+    ws.sheet_view.showGridLines = False
+
     buf = io.BytesIO()
     wb.save(buf)
     return buf.getvalue()
@@ -2562,6 +2750,96 @@ class Handler(BaseHTTPRequestHandler):
                 self._json(200, {'page_url': url})
             else:
                 self._json(404, {'error': 'No recent lead'})
+        elif parsed.path == '/api/leads/export':
+            user = require_auth(self)
+            if not user: return
+            is_admin = user.get('role') in ('admin', 'super_admin')
+            params = parse_qs(parsed.query)
+            status_filter = params.get('status', [None])[0]
+            fmt = (params.get('format', ['xlsx'])[0] or 'xlsx').lower()
+            leads = read_all_leads(
+                filter_status=status_filter,
+                include_all_users=is_admin,
+                user_id=None if is_admin else user['id'],
+            )
+            if not leads:
+                self._json(404, {'error': 'No leads to export'}); return
+
+            cols = [
+                'date', 'platform', 'business_name', 'page_url', 'category',
+                'followers', 'email', 'phone', 'website', 'has_website',
+                'address', 'last_post_date', 'qualification_score', 'status',
+                'notes', 'follow_up_date', 'saved_by_user_name',
+            ]
+            labels = {
+                'date': 'Date', 'platform': 'Platform', 'business_name': 'Business Name',
+                'page_url': 'Page URL', 'category': 'Category', 'followers': 'Followers',
+                'email': 'Email', 'phone': 'Phone', 'website': 'Website',
+                'has_website': 'Has Website', 'address': 'Address',
+                'last_post_date': 'Last Post', 'qualification_score': 'Score',
+                'status': 'Status', 'notes': 'Notes', 'follow_up_date': 'Follow-up',
+                'saved_by_user_name': 'Saved By',
+            }
+            buf = io.StringIO()
+            fieldnames = list(cols)
+            writer = csv.DictWriter(buf, fieldnames=fieldnames, quoting=csv.QUOTE_ALL, extrasaction='ignore')
+            writer.writeheader()
+            for l in leads:
+                writer.writerow({k: (l.get(k) or '') for k in fieldnames})
+            csv_content = buf.getvalue()
+
+            sheet_title = (
+                'Qualified Leads' if status_filter == 'qualified' else
+                'Contacted Leads' if status_filter == 'contacted' else
+                'All Leads' if is_admin else 'My Leads'
+            )
+            timestamp = datetime.now().strftime('%Y%m%d_%H%M')
+
+            if fmt == 'csv':
+                brand_block = (
+                    'SKARBOL TECH\r\n'
+                    "Building Tomorrow's Intelligence Today\r\n"
+                    '\r\n'
+                    f'Report,{sheet_title}\r\n'
+                    f'Generated,{datetime.now().strftime("%Y-%m-%d %H:%M")}\r\n'
+                    f'Website,{BRAND_WEBSITE}\r\n'
+                    f'Total Leads,{len(leads)}\r\n'
+                    f'Saved By,"{user.get("name","")} ({user.get("email","")})"\r\n'
+                    f'Status Filter,{status_filter or "all"}\r\n'
+                    '\r\n'
+                )
+                csv_text = brand_block + csv_content.lstrip() + f'\r\n# {BRAND_LINE}\r\n'
+                csv_bytes = b'\xef\xbb\xbf' + csv_text.encode('utf-8')
+                self.send_response(200)
+                self.send_header('Content-Type', 'text/csv; charset=utf-8')
+                self.send_header('Content-Disposition',
+                                 f'attachment; filename="scraven_leads_{timestamp}.csv"')
+                self.send_header('Content-Length', str(len(csv_bytes)))
+                self._cors_headers()
+                self.end_headers()
+                self.wfile.write(csv_bytes)
+                return
+
+            xlsx_bytes = csv_to_xlsx_bytes(
+                csv_content,
+                sheet_name=sheet_title[:31],
+                report_title=sheet_title,
+                source_label='all_users' if is_admin else 'user_only',
+                report_meta={
+                    'Saved By': f"{user.get('name','')} ({user.get('email','')})",
+                    'Status Filter': status_filter or 'all',
+                },
+                field_labels=[labels.get(c, c.title()) for c in cols],
+            )
+            self.send_response(200)
+            self.send_header('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+            self.send_header('Content-Disposition',
+                             f'attachment; filename="scraven_leads_{timestamp}.xlsx"')
+            self.send_header('Content-Length', str(len(xlsx_bytes)))
+            self._cors_headers()
+            self.end_headers()
+            self.wfile.write(xlsx_bytes)
+            return
         # \u2500\u2500 F-Commerce GET endpoints \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
         elif parsed.path == '/api/fcommerce/leads':
             params = parse_qs(parsed.query)
@@ -2578,16 +2856,38 @@ class Handler(BaseHTTPRequestHandler):
             self._json(200, _fcommerce_stats())
         elif parsed.path == '/api/fcommerce/export':
             leads = _read_fcommerce_leads()
-            import io
             output = io.StringIO()
-            writer = csv.DictWriter(output, fieldnames=FCOMMERCE_COLUMNS)
-            writer.writeheader()
+            # Professional brand-styled CSV — Excel-friendly (BOM + CRLF),
+            # brand title block at top, blank separator, header row,
+            # blank separator, body. Reader-friendly when opened as plain
+            # text too.
+            generated_at = datetime.now().strftime('%Y-%m-%d %H:%M')
+            header_rows = [
+                ['SKARBOL TECH'],
+                ['Building Tomorrow\'s Intelligence Today'],
+                [],
+                ['Report',     'F-Commerce Lead Vault'],
+                ['Generated',  generated_at],
+                ['Website',    BRAND_WEBSITE],
+                ['Total Leads', len(leads)],
+                ['Source',     'fcommerce_leads.csv'],
+                [],
+            ]
+            for row in header_rows:
+                output.write(csv.writer(output).writerow([str(c) if c is not None else '' for c in row]).rstrip('\r\n') + '\r\n')
+            body_writer = csv.DictWriter(output, fieldnames=FCOMMERCE_COLUMNS, quoting=csv.QUOTE_ALL)
+            body_writer.writeheader()
             for lead in leads:
-                writer.writerow(lead)
-            csv_bytes = output.getvalue().encode('utf-8')
+                body_writer.writerow({k: (lead.get(k, '') if lead else '') for k in FCOMMERCE_COLUMNS})
+            output.write('\r\n')
+            output.write(f'# {BRAND_LINE}\r\n')
+            csv_text = output.getvalue()
+            # Prepend UTF-8 BOM so Excel reliably opens with correct encoding
+            csv_bytes = b'\xef\xbb\xbf' + csv_text.encode('utf-8')
             self.send_response(200)
             self.send_header('Content-Type', 'text/csv; charset=utf-8')
-            self.send_header('Content-Disposition', 'attachment; filename="fcommerce_leads_export.csv"')
+            self.send_header('Content-Disposition',
+                             f'attachment; filename="fcommerce_leads_{datetime.now().strftime("%Y%m%d_%H%M")}.csv"')
             self.send_header('Content-Length', str(len(csv_bytes)))
             self._cors_headers()
             self.end_headers()
@@ -3842,19 +4142,19 @@ def get_last_n_leads_csv(n):
     sources = []
 
     if os.path.exists(today_path):
-        sources.append(('daily', today_path))
+        sources.append(('daily', today_path, "Today's Qualified Leads"))
     if os.path.exists(QUALIFIED_CSV_PATH):
-        sources.append(('qualified', QUALIFIED_CSV_PATH))
+        sources.append(('qualified', QUALIFIED_CSV_PATH, 'Qualified Leads (all-time)'))
     if os.path.exists(CSV_PATH):
-        sources.append(('all', CSV_PATH))
+        sources.append(('all', CSV_PATH, 'Lead Vault (all extracted)'))
 
-    for label, path in sources:
+    for label, path, title in sources:
         with open(path, 'r', newline='', encoding='utf-8') as f:
             reader = csv.DictReader(f)
             rows = list(reader)
         if rows:
             last_n = rows[-n:]
-            with open(path, 'r', newline='', encoding='utf-8') as f:
+            with open(path, 'r', newline='') as f:
                 raw_header = f.readline().strip()
             fieldnames = [fn.strip().strip('"') for fn in raw_header.split(',')]
             out = io.StringIO()
@@ -3862,7 +4162,13 @@ def get_last_n_leads_csv(n):
             writer.writeheader()
             writer.writerows(last_n)
             csv_content = out.getvalue()
-            xlsx_bytes = csv_to_xlsx_bytes(csv_content)
+            xlsx_bytes = csv_to_xlsx_bytes(
+                csv_content,
+                sheet_name=title[:31],
+                report_title=title,
+                source_label=os.path.basename(path),
+                report_meta={'Top N': f'last {n} rows'},
+            )
             return xlsx_bytes, label
     return None, None
 
