@@ -3086,9 +3086,8 @@ class Handler(BaseHTTPRequestHandler):
             rows = []
             total = 0
             try:
-                import auth_db
                 conn = auth_db._sqlite_conn()
-                conn.row_factory = auth_db.sqlite3.Row
+                conn.row_factory = sqlite3.Row
                 c = conn.cursor()
                 c.execute('SELECT * FROM sessions ORDER BY id DESC LIMIT 10')
                 rows = [dict(r) for r in c.fetchall()]
