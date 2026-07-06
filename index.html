@@ -147,7 +147,83 @@
     .cta-banner .btn{position:relative;background:#fff;color:#0A4FD9}
     .cta-banner .btn:hover{background:#F8FAFC}
 
+    /* Header — minimal: just logo + profile avatar (Facebook-style top-bar pattern) */
+    .header-profile{
+      margin-left:auto;width:42px;height:42px;border-radius:50%;
+      background:linear-gradient(135deg,#0A4FD9,#00E5FF);
+      border:1px solid rgba(255,255,255,.18);
+      position:relative;overflow:hidden;flex-shrink:0;
+      box-shadow:0 4px 14px rgba(10,79,217,.35);
+      transition:transform .2s,box-shadow .2s,border-color .2s;
+      display:inline-flex;align-items:center;justify-content:center;
+      text-decoration:none;
+    }
+    .header-profile:hover{transform:scale(1.05);box-shadow:0 6px 20px rgba(10,79,217,.5);border-color:rgba(0,229,255,.6)}
+    .header-profile:active{transform:scale(.96)}
+    .header-profile-letter{
+      font-size:16px;font-weight:800;color:#F8FAFC;letter-spacing:0;
+      text-shadow:0 1px 2px rgba(0,0,0,.3);
+      transition:opacity .2s;
+    }
+    .header-profile-img{
+      position:absolute;inset:0;width:100%;height:100%;object-fit:cover;
+      opacity:0;transition:opacity .25s;border-radius:50%;
+    }
+    .header-profile.has-image .header-profile-img{opacity:1}
+    .header-profile.has-image .header-profile-letter{opacity:0}
+
+    /* ── Facebook-style bottom tab bar (primary navigation) ── */
+    .tab-bar{
+      position:fixed;left:0;right:0;bottom:0;z-index:90;
+      display:grid;grid-template-columns:repeat(5,1fr);
+      gap:4px;padding:6px 6px calc(6px + env(safe-area-inset-bottom, 0px));
+      background:rgba(11,18,33,0.94);
+      -webkit-backdrop-filter:blur(16px) saturate(180%);
+      backdrop-filter:blur(16px) saturate(180%);
+      border-top:1px solid rgba(226,232,240,0.08);
+      box-shadow:0 -8px 24px rgba(0,0,0,.35);
+      max-width:560px;margin:0 auto;
+    }
+    .tab-bar::before{
+      content:'';position:absolute;top:-1px;left:50%;transform:translateX(-50%);
+      width:80%;max-width:380px;height:1px;
+      background:linear-gradient(90deg,transparent,rgba(0,229,255,.4),transparent);
+    }
+    .tab{
+      display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
+      padding:8px 2px 6px;border-radius:10px;
+      text-decoration:none;color:#94A3B8;
+      font-size:10px;font-weight:600;letter-spacing:.3px;text-transform:uppercase;
+      position:relative;transition:color .2s,background .2s,transform .15s;
+      min-height:54px;
+      -webkit-tap-highlight-color:transparent;
+    }
+    .tab:active{transform:scale(.94)}
+    .tab .ti{font-size:20px;line-height:1;display:inline-block;filter:grayscale(.4);transition:filter .2s,transform .2s}
+    .tab:hover{color:#CBD5E1}
+    .tab:hover .ti{filter:grayscale(0)}
+    .tab.is-active{color:#00E5FF}
+    .tab.is-active .ti{filter:grayscale(0);transform:translateY(-1px) scale(1.06)}
+    .tab.is-active::after{
+      content:'';position:absolute;left:50%;bottom:1px;transform:translateX(-50%);
+      width:22px;height:3px;border-radius:3px 3px 0 0;
+      background:linear-gradient(135deg,#0A4FD9,#00E5FF);
+      box-shadow:0 0 12px rgba(0,229,255,.5);
+    }
+    .tab.is-primary{
+      background:linear-gradient(135deg,rgba(10,79,217,.18),rgba(0,229,255,.12));
+      border:1px solid rgba(0,229,255,.3);
+      color:#F8FAFC;
+    }
+    .tab.is-primary .ti{filter:none}
+    .tab.is-primary.is-active{background:linear-gradient(135deg,#0A4FD9,#00E5FF);color:#fff;border-color:transparent;box-shadow:0 8px 20px rgba(10,79,217,.4)}
+    .tab.is-primary.is-active::after{display:none}
+    .tab .tl{font-size:9.5px;font-weight:700;letter-spacing:.4px}
+    .tab-bar-spacer{height:74px}    /* spacer so content doesn't hide under tab bar */
+    @media (min-width:900px){.tab-bar{display:none}.tab-bar-spacer{display:none}}
+
     /* Footer — Skarbol Tech brand colors per KB (2026) */
+    body{padding-bottom:env(safe-area-inset-bottom, 0px)}
     .site-footer{padding:56px 24px 40px;background:linear-gradient(180deg,rgba(11,18,33,0.4),rgba(5,10,20,0.85));border-top:1px solid rgba(0,229,255,0.12);text-align:center;margin-top:0;position:relative;overflow:hidden}
     .site-footer::before{content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);width:min(800px,80%);height:1px;background:linear-gradient(90deg,transparent,#0A4FD9 30%,#00E5FF 70%,transparent);opacity:.6}
     .site-footer::after{content:'';position:absolute;top:-120px;left:50%;transform:translateX(-50%);width:600px;height:600px;background:radial-gradient(circle,rgba(10,79,217,0.08) 0%,transparent 60%);pointer-events:none}
@@ -232,6 +308,10 @@
     /* Body bottom padding when mobile bottom-bar is present */
     body.has-mobile-footer{padding-bottom:96px}
     @media (min-width:769px){body.has-mobile-footer{padding-bottom:0}}
+
+    /* Mobile-only: body offset for the fixed bottom tab bar + footer
+       bottom safe area — keeps content visible above the navigation. */
+    @media (max-width:899px){body{padding-bottom:calc(74px + env(safe-area-inset-bottom,0px))}}
 
     /* Responsive — large desktops / small laptops */
     @media (max-width: 1100px) {
@@ -381,32 +461,11 @@
       <img src="/assets/icon32.png" alt="Scraven" class="logo-icon">
       <span><span class="brand-navy">Scra</span><span class="brand-white">ven</span></span>
     </a>
-    <button class="nav-burger" id="navBurger" type="button" aria-label="Open menu" aria-controls="navDrawer" aria-expanded="false">
-      <span class="bar"></span><span class="bar"></span><span class="bar"></span>
-    </button>
-    <div class="nav-links" id="navLinks">
-      <a href="/leads">Leads</a>
-      <a href="/pricing">Pricing</a>
-      <a href="/login" id="loginLink" class="auth-btn">Sign In</a>
-      <a href="/extract" id="extractLink" class="cta-primary">Open App</a>
-      <a href="/profile" class="avatar-circle" id="profileLink" style="display:none" title="Profile">S</a>
-      <a href="/admin" class="admin-btn" id="adminLink" style="display:none" title="Admin Panel">Admin</a>
-      <button id="logoutBtn" class="logout-btn" style="display:none" title="Sign out">Logout</button>
-    </div>
+    <a href="/profile" class="header-profile" id="headerProfile" aria-label="Your profile" title="Profile">
+      <img class="header-profile-img" id="headerProfileImg" alt="" />
+      <span class="header-profile-letter" id="headerProfileLetter">?</span>
+    </a>
   </nav>
-
-  <div class="nav-drawer" id="navDrawer" role="dialog" aria-modal="true" aria-label="Mobile navigation">
-    <div class="drawer-eyebrow">Browse</div>
-    <a href="/" class="drawer-item"><span class="di">🏠</span>Home</a>
-    <a href="/extract" class="drawer-item is-cta"><span class="di">⚡</span>Open App</a>
-    <a href="/leads" class="drawer-item"><span class="di">📊</span>Leads</a>
-    <a href="/pricing" class="drawer-item"><span class="di">💰</span>Pricing</a>
-    <div class="drawer-eyebrow">Account</div>
-    <a href="/login" id="drawerAccount" class="drawer-item"><span class="di">🔑</span>Sign In</a>
-    <a href="/admin" id="drawerAdmin" class="drawer-item is-admin" style="display:none"><span class="di">🛡</span>Admin</a>
-    <a href="/profile" id="drawerProfile" class="drawer-item" style="display:none"><span class="di">👤</span>Profile</a>
-    <button id="drawerLogout" class="drawer-item is-logout" style="display:none"><span class="di">🚪</span>Logout</button>
-  </div>
 
   <section class="hero">
     <div class="hero-grid">
@@ -484,6 +543,15 @@
     <a href="/register" class="btn-inline btn-inline-primary">Create Free Account</a>
   </section>
 
+  <!-- Facebook-style fixed bottom tab bar (primary nav) -->
+  <nav class="tab-bar" id="tabBar" aria-label="Primary navigation">
+    <a href="/"      class="tab"           data-tab-id="home">    <span class="ti" aria-hidden="true">🏠</span><span class="tl">Home</span></a>
+    <a href="/extract" class="tab is-primary" data-tab-id="extract"><span class="ti" aria-hidden="true">⚡</span><span class="tl">Extract</span></a>
+    <a href="/leads"  class="tab"           data-tab-id="leads">  <span class="ti" aria-hidden="true">📊</span><span class="tl">Leads</span></a>
+    <a href="/pricing" class="tab"          data-tab-id="pricing"><span class="ti" aria-hidden="true">💰</span><span class="tl">Pricing</span></a>
+    <a href="/profile" class="tab"          data-tab-id="account" id="tabBarAccount"><span class="ti" aria-hidden="true">👤</span><span class="tl">Account</span></a>
+  </nav>
+
   <footer class="site-footer" id="siteFooter">
     <button type="button" class="footer-toggle" id="footerToggle" aria-expanded="true" aria-controls="footerMenus" style="display:none">
       <span class="arrow" aria-hidden="true">▾</span>
@@ -506,64 +574,58 @@
   </footer>
 
   <script>
+    // Auth state: drive header-profile (avatar) + footer-signed-in variants.
     (async function() {
-      var loginLink = document.getElementById('loginLink');
-      var profileLink = document.getElementById('profileLink');
-      var adminLink = document.getElementById('adminLink');
-      var logoutBtn = document.getElementById('logoutBtn');
-      var extractLink = document.getElementById('extractLink');
-      var footerAccount = document.getElementById('footerAccount');
-      var footerAdminLink = document.getElementById('footerAdminLink');
+      var headerProfile   = document.getElementById('headerProfile');
+      var headerProfileImg  = document.getElementById('headerProfileImg');
+      var headerProfileLetter = document.getElementById('headerProfileLetter');
+      var footerAccount    = document.getElementById('footerAccount');
+      var footerAdminLink  = document.getElementById('footerAdminLink');
+
       var token = null;
       try { token = localStorage.getItem('skarbol_token'); } catch(_) {}
-      if (!token) return;
+      if (!token) {
+        // Signed-out state: show '?' letter, link to /login
+        if (headerProfile) headerProfile.href = '/login';
+        if (headerProfileLetter) headerProfileLetter.textContent = '?';
+        return;
+      }
 
       try {
         var resp = await fetch(window.location.origin + '/api/auth/me', {
           headers: { 'Authorization': 'Bearer ' + token }
         });
-        if (!resp.ok) return;
+        if (!resp.ok) {
+          if (headerProfile) headerProfile.href = '/login';
+          if (headerProfileLetter) headerProfileLetter.textContent = '?';
+          return;
+        }
         var data = await resp.json();
         var user = (data && data.user) ? data.user : data;
         if (!user || !user.id) return;
 
-        if (loginLink) loginLink.style.display = 'none';
-        if (profileLink) {
-          profileLink.style.display = 'flex';
-          profileLink.textContent = (user.name || '?').charAt(0).toUpperCase();
-          profileLink.title = (user.name || 'Profile') + ' — open profile';
-          profileLink.href = '/profile';
-          // try to load avatar image
-          var img = new Image();
-          img.onload = function() {
-            if (!profileLink) return;
-            profileLink.innerHTML = '';
-            profileLink.style.background = 'none';
-            profileLink.style.padding = '0';
-            profileLink.appendChild(img);
+        // ── Header profile avatar ──
+        if (headerProfile) {
+          headerProfile.href = '/profile';
+          headerProfile.title = (user.name || 'Profile') + ' — open profile';
+        }
+        if (headerProfileLetter) {
+          headerProfileLetter.textContent = (user.name || '?').charAt(0).toUpperCase();
+        }
+        // Try to load profile picture from Mongo
+        if (headerProfileImg) {
+          var imgUrl = window.location.origin + '/api/avatars/' + user.id + '.jpg?t=' + Date.now();
+          var testImg = new Image();
+          testImg.onload = function() {
+            if (!headerProfile || !headerProfileImg) return;
+            headerProfileImg.src = imgUrl;
+            headerProfile.classList.add('has-image');
           };
-          img.onerror = function() {};
-          img.src = window.location.origin + '/api/avatars/' + user.id + '.jpg?t=' + Date.now();
+          testImg.onerror = function() { /* keep letter fallback */ };
+          testImg.src = imgUrl;
         }
-        if (adminLink && (user.role === 'admin' || user.role === 'super_admin')) {
-          adminLink.style.display = 'inline-flex';
-        }
-        if (logoutBtn) {
-          logoutBtn.style.display = 'inline-flex';
-          logoutBtn.addEventListener('click', async function() {
-            try {
-              await fetch(window.location.origin + '/api/auth/logout', {
-                method: 'POST',
-                headers: { 'Authorization': 'Bearer ' + token }
-              });
-            } catch(_) {}
-            try { localStorage.removeItem('skarbol_token'); } catch(_) {}
-            window.location.href = '/login';
-          });
-        }
-        if (extractLink) extractLink.textContent = 'Dashboard →';
 
-        // Footer variants: account link shows signed-in state, admin button mirrors nav
+        // ── Footer account/admin variants ──
         if (footerAccount) {
           footerAccount.href = '/profile';
           footerAccount.title = (user.name || 'Account') + ' — open profile';
@@ -575,8 +637,23 @@
         if (footerAdminLink && (user.role === 'admin' || user.role === 'super_admin')) {
           footerAdminLink.style.display = 'flex';
         }
-      } catch(_) {}
+      } catch(_) {
+        if (headerProfile) headerProfile.href = '/login';
+        if (headerProfileLetter) headerProfileLetter.textContent = '?';
+      }
     })();
+
+    // Logout function — bound to window so admin pages can call it
+    window.skarbolLogout = async function() {
+      var token = null;
+      try { token = localStorage.getItem('skarbol_token'); } catch(_) {}
+      if (token) {
+        try { await fetch(window.location.origin + '/api/auth/logout', {
+          method: 'POST', headers: { 'Authorization': 'Bearer ' + token } }); } catch(_) {}
+      }
+      try { localStorage.removeItem('skarbol_token'); } catch(_) {}
+      window.location.href = '/login';
+    };
 
     // ── Mobile-mode footer behavior ─────────────────────────────────
     (function setupFooterMobile() {
@@ -619,75 +696,30 @@
       window.addEventListener('resize', applyFooterMode, { passive: true });
     })();
 
-    // ── Mobile hamburger drawer (≤768px) ────────────────────────────────
-    (function setupBurger() {
-      var burger   = document.getElementById('navBurger');
-      var drawer   = document.getElementById('navDrawer');
-      var navLinks = document.getElementById('navLinks');
-      if (!burger || !drawer) return;
-
-      function open() {
-        drawer.classList.add('is-open');
-        burger.setAttribute('aria-expanded', 'true');
-        burger.setAttribute('aria-label', 'Close menu');
-        document.body.style.overflow = 'hidden';
-      }
-      function close() {
-        drawer.classList.remove('is-open');
-        burger.setAttribute('aria-expanded', 'false');
-        burger.setAttribute('aria-label', 'Open menu');
-        document.body.style.overflow = '';
-      }
-      burger.addEventListener('click', function() {
-        if (drawer.classList.contains('is-open')) close();
-        else open();
-      });
-      // Close drawer after any link tap (small delay to allow nav)
-      drawer.querySelectorAll('a, button').forEach(function(el) {
-        el.addEventListener('click', function() { setTimeout(close, 80); });
-      });
-      // Escape closes
-      document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape' && drawer.classList.contains('is-open')) close();
-      });
-      // Resize past 768px closes drawer
-      window.addEventListener('resize', function() {
-        if (!window.matchMedia('(max-width: 768px)').matches &&
-            drawer.classList.contains('is-open')) close();
-      });
-
-      // Sync drawer account/admin/logout button state with auth state
-      function syncAuthState() {
-        var drawerAccount = document.getElementById('drawerAccount');
-        var drawerProfile = document.getElementById('drawerProfile');
-        var drawerAdmin   = document.getElementById('drawerAdmin');
-        var drawerLogout  = document.getElementById('drawerLogout');
-        var profileLink   = document.getElementById('profileLink');
-        var logoutBtn     = document.getElementById('logoutBtn');
-        var userSignedIn = profileLink && profileLink.style.display !== 'none';
-        if (drawerAccount) drawerAccount.style.display = userSignedIn ? 'none' : 'flex';
-        if (drawerProfile) drawerProfile.style.display = userSignedIn ? 'flex' : 'none';
-        if (drawerLogout && logoutBtn) {
-          drawerLogout.style.display = logoutBtn.style.display;
-          if (!drawerLogout.dataset.wired && userSignedIn) {
-            drawerLogout.addEventListener('click', function() { logoutBtn.click(); });
-            drawerLogout.dataset.wired = '1';
+    // ── Tab bar active-state tracking (Facebook-style) ───────────
+    (function setupTabBar() {
+      var bar = document.getElementById('tabBar');
+      if (!bar) return;
+      function syncActive() {
+        var path = window.location.pathname.replace(/\\/$/, '') || '/';
+        var matched = false;
+        bar.querySelectorAll('.tab').forEach(function(t) {
+          var href = (t.getAttribute('href') || '').replace(/\\/$/, '') || '/';
+          t.classList.remove('is-active');
+          t.removeAttribute('aria-current');
+          if (!matched && href === path) {
+            t.classList.add('is-active');
+            t.setAttribute('aria-current', 'page');
+            matched = true;
           }
-        }
-        if (drawerAdmin) {
-          var navAdmin = document.getElementById('adminLink');
-          drawerAdmin.style.display = (navAdmin && navAdmin.style.display !== 'none') ? 'flex' : 'none';
-        }
+        });
       }
-      // Hook into the existing auth-sync path: poll once after auth resolves
-      var mo = new MutationObserver(syncAuthState);
-      var p = document.getElementById('profileLink');
-      if (p) mo.observe(p, { attributes: true, attributeFilter: ['style'] });
-      var a = document.getElementById('adminLink');
-      if (a) mo.observe(a, { attributes: true, attributeFilter: ['style'] });
-      var l = document.getElementById('logoutBtn');
-      if (l) mo.observe(l, { attributes: true, attributeFilter: ['style'] });
-      syncAuthState();
+      syncActive();
+      window.addEventListener('popstate', syncActive);
+      document.addEventListener('click', function(e) {
+        var a = e.target && e.target.closest && e.target.closest('.tab');
+        if (a) setTimeout(syncActive, 80);
+      });
     })();
   </script>
 </body>
