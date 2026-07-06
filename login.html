@@ -4,7 +4,13 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Scraven — Sign In</title>
-  <meta name="description" content="Sign in to Scraven." />
+  <link rel="canonical" href="https://lead-gen-phcw.onrender.com/login" />
+  <meta property="og:title" content="Scraven — Sign In" />
+  <meta property="og:description" content="Sign in to your Scraven account to extract and manage leads from Facebook and Instagram pages." />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://lead-gen-phcw.onrender.com/login" />
+  <meta property="og:image" content="https://lead-gen-phcw.onrender.com/assets/og-default.png" />
+  <meta name="description" content="Sign in to your Scraven account to extract and manage leads from Facebook and Instagram pages." />
   <link rel="icon" type="image/svg+xml" href="assets/icon.svg" />
   <link rel="icon" type="image/png" sizes="32x32" href="assets/icon32.png" />
   <link rel="apple-touch-icon" href="assets/icon192.png" />
@@ -125,6 +131,31 @@
     }
     @keyframes spin { to { transform: rotate(360deg); } }
     @media (max-width: 480px) { .auth-card { padding: 24px 18px; border-radius: 16px; } }
+  
+    /* Comprehensive footer */
+    .site-footer{padding:48px 24px 28px;background:linear-gradient(180deg,rgba(11,18,33,0.4),rgba(5,10,20,0.85));border-top:1px solid rgba(0,229,255,0.12);text-align:left;margin-top:48px;position:relative;overflow:hidden}
+    .site-footer::before{content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);width:min(800px,80%);height:1px;background:linear-gradient(90deg,transparent,#0A4FD9 30%,#00E5FF 70%,transparent);opacity:.6}
+    .site-footer::after{content:'';position:absolute;top:-120px;left:50%;transform:translateX(-50%);width:600px;height:600px;background:radial-gradient(circle,rgba(10,79,217,0.08) 0%,transparent 60%);pointer-events:none}
+    .footer-grid{display:grid;grid-template-columns:1.4fr repeat(3,1fr);gap:32px;max-width:960px;margin:0 auto 24px;position:relative;z-index:1}
+    .footer-brand-name{font-size:20px;font-weight:800;letter-spacing:-0.3px;margin-bottom:8px}
+    .footer-tagline{font-size:13px;color:#94A3B8;line-height:1.5;margin:0;max-width:240px}
+    .footer-col{display:flex;flex-direction:column;gap:6px}
+    .footer-col-title{font-size:10px;font-weight:700;color:#00E5FF;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px}
+    .footer-col a{color:#94A3B8;text-decoration:none;font-size:13px;padding:4px 0;transition:color .2s}
+    .footer-col a:hover{color:#67E8F9}
+    .footer-divider{width:80px;height:2px;background:linear-gradient(90deg,transparent,#00E5FF,transparent);margin:0 auto 20px;border-radius:2px;opacity:.6;position:relative;z-index:1}
+    .footer-meta{font-size:12px;color:#64748B;text-align:center;position:relative;z-index:1;letter-spacing:.2px}
+    .footer-meta .brand-name{color:#94A3B8;font-weight:700;letter-spacing:.5px}
+    .footer-meta a{color:#00E5FF;text-decoration:none;font-weight:500}
+    .footer-meta a:hover{color:#67E8F9}
+    @media(max-width:768px){
+      .footer-grid{grid-template-columns:1fr 1fr;gap:20px}
+      .footer-brand{grid-column:1 / -1}
+    }
+    @media(max-width:480px){
+      .footer-grid{grid-template-columns:1fr;gap:18px}
+      .site-footer{padding:36px 18px 24px}
+    }
   </style>
 </head>
 <body>
@@ -252,6 +283,6 @@
   </script>
   <script>document.querySelectorAll('.nav-links > a').forEach(function(a){var h=a.getAttribute('href');if(h===location.pathname||(h!=='/'&&location.pathname.startsWith(h))){a.style.color='#F8FAFC';a.style.background='rgba(148,163,184,0.08)';a.style.fontWeight='600'}})</script>
   <!-- Shared Facebook-style tab bar (every page) -->
-  <script src="/assets/tabbar.js?v=3" defer></script>
+  <script src="/assets/tabbar.js?v=4" defer></script>
 </body>
 </html>

@@ -104,6 +104,114 @@
     return extra[name] || SVGS[name] || "";
   }
 
+  function mountProfile() {
+    var topNav = document.querySelector("nav.nav, header nav, .nav");
+    if (!topNav) return;
+    if (document.getElementById("navProfile")) return;
+
+    var u = getUser();
+    if (!u || !u.id) return;  // only inject when signed in
+
+    var role = u.role;
+    var isAdmin = role === "admin" || role === "super_admin";
+
+    var profile = document.createElement("div");
+    profile.id = "navProfile";
+    profile.className = "nav-profile";
+    profile.setAttribute("aria-label", (u.name || "Profile") + " — " + (u.email || ""));
+    var initial = (u.name || u.email || "?").charAt(0).toUpperCase();
+    profile.innerHTML =
+      '<a href="/profile" class="nav-profile-avatar" id="navProfileAvatar" aria-hidden="true" title="' + escAttr(u.email || "") + '">' + escAttr(initial) + '</a>' +
+      '<button type="button" class="nav-profile-btn" id="navProfileBtn" aria-haspopup="menu" aria-expanded="false">' +
+        '<span class="nav-profile-name">' + escAttr(u.name || "Account") + '</span>' +
+        '<svg class="nav-profile-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>' +
+      '</button>' +
+      '<div class="nav-profile-menu" id="navProfileMenu" role="menu">' +
+        '<div class="nav-profile-menu-head">' +
+          '<div class="nav-profile-menu-avatar" id="navProfileMenuAvatar">' + escAttr(initial) + '</div>' +
+          '<div class="nav-profile-menu-meta">' +
+            '<div class="nav-profile-menu-name">' + escAttr(u.name || "") + '</div>' +
+            '<div class="nav-profile-menu-email">' + escAttr(u.email || "") + '</div>' +
+            '<div class="nav-profile-menu-role">' + escAttr(role || "user") + '</div>' +
+          '</div>' +
+        '</div>' +
+        '<a href="/profile" class="nav-profile-menu-item" role="menuitem"><span class="di">' + iconSVG("account") + '</span><span class="dl">Profile</span></a>' +
+        (isAdmin ? '<a href="/admin" class="nav-profile-menu-item" role="menuitem"><span class="di">' + iconSVG("admin") + '</span><span class="dl">Admin</span></a>' : '') +
+        '<button type="button" class="nav-profile-menu-item is-logout" data-action="logout" role="menuitem"><span class="di">' + iconSVG("logout") + '</span><span class="dl">Logout</span></button>' +
+      '</div>';
+
+    topNav.appendChild(profile);
+
+    // Hide any pre-existing duplicate profile link in the page header
+    // (avoids two profile buttons showing in the top bar).
+    var dup = topNav.querySelectorAll('#profileLink, .header-profile');
+    for (var i = 0; i < dup.length; i++) dup[i].style.display = 'none';
+
+    var btn = document.getElementById("navProfileBtn");
+    var menu = document.getElementById("navProfileMenu");
+    function setOpen(open) {
+      btn.setAttribute("aria-expanded", open ? "true" : "false");
+      menu.classList.toggle("is-open", open);
+    }
+    btn.addEventListener("click", function (e) {
+      e.stopPropagation();
+      setOpen(btn.getAttribute("aria-expanded") !== "true");
+    });
+    document.addEventListener("click", function (e) {
+      if (menu.classList.contains("is-open") && !menu.contains(e.target) && !btn.contains(e.target)) {
+        setOpen(false);
+      }
+    });
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape" && menu.classList.contains("is-open")) setOpen(false);
+    });
+    menu.addEventListener("click", function (e) {
+      var link = e.target.closest && e.target.closest("[data-action], a, button");
+      if (!link) return;
+      if (link.dataset && link.dataset.action === "logout") {
+        e.preventDefault();
+        var tok = getToken();
+        if (tok && window.fetch) {
+          fetch(window.location.origin + "/api/auth/logout", { method: "POST", headers: { "Authorization": "Bearer " + tok } }).catch(function () {});
+        }
+        try { localStorage.removeItem("skarbol_token"); localStorage.removeItem("skarbol_user"); } catch (e) {}
+        window.location.href = "/";
+        return;
+      }
+      setOpen(false);
+    });
+
+    // Hydrate avatar (both header + menu) with the user's picture from Mongo
+    function hydrate() {
+      var imgUrl = window.location.origin + "/api/avatars/" + u.id + ".jpg?t=" + Date.now();
+      var testImg = new Image();
+      testImg.onload = function () {
+        var targets = [
+          document.getElementById("navProfileAvatar"),
+          document.getElementById("navProfileMenuAvatar")
+        ];
+        for (var k = 0; k < targets.length; k++) {
+          var t = targets[k];
+          if (!t) continue;
+          t.innerHTML = "";
+          t.style.background = "none";
+          t.style.padding = "0";
+          var im = document.createElement("img");
+          im.src = imgUrl;
+          im.alt = "";
+          im.style.width = "100%";
+          im.style.height = "100%";
+          im.style.objectFit = "cover";
+          im.style.borderRadius = "50%";
+          t.appendChild(im);
+        }
+      };
+      testImg.onerror = function () {};
+      testImg.src = imgUrl;
+    }
+    hydrate();
+  }
+
   function mountBurger() {
     var topNav = document.querySelector("nav.nav, header nav, .nav");
     if (!topNav) return;
@@ -118,6 +226,11 @@
     burger.setAttribute("aria-controls", "navDrawer");
     burger.innerHTML = '<span class="bar"></span><span class="bar"></span><span class="bar"></span>';
     topNav.appendChild(burger);
+
+    // Hide nav-links on mobile so the burger + profile sit clean at the right.
+    // The drawer replaces them on small viewports.
+    var navLinks = topNav.querySelector('.nav-links');
+    if (navLinks) navLinks.classList.add('tabbar-hide-mobile');
 
     var drawer = document.createElement("div");
     drawer.id = "navDrawer";
@@ -281,6 +394,7 @@
   function init() {
     injectStyles();
     mountNav();
+    mountProfile();
     mountBurger();
     syncActive();
     setupScrollHide();
