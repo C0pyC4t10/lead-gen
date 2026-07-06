@@ -1148,14 +1148,14 @@
       const outreachLogs = lead.outreach_logs || [];
       const remarks = lead.remarks || [];
       const score = parseInt(lead.qualification_score) || 0;
-      const followers = parseInt(String(lead.followers || '0').replace(/[^0-9]/g, '')) || 0;
+      const rawFollowers = lead.followers || '';
       const html = [] +
         // Quality
         '<div class="dp-section">' +
           '<h4>Quality</h4>' +
           '<div class="dp-stat-grid">' +
             '<div class="dp-stat"><div class="l">Score</div><div class="v" style="color:' + (score >= 7 ? '#6EE7B7' : score >= 5 ? '#FCD34D' : '#FCA5A5') + '">' + score + '</div></div>' +
-            '<div class="dp-stat"><div class="l">Followers</div><div class="v" style="font-size:14px">' + (followers ? followers.toLocaleString() : '—') + '</div></div>' +
+            '<div class="dp-stat"><div class="l">Followers</div><div class="v" style="font-size:14px">' + (rawFollowers || '—') + '</div></div>' +
             '<div class="dp-stat"><div class="l">Outreach</div><div class="v" style="color:#67E8F9">' + outreachLogs.length + '</div></div>' +
           '</div>' +
         '</div>' +
