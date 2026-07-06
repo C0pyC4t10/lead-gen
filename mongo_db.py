@@ -439,7 +439,10 @@ def trash_lead(page_url, user_id):
         {'page_url': page_url, 'saved_by_user_id': to_object_id(user_id), 'deleted_at': None},
         {'$set': {'deleted_at': now_iso(), 'status': 'trashed'}},
     )
-    return result.modified_count > 0
+    # Also remove from qualified pipeline
+    q_removed = db.qualified_leads.delete_many({'page_url': page_url})
+    db.qualified_remarks.delete_many({'page_url': page_url})
+    return result.modified_count > 0 or q_removed.deleted_count > 0
 
 def restore_lead(page_url, user_id):
     db = get_db()
