@@ -274,12 +274,12 @@ if (token) {
 function renderAuth() {
   if (currentUser) {
     document.getElementById('loginLink').style.display = 'none'
-    document.getElementById('profileLink').style.display = 'flex'
+    document.getElementById('profileLink').style.display = 'none'
     document.getElementById('profileLink').textContent = (currentUser.name || currentUser.email)[0].toUpperCase()
     (function(){ var i=new Image(); i.onload=function(){ var a=document.getElementById('profileLink'); a.innerHTML=''; a.style.background='none'; a.style.padding='0'; a.appendChild(i); }; i.onerror=function(){}; i.src=window.location.origin+'/api/avatars/'+currentUser.id+'.jpg?t='+Date.now(); })();
-    document.getElementById('logoutBtn').style.display = 'inline-flex'
+    document.getElementById('logoutBtn').style.display = 'none'
     if (currentUser.role === 'admin' || currentUser.role === 'super_admin') {
-      document.getElementById('adminLink').style.display = 'inline-flex'
+      document.getElementById('adminLink').style.display = 'none'
     }
     fetch(window.location.origin + '/api/auth/leads-remaining', {
       headers: {'Authorization': 'Bearer ' + token}
@@ -307,6 +307,8 @@ function renderAuth() {
         <a href="/">Home</a>
         <a href="/extract">Extract</a>
         <a href="/leads">Leads</a>
+        <a href="/qualified">Qualified</a>
+        <a href="/trash">Trash</a>
         <a href="/pricing">Pricing</a>
       </div>
       <div class="footer-col">

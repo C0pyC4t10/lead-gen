@@ -542,6 +542,8 @@
         <a href="/">Home</a>
         <a href="/extract">Extract</a>
         <a href="/leads">Leads</a>
+        <a href="/qualified">Qualified</a>
+        <a href="/trash">Trash</a>
         <a href="/pricing">Pricing</a>
       </div>
       <div class="footer-col">
@@ -921,18 +923,19 @@
     })();
 
     function renderExtractAuth(user) {
-      document.getElementById('loginLink').style.display = 'none';
+      // Hide legacy auth-nav controls — tabbar.js mountProfile will inject
+      // its own profile+admin+logout dropdown (the single source of truth).
       const avatar = document.getElementById('profileLink');
-      avatar.textContent = user.name.charAt(0).toUpperCase();
-      avatar.style.display = 'flex';
-      avatar.className = 'avatar-circle';
-      avatar.href = '/profile'; avatar.title = 'Profile';
+      const adminLink = document.getElementById('adminLink');
+      const logoutBtn = document.getElementById('logoutBtn');
+      const loginLink = document.getElementById('loginLink');
+      if (avatar) avatar.style.display = 'none';
+      if (adminLink) adminLink.style.display = 'none';
+      if (logoutBtn) logoutBtn.style.display = 'none';
+      if (loginLink) loginLink.style.display = 'none';
       APP_USER = user;
       try { localStorage.setItem('skarbol_user', JSON.stringify(user)); } catch (_) {}
       const isAdminUser = (user.role === 'admin' || user.role === 'super_admin');
-      if (isAdminUser) {
-        document.getElementById('adminLink').style.display = 'inline-flex';
-      }
       // Show Telegram option only for admin users; show locked label for others
       const chkBox = document.getElementById('chkNotifyTelegram');
       const notifyHint = document.getElementById('notifyHint');
@@ -947,8 +950,6 @@
         if (notifyHint) notifyHint.style.display = 'none';
         if (notifyLocked) notifyLocked.style.display = '';
       }
-      (function(){ var i=new Image(); i.onload=function(){ avatar.innerHTML=''; avatar.style.background='none'; avatar.style.padding='0'; avatar.appendChild(i); }; i.onerror=function(){}; i.src=API_BASE+'/api/avatars/'+user.id+'.jpg?t='+Date.now(); })();
-      document.getElementById('logoutBtn').style.display = 'flex';
 
       const token = localStorage.getItem('skarbol_token');
       if (!user.email_verified && user.role !== 'admin' && user.role !== 'super_admin') {

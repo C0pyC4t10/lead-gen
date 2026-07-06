@@ -1986,25 +1986,26 @@
     })();
 
     function renderLeadsAuth(user) {
-      document.getElementById('loginLink').style.display = 'none';
+      // Hide legacy auth-nav controls — tabbar.js mountProfile will inject
+      // its own profile+admin+logout dropdown (the single source of truth).
+      // We still want the leads-remaining badge to be visible, so we only
+      // hide the items that mountProfile replaces.
       const avatar = document.getElementById('profileLink');
-      avatar.textContent = user.name.charAt(0).toUpperCase();
-      avatar.style.display = 'flex';
-      avatar.className = 'avatar-circle';
-      avatar.href = '/profile'; avatar.title = 'Profile';
+      const adminLink = document.getElementById('adminLink');
+      const logoutBtn = document.getElementById('logoutBtn');
+      const loginLink = document.getElementById('loginLink');
+      if (avatar) avatar.style.display = 'none';
+      if (adminLink) adminLink.style.display = 'none';
+      if (logoutBtn) logoutBtn.style.display = 'none';
+      if (loginLink) loginLink.style.display = 'none';
       APP_USER = user;
       try { localStorage.setItem('skarbol_user', JSON.stringify(user)); } catch (_) {}
       const isAdminUser = (user.role === 'admin' || user.role === 'super_admin');
-      if (isAdminUser) {
-        document.getElementById('adminLink').style.display = 'inline-flex';
-      }
       // Show Telegram option only for admin users; show locked label for others
       const tgLabel = document.getElementById('telegramOptionLabel');
       if (tgLabel) tgLabel.style.display = isAdminUser ? 'inline-flex' : 'none';
       const tgLocked = document.getElementById('lblTelegramLocked');
       if (tgLocked) tgLocked.style.display = isAdminUser ? 'none' : 'inline-flex';
-      (function(){ var i=new Image(); i.onload=function(){ avatar.innerHTML=''; avatar.style.background='none'; avatar.style.padding='0'; avatar.appendChild(i); }; i.onerror=function(){}; i.src=API_BASE+'/api/avatars/'+user.id+'.jpg?t='+Date.now(); })();
-      document.getElementById('logoutBtn').style.display = 'flex';
 
       const token = localStorage.getItem('skarbol_token');
       window.updateLeadsBadge = function(remainingOverride) {

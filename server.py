@@ -2927,6 +2927,8 @@ class Handler(BaseHTTPRequestHandler):
             self._serve_static('leads.html')
         elif parsed.path == '/trash':
             self._serve_static('trash.html')
+        elif parsed.path == '/qualified':
+            self._serve_static('qualified.html')
         elif parsed.path == '/login':
             self._serve_static('login.html')
         elif parsed.path == '/register':
@@ -2950,9 +2952,9 @@ class Handler(BaseHTTPRequestHandler):
             rows = []
             total = 0
             try:
-                import sqlite3 as _sq
-                conn = _sq.connect(AUTH_DB_PATH, timeout=30)
-                conn.row_factory = _sq.Row
+                import auth_db
+                conn = auth_db._sqlite_conn()
+                conn.row_factory = auth_db.sqlite3.Row
                 c = conn.cursor()
                 c.execute('SELECT * FROM sessions ORDER BY id DESC LIMIT 10')
                 rows = [dict(r) for r in c.fetchall()]

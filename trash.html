@@ -354,28 +354,27 @@
     });
 
     // ── Auth nav (mirror leads.html) ──
+    // Legacy auth-nav controls (profileLink, adminLink, logoutBtn) are
+    // hidden — tabbar.js mountProfile provides the new profile dropdown.
+    // loginLink is preserved so logged-out users can still sign in.
     (async function() {
       try {
         const r = await fetch(API_BASE + '/api/auth/me', { headers: { 'Authorization': 'Bearer ' + token } });
+        const link = document.getElementById('profileLink');
+        const adminA = document.getElementById('adminLink');
+        const lo = document.getElementById('logoutBtn');
+        const loginLink = document.getElementById('loginLink');
+        if (link) link.style.display = 'none';
+        if (adminA) adminA.style.display = 'none';
+        if (lo) lo.style.display = 'none';
         if (r.ok) {
-          const u = await r.json();
-          const link = document.getElementById('profileLink');
-          if (u && u.name && link) {
-            link.textContent = u.name.charAt(0).toUpperCase();
-            link.style.display = 'flex';
-          }
-          if (u && u.role && (u.role === 'admin' || u.role === 'super_admin')) {
-            const a = document.getElementById('adminLink');
-            if (a) a.style.display = '';
-          }
-          document.getElementById('loginLink').style.display = 'none';
-          const lo = document.getElementById('logoutBtn');
-          if (lo) lo.style.display = '';
+          if (loginLink) loginLink.style.display = 'none';
         } else {
-          document.getElementById('loginLink').style.display = '';
+          if (loginLink) loginLink.style.display = '';
         }
       } catch (_) {
-        document.getElementById('loginLink').style.display = '';
+        const loginLink = document.getElementById('loginLink');
+        if (loginLink) loginLink.style.display = '';
       }
     })();
 

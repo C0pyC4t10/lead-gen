@@ -264,12 +264,12 @@
         try { user = JSON.parse(localStorage.getItem('skarbol_user') || 'null'); } catch(e) { user = null; }
         if (user && user.name) {
           document.getElementById('loginLink').style.display = 'none';
-          document.getElementById('profileLink').style.display = 'flex';
+          document.getElementById('profileLink').style.display = 'none';
           document.getElementById('profileLink').textContent = user.name.charAt(0).toUpperCase();
           (function(){ var i=new Image(); i.onload=function(){ var a=document.getElementById('profileLink'); a.innerHTML=''; a.style.background='none'; a.style.padding='0'; a.appendChild(i); }; i.onerror=function(){}; i.src=window.location.origin+'/api/avatars/'+user.id+'.jpg?t='+Date.now(); })();
-          document.getElementById('logoutBtn').style.display = 'inline-flex';
+          document.getElementById('logoutBtn').style.display = 'none';
           if (user.role === 'admin' || user.role === 'super_admin') {
-            document.getElementById('adminLink').style.display = 'inline-flex';
+            document.getElementById('adminLink').style.display = 'none';
           }
           document.getElementById('logoutBtn').addEventListener('click', function(){
             fetch(window.location.origin + '/api/auth/logout', {method:'POST',headers:{'Authorization':'Bearer '+token}}).catch(function(){});
