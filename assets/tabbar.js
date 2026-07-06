@@ -5,14 +5,22 @@
   if (window.__SCRAVEN_TABBAR__) return;
   window.__SCRAVEN_TABBAR__ = true;
 
+  // ── Custom SVG icons (Lucide-inspired, Skarbol Tech brand style) ──
+  var SVGS = {
+    home: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/><line x1="12" y1="2" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="2" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="22" y2="12"/></svg>',
+    extract: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13,2 4,14 11,14 10,22 20,10 13,10"/></svg>',
+    leads: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14c0 1.66 4.03 3 9 3s9-1.34 9-3V5"/><path d="M3 12c0 1.66 4.03 3 9 3s9-1.34 9-3"/></svg>',
+    history: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12,6 12,12 16,14"/></svg>',
+    account: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="5"/><path d="M3 21v-2a7 7 0 0 1 7-7h4a7 7 0 0 1 7 7v2"/></svg>',
+  };
+
   // 5 tabs — each with route, icon, label, and brand-color tint.
-  // 'History' replaces the previous 'Pricing' tab per user request.
   var TABS = [
-    { id: "home",    href: "/",         icon: "\ud83c\udfe0", label: "Home" },
-    { id: "extract", href: "/extract",  icon: "\u26a1",     label: "Extract", primary: true },
-    { id: "leads",   href: "/leads",    icon: "\ud83d\udcca", label: "Leads" },
-    { id: "history", href: "/trash",    icon: "\ud83d\udd52", label: "History" },
-    { id: "account", href: "/profile",  icon: "\ud83d\ude64", label: "Account", elemId: "tabBarAccount" },
+    { id: "home",    href: "/",         svg: SVGS.home,    label: "Home" },
+    { id: "extract", href: "/extract",  svg: SVGS.extract, label: "Extract", primary: true },
+    { id: "leads",   href: "/leads",    svg: SVGS.leads,   label: "Leads" },
+    { id: "history", href: "/trash",    svg: SVGS.history, label: "History" },
+    { id: "account", href: "/profile",  svg: SVGS.account, label: "Account", elemId: "tabBarAccount" },
   ];
 
   function injectStyles() {
@@ -36,7 +44,7 @@
       var idAttr = t.elemId ? ' id="' + t.elemId + '"' : "";
       return (
         '<a href="' + t.href + '"' + idAttr + ' class="' + cls + '" data-tab-id="' + t.id +
-        '"><span class="ti" aria-hidden="true">' + t.icon +
+        '"><span class="ti" aria-hidden="true">' + (t.svg || t.icon || '') +
         '</span><span class="tl">' + t.label + '</span></a>'
       );
     }).join("");

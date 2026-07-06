@@ -89,3 +89,20 @@ python3 build_demo.py --facebook-page "https://facebook.com/bellabd.bd" --deploy
 # Extract just the brand info
 python3 extract_facebook_brand.py "bellabd.bd" --json
 ```
+
+## Custom Tab Bar Icons
+
+The bottom tab bar uses custom SVG icons stored in `assets/icons/` and injected inline via `tabbar.js`:
+
+| Tab | File | Description |
+|-----|------|-------------|
+| Home | `assets/icons/home.svg` | Crosshair/target — "The Hunter's aim" |
+| Extract | `assets/icons/extract.svg` | Lightning bolt — energy extraction |
+| Leads | `assets/icons/leads.svg` | Database stack — stored leads |
+| History | `assets/icons/history.svg` | Clock — past hunts |
+| Account | `assets/icons/account.svg` | User silhouette — hunter identity |
+
+**Brand style:** 24×24 viewBox, 2px stroke, round caps/joins, Lucide-inspired, CSS `currentColor` for state-driven coloring. Inactive tabs use `#94A3B8` (Steel Vapor) with 40% grayscale, active tabs use `#00E5FF` (Fusion Cyan) at full saturation. The Extract (primary) tab gets Neural Blue→Fusion Cyan gradient background when active with white icon.
+
+**To add/replace an icon:** Edit the `SVGS` object in `assets/tabbar.js` (inline SVG string) and the standalone file in `assets/icons/` for reuse elsewhere.
+```

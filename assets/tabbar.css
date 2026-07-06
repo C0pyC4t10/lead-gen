@@ -60,9 +60,19 @@
 .tab .ti {
   font-size: 20px;
   line-height: 1;
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
   filter: grayscale(0.4);
   transition: filter 0.2s, transform 0.2s;
+}
+.tab .ti svg {
+  width: 20px;
+  height: 20px;
+  display: block;
+  overflow: visible;
 }
 .tab:hover { color: #CBD5E1; }
 .tab:hover .ti { filter: grayscale(0); }
@@ -91,6 +101,8 @@
   border-color: transparent;
   box-shadow: 0 8px 20px rgba(10, 79, 217, 0.4);
 }
+.tab.is-primary.is-active .ti { filter: grayscale(0) brightness(1.2); }
+.tab.is-primary.is-active .ti svg { filter: drop-shadow(0 0 4px rgba(255,255,255,0.4)); }
 .tab.is-primary.is-active::after { display: none; }
 
 /* Body offset to keep content above the tab bar */
