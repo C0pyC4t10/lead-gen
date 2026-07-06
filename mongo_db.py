@@ -6,10 +6,18 @@ Reads connection from MONGODB_URI env var.
 Code style: sync (server.py is sync — pymongo, not motor).
 """
 import os
+import time
 import threading
 import datetime
 from bson import ObjectId
 from pymongo import MongoClient, ASCENDING, DESCENDING
+from pymongo.errors import ServerSelectionTimeoutError, ConnectionFailure, ConfigurationError
+
+try:
+    import certifi
+    _TLS_CA = certifi.where()
+except Exception:
+    _TLS_CA = None
 
 MONGO_URI = os.environ.get('MONGODB_URI', '').strip()
 DB_NAME = os.environ.get('MONGODB_DB', 'scraven')
@@ -18,6 +26,45 @@ _client = None
 _db = None
 _lock = threading.Lock()
 
+
+def _connect_with_retry(max_attempts=5, base_delay=1.5):
+    """Connect to MongoDB with exponential backoff.
+
+    Atlas free M0 clusters can take 30-60s to wake from idle pause.
+    Repeated SSL handshake failures on the first attempt are common.
+    """
+    last_err = None
+    for attempt in range(1, max_attempts + 1):
+        try:
+            kwargs = dict(
+                serverSelectionTimeoutMS=8000,
+                connectTimeoutMS=8000,
+                socketTimeoutMS=15000,
+                retryWrites=False,
+                appname='scraven-render',
+            )
+            if _TLS_CA:
+                kwargs['tlsCAFile'] = _TLS_CA
+            _client = MongoClient(MONGO_URI, **kwargs)
+            _client.admin.command('ping')
+            print(f"[mongo] connected on attempt {attempt}", flush=True)
+            return _client
+        except (ServerSelectionTimeoutError, ConnectionFailure, ConfigurationError, Exception) as e:
+            last_err = e
+            err_short = str(e).split(',')[0][:140]
+            print(f"[mongo] attempt {attempt}/{max_attempts} failed: {err_short}", flush=True)
+            try:
+                if _client:
+                    _client.close()
+            except Exception:
+                pass
+            _client = None
+            if attempt < max_attempts:
+                time.sleep(base_delay * (2 ** (attempt - 1)))  # 1.5s, 3s, 6s, 12s
+    print(f"[mongo] giving up after {max_attempts} attempts; last error: {str(last_err).split(chr(10))[0][:200]}", flush=True)
+    return None
+
+
 def get_db():
     """Lazy-init the MongoDB client. Returns pymongo database handle or None."""
     global _client, _db
@@ -25,14 +72,12 @@ def get_db():
         return None
     with _lock:
         if _db is None:
-            try:
-                _client = MongoClient(MONGO_URI, serverSelectionTimeoutMS=5000, connectTimeoutMS=5000)
-                _client.admin.command('ping')
-                _db = _client[DB_NAME]
-                _ensure_indexes(_db)
-            except Exception as e:
-                print(f"[mongo] connection failed: {e}", flush=True)
-                _db = None
+            client = _connect_with_retry()
+            if client is None:
+                return None
+            _client = client
+            _db = _client[DB_NAME]
+            _ensure_indexes(_db)
         return _db
 
 def _ensure_indexes(db):
