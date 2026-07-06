@@ -3106,8 +3106,9 @@ class Handler(BaseHTTPRequestHandler):
                         content = f.read()
                 except Exception:
                     content = None
-            # Mongo fallback — survives Render restarts
-            if content is None and USE_MONGO and _mongo_alive():
+            # Mongo fallback — survives Render restarts (no _mongo_alive() check:
+            # get_user_by_id internally returns None if the DB handle doesn't exist yet)
+            if content is None and USE_MONGO:
                 try:
                     user_id = fname.rsplit('.', 1)[0]
                     u = mongo_db.get_user_by_id(user_id)
@@ -3202,7 +3203,7 @@ class Handler(BaseHTTPRequestHandler):
                         except Exception as e:
                             print(f'[avatar] local save failed (non-fatal): {e}', flush=True)
                         # Persist binary in Mongo as base64 so it survives restart
-                        if USE_MONGO and _mongo_alive():
+                        if USE_MONGO:
                             try:
                                 import base64
                                 mongo_db.update_user(str(user['id']), {
