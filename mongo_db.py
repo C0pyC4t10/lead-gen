@@ -42,6 +42,8 @@ def _connect_with_retry(max_attempts=5, base_delay=1.5):
                 socketTimeoutMS=15000,
                 retryWrites=False,
                 appname='scraven-render',
+                tls=True,
+                tlsAllowInvalidCertificates=False,
             )
             if _TLS_CA:
                 kwargs['tlsCAFile'] = _TLS_CA
