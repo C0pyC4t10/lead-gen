@@ -279,6 +279,12 @@
       const newRole = sel.value;
       const orig = sel.dataset.orig;
       if (newRole === orig) return;
+      const ok = await scravenConfirm(
+        'Change this user\'s role from "' + orig + '" to "' + newRole + '"?\n\n' +
+        'This will affect their permissions immediately.',
+        { title: 'Change Role', primaryLabel: 'Change Role' }
+      );
+      if (!ok) { sel.value = orig; return; }
       sel.disabled = true;
       sel.style.opacity = '0.6';
       try {
