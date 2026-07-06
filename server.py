@@ -1002,7 +1002,22 @@ def get_funnel_stats(user_id=None, include_all_users=False):
 
 def get_qualified_leads():
     if _mongo_alive():
-        return mongo_db.serialize(mongo_db.list_qualified_leads())
+        leads = mongo_db.serialize(mongo_db.list_qualified_leads())
+        # Enrich qualified leads with missing fields from the original lead
+        for l in leads:
+            if not l.get('followers') or not l.get('address'):
+                orig = mongo_db.find_lead_by_url(l.get('page_url', ''), user_id=None, is_admin=True)
+                if orig:
+                    orig = mongo_db.serialize(orig)
+                    if not l.get('followers') and orig.get('followers'):
+                        l['followers'] = orig['followers']
+                    if not l.get('address') and orig.get('address'):
+                        l['address'] = orig['address']
+                    if not l.get('website') and orig.get('website'):
+                        l['website'] = orig['website']
+                    if not l.get('platform') and orig.get('platform'):
+                        l['platform'] = orig['platform']
+        return leads
     return leads_db.get_qualified_leads()
 
 
