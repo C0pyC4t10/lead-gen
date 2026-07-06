@@ -97,10 +97,10 @@
    prevents the "stuck on Extract" visual bug where the Extract icon
    looked highlighted even on other pages just because of the is-primary
    style. */
-.tab.is-primary { color: #94A3B8; }
-.tab.is-primary .ti { filter: grayscale(0.4); }
-.tab.is-primary:hover { color: #CBD5E1; }
-.tab.is-primary:hover .ti { filter: grayscale(0); }
+.tab.is-primary { color: #94A3B8 !important; }
+.tab.is-primary .ti { filter: grayscale(0.4) !important; }
+.tab.is-primary:hover { color: #CBD5E1 !important; }
+.tab.is-primary:hover .ti { filter: grayscale(0) !important; }
 .tab.is-primary.is-active {
   background: linear-gradient(135deg, #0A4FD9, #00E5FF);
   color: #fff;
@@ -282,12 +282,22 @@ body.has-tab-bar {
 /* In the mobile drawer, is-primary (Extract) must look identical to
    every other item when not active. It only earns its highlight when
    the user is actually ON /extract (is-current). This prevents the
-   "stuck on Extract" visual bug. */
-.nav-drawer a.is-primary {
-  background: transparent;
-  border-color: transparent;
-  color: inherit;
+   "stuck on Extract" visual bug. We use !important because some
+   pages have inline-style nav-drawer CSS that can otherwise win. */
+.nav-drawer a.is-primary,
+.nav-drawer button.is-primary {
+  background: transparent !important;
+  border-color: transparent !important;
+  color: inherit !important;
+  box-shadow: none !important;
 }
+.nav-drawer a.is-primary .di,
+.nav-drawer button.is-primary .di {
+  background: transparent !important;
+  border-color: transparent !important;
+  color: inherit !important;
+}
+/* When the user IS on /extract, the is-current rule wins (see below). */
 /* Current page in the mobile drawer — same treatment as the top-nav
    .active state so the user always knows which page they're on. */
 .nav-drawer a.is-current,
