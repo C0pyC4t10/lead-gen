@@ -91,23 +91,91 @@
     .cta-banner .btn{position:relative;background:#fff;color:#0A4FD9}
     .cta-banner .btn:hover{background:#F8FAFC}
 
-    /* Footer */
-    .site-footer{padding:48px 24px 36px;background:rgba(5,10,20,0.6);border-top:1px solid rgba(226,232,240,0.06);text-align:center;margin-top:0}
-    .footer-menus{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;max-width:820px;margin:0 auto 28px}
-    .menu-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:18px 12px;border-radius:12px;background:rgba(14,24,37,0.6);border:1px solid rgba(226,232,240,0.08);color:#E2E8F0;text-decoration:none;transition:transform .2s, border-color .2s, background .2s, color .2s;font-family:inherit;cursor:pointer;min-height:88px}
-    .menu-btn:hover{border-color:rgba(0,229,255,0.35);background:rgba(0,229,255,0.06);transform:translateY(-2px);color:#F8FAFC}
-    .menu-btn:active{transform:translateY(0)}
-    .menu-btn .mi{font-size:24px;line-height:1;display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,rgba(10,79,217,0.18),rgba(0,229,255,0.12));border:1px solid rgba(0,229,255,0.18)}
-    .menu-btn:hover .mi{box-shadow:0 0 18px rgba(0,229,255,0.25)}
-    .menu-btn .ml{font-size:12px;font-weight:600;color:#94A3B8;letter-spacing:0.2px;white-space:nowrap}
-    .menu-btn:hover .ml{color:#00E5FF}
-    .menu-btn.is-primary{border-color:rgba(0,229,255,0.35);background:linear-gradient(135deg,rgba(10,79,217,0.18),rgba(0,229,255,0.06))}
-    .menu-btn.is-primary .ml{color:#F8FAFC}
-    .footer-meta{font-size:13px;color:#475569}
-    .footer-meta .brand-name{color:#64748B;font-weight:600}
-    .footer-meta a{color:#00E5FF;text-decoration:none}
+    /* Footer — Skarbol Tech brand colors per KB (2026) */
+    .site-footer{padding:56px 24px 40px;background:linear-gradient(180deg,rgba(11,18,33,0.4),rgba(5,10,20,0.85));border-top:1px solid rgba(0,229,255,0.12);text-align:center;margin-top:0;position:relative;overflow:hidden}
+    .site-footer::before{content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);width:min(800px,80%);height:1px;background:linear-gradient(90deg,transparent,#0A4FD9 30%,#00E5FF 70%,transparent);opacity:.6}
+    .site-footer::after{content:'';position:absolute;top:-120px;left:50%;transform:translateX(-50%);width:600px;height:600px;background:radial-gradient(circle,rgba(10,79,217,0.08) 0%,transparent 60%);pointer-events:none}
+
+    /* Mobile-mode toggle (collapse button for narrow screens) */
+    .footer-toggle{display:none;margin:0 auto 16px;padding:8px 14px;border-radius:999px;background:rgba(10,79,217,0.12);border:1px solid rgba(0,229,255,0.25);color:#67E8F9;font-size:12px;font-weight:600;cursor:pointer;align-items:center;gap:6px;width:fit-content;font-family:inherit}
+    .footer-toggle:hover{background:rgba(10,79,217,0.2)}
+    .footer-toggle .arrow{display:inline-block;transition:transform .2s}
+    .footer.is-collapsed .footer-toggle .arrow{transform:rotate(180deg)}
+    .footer.is-collapsed .footer-menus{display:none}
+    .footer.is-collapsed .footer-divider{display:none}
+
+    .footer-menus{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;max-width:860px;margin:0 auto 28px;position:relative;z-index:1}
+
+    .menu-btn{
+      position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;
+      padding:18px 12px;border-radius:14px;background:rgba(14,24,37,0.6);border:1px solid rgba(226,232,240,0.08);
+      color:#E2E8F0;text-decoration:none;
+      transition:transform .2s cubic-bezier(0.4,0,0.2,1), border-color .2s, background .2s, color .2s, box-shadow .2s;
+      font-family:inherit;cursor:pointer;min-height:96px;overflow:hidden;
+      -webkit-tap-highlight-color:transparent;
+    }
+    .menu-btn::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(10,79,217,0),rgba(0,229,255,0));border-radius:14px;opacity:0;transition:opacity .2s;pointer-events:none}
+    .menu-btn:hover{transform:translateY(-3px);color:#F8FAFC;border-color:transparent;box-shadow:0 8px 24px rgba(0,0,0,0.35)}
+    .menu-btn:hover::before{opacity:1}
+    .menu-btn:active{transform:translateY(-1px) scale(.98)}
+
+    .menu-btn .mi{font-size:24px;line-height:1;display:inline-flex;align-items:center;justify-content:center;width:42px;height:42px;border-radius:12px;position:relative;transition:box-shadow .25s, transform .25s}
+    .menu-btn .ml{font-size:12px;font-weight:700;color:#94A3B8;letter-spacing:.3px;white-space:nowrap;text-transform:uppercase;font-size:11px}
+
+    /* ── Brand-aligned button color variants ──
+       Each variant gets its own hover/active glow, matching the
+       Skarbol Tech brand palette (Neural Blue, Fusion Cyan, Emerald,
+       Amber, Sentinel Purple, Info Beam) for visual signaling. */
+    .menu-btn--home    .mi{background:linear-gradient(135deg,#1A2538,#0E1825);border:1px solid rgba(148,163,184,.18)}
+    .menu-btn--home:hover{border-color:rgba(148,163,184,.5)}
+    .menu-btn--home:hover .mi{box-shadow:0 0 20px rgba(148,163,184,.35)}
+
+    .menu-btn--extract{background:linear-gradient(135deg,rgba(10,79,217,.18),rgba(0,229,255,.10));border-color:rgba(0,229,255,.45)}
+    .menu-btn--extract .mi{background:linear-gradient(135deg,#0A4FD9,#00E5FF);border:1px solid rgba(255,255,255,.2);box-shadow:0 4px 14px rgba(10,79,217,.45)}
+    .menu-btn--extract .ml{color:#F8FAFC}
+    .menu-btn--extract:hover{background:linear-gradient(135deg,#0A4FD9,#00E5FF);border-color:transparent;box-shadow:0 12px 32px rgba(10,79,217,.55)}
+    .menu-btn--extract:hover .mi{box-shadow:0 8px 24px rgba(0,229,255,.6);transform:scale(1.05)}
+    .menu-btn--extract:hover::before{background:linear-gradient(135deg,rgba(0,229,255,.2),rgba(255,255,255,.1))}
+
+    .menu-btn--leads   .mi{background:linear-gradient(135deg,#0E7490,#00E5FF);border:1px solid rgba(0,229,255,.3)}
+    .menu-btn--leads:hover{border-color:rgba(0,229,255,.7)}
+    .menu-btn--leads:hover .mi{box-shadow:0 0 24px rgba(0,229,255,.55)}
+    .menu-btn--leads:hover .ml{color:#67E8F9}
+
+    .menu-btn--pricing .mi{background:linear-gradient(135deg,#10B981,#059669);border:1px solid rgba(16,185,129,.4)}
+    .menu-btn--pricing:hover{border-color:rgba(16,185,129,.6)}
+    .menu-btn--pricing:hover .mi{box-shadow:0 0 22px rgba(16,185,129,.5)}
+    .menu-btn--pricing:hover .ml{color:#6EE7B7}
+
+    .menu-btn--account .mi{background:linear-gradient(135deg,#F59E0B,#D97706);border:1px solid rgba(245,158,11,.4)}
+    .menu-btn--account:hover{border-color:rgba(245,158,11,.6)}
+    .menu-btn--account:hover .mi{box-shadow:0 0 22px rgba(245,158,11,.5)}
+    .menu-btn--account:hover .ml{color:#FCD34D}
+
+    .menu-btn--admin   .mi{background:linear-gradient(135deg,#8B5CF6,#6D28D9);border:1px solid rgba(139,92,246,.4)}
+    .menu-btn--admin:hover{border-color:rgba(139,92,246,.7)}
+    .menu-btn--admin:hover .mi{box-shadow:0 0 22px rgba(139,92,246,.55)}
+    .menu-btn--admin:hover .ml{color:#C4B5FD}
+
+    .menu-btn--contact .mi{background:linear-gradient(135deg,#3B82F6,#1D4ED8);border:1px solid rgba(59,130,246,.4)}
+    .menu-btn--contact:hover{border-color:rgba(59,130,246,.6)}
+    .menu-btn--contact:hover .mi{box-shadow:0 0 22px rgba(59,130,246,.5)}
+    .menu-btn--contact:hover .ml{color:#93C5FD}
+
+    .menu-btn--source  .mi{background:linear-gradient(135deg,#0A4FD9,#1E40AF);border:1px solid rgba(10,79,217,.4)}
+    .menu-btn--source:hover{border-color:rgba(10,79,217,.7)}
+    .menu-btn--source:hover .mi{box-shadow:0 0 22px rgba(10,79,217,.55)}
+    .menu-btn--source:hover .ml{color:#93C5FD}
+
+    .footer-meta{font-size:13px;color:#64748B;position:relative;z-index:1;letter-spacing:.2px}
+    .footer-meta .brand-name{color:#94A3B8;font-weight:700;letter-spacing:.5px}
+    .footer-meta a{color:#00E5FF;text-decoration:none;font-weight:500}
     .footer-meta a:hover{color:#67E8F9}
-    .footer-divider{width:64px;height:1px;background:linear-gradient(90deg,transparent,rgba(226,232,240,0.15),transparent);margin:0 auto 24px}
+    .footer-divider{width:80px;height:2px;background:linear-gradient(90deg,transparent,#00E5FF,transparent);margin:8px auto 24px;border-radius:2px;opacity:.7;position:relative;z-index:1}
+
+    /* Body bottom padding when mobile bottom-bar is present */
+    body.has-mobile-footer{padding-bottom:96px}
+    @media (min-width:769px){body.has-mobile-footer{padding-bottom:0}}
 
     /* Responsive — large desktops / small laptops */
     @media (max-width: 1100px) {
@@ -119,7 +187,7 @@
       .feature-card{padding:24px}
       .cta-banner{padding:52px 40px;width:calc(100% - 40px);margin:64px auto}
       .cta-banner h2{font-size:32px}
-      .footer-menus{grid-template-columns:repeat(4,1fr);max-width:720px}
+      .footer-menus{grid-template-columns:repeat(4,1fr);max-width:760px;gap:12px}
     }
 
     /* Tablets */
@@ -136,7 +204,7 @@
       .cta-banner h2{font-size:28px}
       .cta-banner p{font-size:15px}
       .footer-menus{grid-template-columns:repeat(4,1fr);max-width:680px;gap:10px}
-      .menu-btn{padding:16px 8px;min-height:80px}
+      .menu-btn{padding:16px 8px;min-height:84px;border-radius:12px}
     }
 
     /* Phones */
@@ -164,12 +232,41 @@
       .section-tag{font-size:11px;letter-spacing:1.2px}
       .section-title{font-size:26px;letter-spacing:-0.3px}
       .section-sub{font-size:15px;margin-bottom:32px}
-      .site-footer{padding:32px 12px 24px}
-      .footer-menus{grid-template-columns:repeat(4,1fr);gap:8px;max-width:420px}
-      .menu-btn{padding:12px 4px;gap:6px;min-height:64px;border-radius:10px}
-      .menu-btn .mi{font-size:18px;width:30px;height:30px;border-radius:8px}
-      .menu-btn .ml{font-size:10px;letter-spacing:0}
-      .footer-meta{font-size:12px;padding:0 8px}
+      .site-footer{padding:18px 12px 12px;border-top-width:1px}
+      .site-footer::before{width:90%}
+      /* MOBILE MODE: Horizontal scroll strip with 4-col grid visible,
+         auto-flow for overflow. Compact icon-forward buttons. */
+      .footer-menus{
+        grid-template-columns:repeat(4,1fr);
+        gap:8px;
+        max-width:none;
+        overflow-x:auto;
+        scroll-snap-type:x proximity;
+        padding:6px 4px 4px;
+        -webkit-overflow-scrolling:touch;
+        scrollbar-width:none;
+      }
+      .footer-menus::-webkit-scrollbar{display:none}
+      .footer-divider{margin:6px auto 14px}
+      .footer-meta{font-size:11px;padding:0 6px;line-height:1.5}
+
+      .menu-btn{
+        flex:0 0 auto;
+        scroll-snap-align:start;
+        padding:10px 4px;
+        gap:5px;
+        min-height:60px;
+        border-radius:10px;
+        min-width:64px;
+      }
+      .menu-btn .mi{font-size:16px;width:28px;height:28px;border-radius:8px}
+      .menu-btn .ml{font-size:9px;letter-spacing:0}
+
+      /* Show the collapse toggle only on mobile */
+      .footer-toggle{display:inline-flex}
+
+      /* Bottom padding to body so footer doesn't cover content */
+      body{padding-bottom:140px}
       .feature-grid{grid-template-columns:1fr;gap:14px}
       .feature-card{padding:22px 20px}
       .feature-icon{width:40px;height:40px;font-size:20px}
@@ -192,10 +289,11 @@
       .avatar-circle{width:28px;height:28px;font-size:11px}
       .hero h1{font-size:28px}
       .cta-banner h2{font-size:20px}
-      .footer-menus{grid-template-columns:repeat(4,1fr);gap:6px;max-width:340px}
-      .menu-btn{padding:10px 2px;min-height:56px;border-radius:8px}
-      .menu-btn .mi{font-size:16px;width:26px;height:26px}
-      .menu-btn .ml{font-size:9px}
+      .site-footer{padding:16px 8px 10px}
+      .footer-menus{gap:6px}
+      .menu-btn{padding:9px 3px;min-height:54px;border-radius:9px;min-width:56px}
+      .menu-btn .mi{font-size:14px;width:26px;height:26px;border-radius:7px}
+      .menu-btn .ml{font-size:8px}
     }
 
     /* Very small phones (e.g. iPhone SE 1st gen) */
@@ -209,10 +307,11 @@
       .cta-banner{padding:28px 16px}
       .cta-banner h2{font-size:18px}
       .cta-banner p{font-size:13px}
-      .site-footer{padding:24px 8px 20px}
-      .footer-menus{grid-template-columns:repeat(4,1fr);gap:6px;max-width:300px}
-      .menu-btn{padding:8px 2px;min-height:50px}
-      .menu-btn .ml{font-size:8px}
+      .site-footer{padding:14px 6px 10px}
+      .footer-menus{gap:5px;padding:4px 2px}
+      .menu-btn{padding:8px 2px;min-height:48px;min-width:50px;border-radius:8px}
+      .menu-btn .mi{font-size:13px;width:24px;height:24px;border-radius:6px}
+      .menu-btn .ml{font-size:7px;letter-spacing:0}
     }
 
     /* Reduced motion */
@@ -315,16 +414,20 @@
     <a href="/register" class="btn">Create Free Account</a>
   </section>
 
-  <footer class="site-footer">
-    <nav class="footer-menus" aria-label="Footer navigation">
-      <a href="/" class="menu-btn"><span class="mi" aria-hidden="true">🏠</span><span class="ml">Home</span></a>
-      <a href="/extract" class="menu-btn is-primary"><span class="mi" aria-hidden="true">⚡</span><span class="ml">Extract</span></a>
-      <a href="/leads" class="menu-btn"><span class="mi" aria-hidden="true">📊</span><span class="ml">Leads</span></a>
-      <a href="/pricing" class="menu-btn"><span class="mi" aria-hidden="true">💰</span><span class="ml">Pricing</span></a>
-      <a href="/login" class="menu-btn" id="footerAccount"><span class="mi" aria-hidden="true">🔑</span><span class="ml">Sign In</span></a>
-      <a href="/admin" class="menu-btn" id="footerAdminLink" style="display:none"><span class="mi" aria-hidden="true">🛡</span><span class="ml">Admin</span></a>
-      <a href="mailto:jahid.skarbol@gmail.com" class="menu-btn"><span class="mi" aria-hidden="true">✉️</span><span class="ml">Contact</span></a>
-      <a href="https://github.com/C0pyC4t10/lead-gen" target="_blank" rel="noopener noreferrer" class="menu-btn"><span class="mi" aria-hidden="true">🐙</span><span class="ml">Source</span></a>
+  <footer class="site-footer" id="siteFooter">
+    <button type="button" class="footer-toggle" id="footerToggle" aria-expanded="true" aria-controls="footerMenus" style="display:none">
+      <span class="arrow" aria-hidden="true">▾</span>
+      <span class="tl-text">All links</span>
+    </button>
+    <nav class="footer-menus" id="footerMenus" aria-label="Footer navigation">
+      <a href="/" class="menu-btn menu-btn--home"><span class="mi" aria-hidden="true">🏠</span><span class="ml">Home</span></a>
+      <a href="/extract" class="menu-btn menu-btn--extract"><span class="mi" aria-hidden="true">⚡</span><span class="ml">Extract</span></a>
+      <a href="/leads" class="menu-btn menu-btn--leads"><span class="mi" aria-hidden="true">📊</span><span class="ml">Leads</span></a>
+      <a href="/pricing" class="menu-btn menu-btn--pricing"><span class="mi" aria-hidden="true">💰</span><span class="ml">Pricing</span></a>
+      <a href="/login" class="menu-btn menu-btn--account" id="footerAccount"><span class="mi" aria-hidden="true">🔑</span><span class="ml">Sign In</span></a>
+      <a href="/admin" class="menu-btn menu-btn--admin" id="footerAdminLink" style="display:none"><span class="mi" aria-hidden="true">🛡</span><span class="ml">Admin</span></a>
+      <a href="mailto:jahid.skarbol@gmail.com" class="menu-btn menu-btn--contact"><span class="mi" aria-hidden="true">✉️</span><span class="ml">Contact</span></a>
+      <a href="https://github.com/C0pyC4t10/lead-gen" target="_blank" rel="noopener noreferrer" class="menu-btn menu-btn--source"><span class="mi" aria-hidden="true">🐙</span><span class="ml">Source</span></a>
     </nav>
     <div class="footer-divider" aria-hidden="true"></div>
     <div class="footer-meta">
@@ -403,6 +506,47 @@
           footerAdminLink.style.display = 'flex';
         }
       } catch(_) {}
+    })();
+
+    // ── Mobile-mode footer behavior ─────────────────────────────────
+    (function setupFooterMobile() {
+      var footer      = document.getElementById('siteFooter');
+      var toggle      = document.getElementById('footerToggle');
+      var toggleLabel = toggle && toggle.querySelector('.tl-text');
+      if (!footer || !toggle) return;
+
+      function applyFooterMode() {
+        var isMobile = window.matchMedia('(max-width: 768px)').matches;
+        if (isMobile) {
+          toggle.style.display = 'inline-flex';
+          // Mobile default: collapsed — show only the toggle + meta line.
+          // The user can tap "All links" to expand the strip.
+          if (!footer.dataset.userExpanded) {
+            footer.classList.add('is-collapsed');
+            toggle.setAttribute('aria-expanded', 'false');
+            if (toggleLabel) toggleLabel.textContent = 'Show all links';
+          }
+        } else {
+          toggle.style.display = 'none';
+          footer.classList.remove('is-collapsed');
+          toggle.setAttribute('aria-expanded', 'true');
+          if (toggleLabel) toggleLabel.textContent = 'All links';
+        }
+      }
+
+      toggle.addEventListener('click', function() {
+        var isCollapsed = footer.classList.toggle('is-collapsed');
+        if (!isCollapsed) {
+          footer.dataset.userExpanded = '1';
+        } else {
+          delete footer.dataset.userExpanded;
+        }
+        toggle.setAttribute('aria-expanded', isCollapsed ? 'false' : 'true');
+        if (toggleLabel) toggleLabel.textContent = isCollapsed ? 'Show all links' : 'Hide links';
+      });
+
+      applyFooterMode();
+      window.addEventListener('resize', applyFooterMode, { passive: true });
     })();
   </script>
 </body>
