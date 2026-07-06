@@ -52,6 +52,163 @@
     return nav;
   }
 
+  // ── Top-bar hamburger drawer (mobile only) ─────────────────────
+  // Injects a hamburger button into the existing <nav class="nav"> on
+  // mobile widths, and a fullscreen drawer with all nav items + auth
+  // actions. Desktop viewports keep the existing inline nav untouched.
+
+  function getUser() {
+    try { return JSON.parse(localStorage.getItem("skarbol_user") || "null"); }
+    catch (e) { return null; }
+  }
+
+  function getToken() {
+    return localStorage.getItem("skarbol_token") || "";
+  }
+
+  function escAttr(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]; }); }
+
+  function buildDrawerItems() {
+    var u = getUser();
+    var loggedIn = !!(u && u.id);
+    var role = u && u.role;
+    var isAdmin = role === "admin" || role === "super_admin";
+    var items = [
+      { href: "/",         icon: "home",    label: "Home" },
+      { href: "/extract",  icon: "extract", label: "Extract", primary: true },
+      { href: "/leads",    icon: "leads",   label: "Leads" },
+      { href: "/leads#history", icon: "history", label: "History" },
+      { href: "/pricing",  icon: "pricing", label: "Pricing" },
+    ];
+    if (loggedIn) {
+      items.push({ divider: true, label: "Account" });
+      items.push({ href: "/profile", icon: "account", label: "Profile" });
+      if (isAdmin) items.push({ href: "/admin", icon: "admin", label: "Admin" });
+      items.push({ action: "logout", icon: "logout", label: "Logout" });
+    } else {
+      items.push({ divider: true });
+      items.push({ href: "/login",    icon: "login",    label: "Sign In", cta: true });
+      items.push({ href: "/register", icon: "register", label: "Create Account" });
+    }
+    return items;
+  }
+
+  function iconSVG(name) {
+    var extra = {
+      pricing: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>',
+      admin:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>',
+      login:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>',
+      register:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>',
+      logout:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>',
+    };
+    return extra[name] || SVGS[name] || "";
+  }
+
+  function mountBurger() {
+    var topNav = document.querySelector("nav.nav, header nav, .nav");
+    if (!topNav) return;
+    if (document.getElementById("navBurger")) return;
+
+    var burger = document.createElement("button");
+    burger.type = "button";
+    burger.id = "navBurger";
+    burger.className = "nav-burger";
+    burger.setAttribute("aria-label", "Open menu");
+    burger.setAttribute("aria-expanded", "false");
+    burger.setAttribute("aria-controls", "navDrawer");
+    burger.innerHTML = '<span class="bar"></span><span class="bar"></span><span class="bar"></span>';
+    topNav.appendChild(burger);
+
+    var drawer = document.createElement("div");
+    drawer.id = "navDrawer";
+    drawer.className = "nav-drawer";
+    drawer.setAttribute("role", "dialog");
+    drawer.setAttribute("aria-label", "Site navigation");
+    var user = getUser();
+    var userLabel = user && user.name ? user.name : "";
+    var userEmail = user && user.email ? user.email : "";
+    var html = '';
+    if (userLabel || userEmail) {
+      html += '<div class="drawer-user">' +
+        '<div class="drawer-avatar" id="drawerAvatar">' + escAttr((userLabel || "?").charAt(0).toUpperCase()) + '</div>' +
+        '<div class="drawer-user-meta"><div class="drawer-user-name">' + escAttr(userLabel) + '</div><div class="drawer-user-email">' + escAttr(userEmail) + '</div></div>' +
+        '</div>';
+    } else {
+      html += '<div class="drawer-eyebrow">Scraven</div>';
+    }
+    html += buildDrawerItems().map(function (it) {
+      if (it.divider) {
+        return it.label ? '<div class="drawer-section">' + escAttr(it.label) + '</div>' : '<div class="drawer-divider"></div>';
+      }
+      var cls = "drawer-link";
+      if (it.primary) cls += " is-primary";
+      if (it.cta)     cls += " is-cta";
+      if (it.action === "logout") cls += " is-logout";
+      if (it.action) {
+        return '<button type="button" class="' + cls + '" data-action="' + it.action + '"><span class="di">' + iconSVG(it.icon) + '</span><span class="dl">' + escAttr(it.label) + '</span></button>';
+      }
+      return '<a href="' + escAttr(it.href) + '" class="' + cls + '"><span class="di">' + iconSVG(it.icon) + '</span><span class="dl">' + escAttr(it.label) + '</span></a>';
+    }).join("");
+    drawer.innerHTML = html;
+    document.body.appendChild(drawer);
+
+    function setOpen(open) {
+      burger.setAttribute("aria-expanded", open ? "true" : "false");
+      drawer.classList.toggle("is-open", open);
+      document.body.classList.toggle("nav-drawer-open", open);
+    }
+
+    burger.addEventListener("click", function (e) {
+      e.stopPropagation();
+      setOpen(burger.getAttribute("aria-expanded") !== "true");
+    });
+    drawer.addEventListener("click", function (e) {
+      var link = e.target.closest && e.target.closest(".drawer-link");
+      if (link) {
+        if (link.dataset && link.dataset.action === "logout") {
+          e.preventDefault();
+          var tok = getToken();
+          if (tok && window.fetch) {
+            fetch(window.location.origin + "/api/auth/logout", { method: "POST", headers: { "Authorization": "Bearer " + tok } }).catch(function () {});
+          }
+          try {
+            localStorage.removeItem("skarbol_token");
+            localStorage.removeItem("skarbol_user");
+          } catch (e) {}
+          window.location.href = "/";
+          return;
+        }
+        setOpen(false);
+      }
+    });
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape" && drawer.classList.contains("is-open")) setOpen(false);
+    });
+    drawer.addEventListener("click", function (e) {
+      if (e.target === drawer) setOpen(false);
+    });
+    // Auto-close drawer if viewport grows to desktop
+    var mq = window.matchMedia("(min-width: 769px)");
+    var onMq = function (ev) { if (ev.matches) setOpen(false); };
+    if (mq.addEventListener) mq.addEventListener("change", onMq);
+    else if (mq.addListener) mq.addListener(onMq);
+
+    // Hydrate drawer avatar with picture if available
+    var av = document.getElementById("drawerAvatar");
+    if (av && user && user.id) {
+      var img = new Image();
+      img.alt = "";
+      img.onload = function () {
+        av.innerHTML = "";
+        av.style.background = "none";
+        av.style.padding = "0";
+        av.appendChild(img);
+      };
+      img.onerror = function () {};
+      img.src = window.location.origin + "/api/avatars/" + user.id + ".jpg?t=" + Date.now();
+    }
+  }
+
   function currentPath() {
     var p = window.location.pathname || "/";
     // Treat /index.html as home
@@ -124,6 +281,7 @@
   function init() {
     injectStyles();
     mountNav();
+    mountBurger();
     syncActive();
     setupScrollHide();
     window.addEventListener("popstate", syncActive);
