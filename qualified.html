@@ -35,7 +35,7 @@
     .nav-links{display:flex;align-items:center;gap:6px;margin-left:auto;flex-wrap:nowrap}
     .nav-links a{color:#94A3B8;text-decoration:none;font-size:14px;padding:8px 12px;border-radius:8px;transition:all .2s;font-weight:500;white-space:nowrap;display:inline-flex;align-items:center;gap:6px}
     .nav-links a:hover{color:#F8FAFC;background:rgba(148,163,184,0.08)}
-    .nav-links a.active{color:#10B981;background:rgba(16,185,129,0.12);border:1px solid rgba(16,185,129,0.3)}
+    .nav-links a.active{color:#00E5FF;background:rgba(0,229,255,0.1);border:1px solid rgba(0,229,255,0.3)}
     .nav-links a .nav-ic{width:16px;height:16px;display:inline-block;vertical-align:middle}
     .auth-btn{background:linear-gradient(135deg,#0A4FD9,#00E5FF);color:#fff!important;font-weight:600;padding:7px 14px!important;border-radius:8px!important;min-height:32px;display:inline-flex;align-items:center;justify-content:center;line-height:1;box-sizing:border-box;transition:opacity .2s,transform .15s;font-size:13px;white-space:nowrap}
     .auth-btn:hover{background:linear-gradient(135deg,#0A4FD9,#00E5FF)!important;opacity:0.92}
@@ -287,19 +287,60 @@
       .stats-grid{grid-template-columns:repeat(2,1fr)}
       .pipeline-stages{grid-template-columns:repeat(5,1fr);font-size:10px}
     }
+    @media(max-width:900px){
+      .nav{padding:10px 16px}
+      .nav-links{gap:4px}
+      .nav-links a{font-size:13px;padding:6px 10px}
+    }
     @media(max-width:768px){
       .container{padding:16px 12px 100px}
       .page-title{font-size:22px}
+      .page-sub{font-size:13px}
       .stats-grid{grid-template-columns:1fr 1fr;gap:8px}
       .stat-card{padding:12px 14px}
       .stat-val{font-size:22px}
+      .pipeline{padding:12px 14px}
       .pipeline-stages{grid-template-columns:repeat(2,1fr);gap:6px}
       .pipeline-stage::after{display:none}
+      .stage-val{font-size:16px}
       .filter-bar{flex-direction:column;align-items:stretch}
       .filter-bar .left{flex-direction:column;align-items:stretch}
       .search-input{min-width:0;width:100%}
       .filter-select{width:100%}
       .page-header{flex-direction:column;align-items:flex-start}
+      .header-actions{width:100%}
+      .header-actions .btn{flex:1;justify-content:center}
+      .bulk-bar{flex-wrap:wrap;padding:10px 12px}
+      .bulk-count{font-size:12px}
+      .dp{width:100%}
+    }
+    @media(max-width:640px){
+      .nav{padding:8px 12px;gap:6px}
+      .logo-icon{width:30px;height:30px}
+      .logo span{font-size:16px}
+      .nav-links a{font-size:12px;padding:5px 8px}
+      .page-title{font-size:20px}
+      .stat-val{font-size:20px}
+      .stat-label{font-size:10px}
+      .op{max-width:100%;max-height:100vh;border-radius:0;padding:18px}
+    }
+    @media(max-width:480px){
+      .stats-grid{grid-template-columns:1fr;gap:6px}
+      .stat-card{padding:10px 12px;display:flex;align-items:center;gap:12px}
+      .stat-card>div:first-child{flex:1}
+      .stat-card::after{display:none}
+      .pipeline-stages{grid-template-columns:1fr 1fr;gap:4px}
+      .filter-bar{padding:10px 12px}
+      .bulk-bar{font-size:12px;gap:6px}
+      .bulk-bar .btn{padding:6px 10px;font-size:11px}
+      .row-actions{flex-wrap:wrap}
+      .row-act{padding:4px 6px;font-size:10px}
+    }
+    @media(max-width:360px){
+      .nav-links{display:none}
+      .page-title{font-size:18px}
+      .stat-card{padding:8px 10px}
+      .stat-val{font-size:18px}
     }
   </style>
 </head>
@@ -1340,6 +1381,6 @@
     });
   </script>
   <script src="/assets/scraven-modal.js" defer></script>
-  <script src="/assets/tabbar.js?v=6" defer></script>
+  <script src="/assets/tabbar.js?v=7" defer></script>
 </body>
 </html>

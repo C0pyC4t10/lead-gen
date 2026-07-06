@@ -78,23 +78,29 @@
 .tab:hover .ti { filter: grayscale(0); }
 
 .tab.is-active { color: #00E5FF; }
-.tab.is-active .ti { filter: grayscale(0); transform: translateY(-1px) scale(1.06); }
+.tab.is-active .ti { filter: grayscale(0); transform: translateY(-2px) scale(1.1); }
 .tab.is-active::after {
   content: "";
   position: absolute;
   left: 50%;
   bottom: 1px;
   transform: translateX(-50%);
-  width: 22px;
-  height: 3px;
-  border-radius: 3px 3px 0 0;
+  width: 28px;
+  height: 4px;
+  border-radius: 4px 4px 0 0;
   background: linear-gradient(135deg, #0A4FD9, #00E5FF);
-  box-shadow: 0 0 12px rgba(0, 229, 255, 0.5);
+  box-shadow: 0 0 16px rgba(0, 229, 255, 0.7);
 }
 
-/* Primary CTA tab (Extract) — full gradient when active, subtle otherwise */
-.tab.is-primary { color: #CBD5E1; }
-.tab.is-primary .ti { filter: grayscale(0.2); }
+/* Primary CTA tab (Extract) — only distinguishes itself when ACTIVE.
+   When inactive, it should look identical to every other tab. This
+   prevents the "stuck on Extract" visual bug where the Extract icon
+   looked highlighted even on other pages just because of the is-primary
+   style. */
+.tab.is-primary { color: #94A3B8; }
+.tab.is-primary .ti { filter: grayscale(0.4); }
+.tab.is-primary:hover { color: #CBD5E1; }
+.tab.is-primary:hover .ti { filter: grayscale(0); }
 .tab.is-primary.is-active {
   background: linear-gradient(135deg, #0A4FD9, #00E5FF);
   color: #fff;

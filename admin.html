@@ -29,6 +29,7 @@
     .nav-links{display:flex;align-items:center;gap:12px}
     .nav-links a,.nav-links button{color:#94A3B8;text-decoration:none;font-size:14px;padding:8px 14px;border-radius:8px;transition:all .2s;background:none;border:none;cursor:pointer;font-family:inherit}
     .nav-links a:hover,.nav-links button:hover{color:#F8FAFC;background:rgba(148,163,184,0.08)}
+    .nav-links a.active{color:#00E5FF;background:rgba(0,229,255,0.1);border:1px solid rgba(0,229,255,0.3)}
     #auth-nav{display:flex;align-items:center;gap:8px;margin-left:auto}
     .auth-btn{background:linear-gradient(135deg,#0A4FD9,#00E5FF);color:#fff!important;font-weight:600;padding:7px 14px!important;border-radius:8px!important;min-height:32px;display:inline-flex;align-items:center;justify-content:center;line-height:1;box-sizing:border-box;transition:opacity .2s,transform .15s;font-size:13px;white-space:nowrap}
     .auth-btn:hover{background:linear-gradient(135deg,#0A4FD9,#00E5FF)!important;opacity:0.92}
@@ -423,7 +424,7 @@
       }
     })();
   </script>
-  <script>document.querySelectorAll('.nav-links > a').forEach(function(a){var h=a.getAttribute('href');if(h===location.pathname||(h!=='/'&&location.pathname.startsWith(h))){a.style.color='#F8FAFC';a.style.background='rgba(148,163,184,0.08)';a.style.fontWeight='600'}})</script>
+  <script>document.querySelectorAll('.nav-links > a').forEach(function(a){var h=a.getAttribute('href');if(h===location.pathname||(h!=='/'&&location.pathname.startsWith(h))){a.classList.add('active');}})</script>
 <script src="/assets/scraven-modal.js"></script>
   <footer class="site-footer" id="siteFooter">
     <div class="footer-grid">
@@ -456,6 +457,6 @@
     </div>
   </footer>
   <!-- Shared Facebook-style tab bar (every page) -->
-  <script src="/assets/tabbar.js?v=6" defer></script>
+  <script src="/assets/tabbar.js?v=7" defer></script>
 </body>
 </html>
