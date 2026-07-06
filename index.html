@@ -211,13 +211,16 @@
       box-shadow:0 0 12px rgba(0,229,255,.5);
     }
     .tab.is-primary{
-      background:linear-gradient(135deg,rgba(10,79,217,.18),rgba(0,229,255,.12));
-      border:1px solid rgba(0,229,255,.3);
-      color:#F8FAFC;
+      color:#CBD5E1;
     }
-    .tab.is-primary .ti{filter:none}
+    .tab.is-primary .ti{filter:grayscale(.2)}
     .tab.is-primary.is-active{background:linear-gradient(135deg,#0A4FD9,#00E5FF);color:#fff;border-color:transparent;box-shadow:0 8px 20px rgba(10,79,217,.4)}
     .tab.is-primary.is-active::after{display:none}
+
+    /* Hide/show on scroll (Facebook pattern: slide down on scroll-up,
+       slide in on scroll-down). */
+    .tab-bar{transition:transform .3s cubic-bezier(.4,0,.2,1)}
+    .tab-bar.is-hidden{transform:translateY(calc(100% + env(safe-area-inset-bottom,0px)))}
     .tab .tl{font-size:9.5px;font-weight:700;letter-spacing:.4px}
     .tab-bar-spacer{height:74px}    /* spacer so content doesn't hide under tab bar */
     @media (min-width:900px){.tab-bar{display:none}.tab-bar-spacer{display:none}}
@@ -583,7 +586,9 @@
       var footerAdminLink  = document.getElementById('footerAdminLink');
 
       var token = null;
-      try { token = localStorage.getItem('skarbol_token'); } catch(_) {}
+      try {
+        token = localStorage.getItem('skarbol_token') || localStorage.getItem('token');
+      } catch(_) {}
       if (!token) {
         // Signed-out state: show '?' letter, link to /login
         if (headerProfile) headerProfile.href = '/login';
@@ -701,10 +706,17 @@
       var bar = document.getElementById('tabBar');
       if (!bar) return;
       function syncActive() {
-        var path = window.location.pathname.replace(/\\/$/, '') || '/';
+        // Strip trailing slashes from both path and href for accurate match
+        var rawPath = window.location.pathname || '/';
+        var path = rawPath.replace(/\/+$/, '') || '/';
+        // Treat root explicitly
+        if (window.location.pathname === '/' || window.location.pathname === '') {
+          path = '/';
+        }
         var matched = false;
         bar.querySelectorAll('.tab').forEach(function(t) {
-          var href = (t.getAttribute('href') || '').replace(/\\/$/, '') || '/';
+          var rawHref = t.getAttribute('href') || '/';
+          var href = rawHref.replace(/\/+$/, '') || '/';
           t.classList.remove('is-active');
           t.removeAttribute('aria-current');
           if (!matched && href === path) {
@@ -719,6 +731,46 @@
       document.addEventListener('click', function(e) {
         var a = e.target && e.target.closest && e.target.closest('.tab');
         if (a) setTimeout(syncActive, 80);
+      });
+
+      // ── Facebook-style auto-hide on scroll ────────────────────────
+      // Scroll DOWN → hide tab bar (gives more reading room)
+      // Scroll UP   → show tab bar (always reachable)
+      var lastY = window.scrollY || 0;
+      var ticking = false;
+      var THRESHOLD = 12;       // min scroll delta to trigger
+      var TOP_BUFFER = 60;      // always show near the top of page
+      function apply() {
+        var y = window.scrollY || window.pageYOffset;
+        var delta = y - lastY;
+        if (y < TOP_BUFFER) {
+          bar.classList.remove('is-hidden');
+        } else if (delta > THRESHOLD) {
+          // Scrolling down → hide
+          bar.classList.add('is-hidden');
+        } else if (delta < -THRESHOLD) {
+          // Scrolling up → show
+          bar.classList.remove('is-hidden');
+        }
+        lastY = y;
+        ticking = false;
+      }
+      function onScroll() {
+        if (!ticking) {
+          window.requestAnimationFrame(apply);
+          ticking = true;
+        }
+      }
+      window.addEventListener('scroll', onScroll, { passive: true });
+
+      // Briefly suppress the hide-state right after a tab-tap so users
+      // see the active tab change before any scroll happens.
+      document.addEventListener('click', function(e) {
+        var a = e.target && e.target.closest && e.target.closest('.tab');
+        if (a) {
+          bar.classList.remove('is-hidden');
+          lastY = window.scrollY || 0;
+        }
       });
     })();
   </script>
