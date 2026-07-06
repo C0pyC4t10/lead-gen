@@ -171,7 +171,6 @@
     <div class="nav-links">
       <a href="/extract">Extract</a>
       <a href="/leads">Leads</a>
-      <a href="/leads#history" id="navHistory">History</a>
       <a href="/qualified" class="active">Qualified</a>
       <a href="/trash" id="navTrash">Trash</a>
       <a href="/pricing">Pricing</a>
@@ -257,6 +256,7 @@
               <th>Category</th>
               <th>Followers</th>
               <th>Outreach</th>
+              <th>Remarks</th>
               <th>Qualified</th>
               <th>Actions</th>
             </tr>
@@ -274,6 +274,27 @@
 
     <div class="footer">
       <span style="color:#0A4FD9;font-weight:700">Scraven</span> — The Hunter &middot; Powered by <a href="https://skarboltech.com" target="_blank" rel="noopener noreferrer">Skarbol Tech</a>
+    </div>
+  </div>
+
+  <!-- Standard-quality remarks modal -->
+  <div class="outreach-modal" id="remarksModal">
+    <div class="outreach-panel" id="remarksPanel">
+      <button class="btn-close-x" id="remarksClose" type="button" aria-label="Close">×</button>
+      <h3 id="remarksTitle">Standard-Quality Remarks</h3>
+      <div class="sub" id="remarksSub">Add free-form notes about lead quality. Future you will thank you.</div>
+
+      <textarea class="outreach-notes" id="remarksText" placeholder="e.g. Owner is responsive on WhatsApp. Phone disconnected. Already has 3 competitors nearby. Best fit for in-person demo." maxlength="4000"></textarea>
+
+      <div class="outreach-actions">
+        <button class="btn btn-ghost" id="remarksCancel" type="button">Cancel</button>
+        <button class="btn btn-glow" id="remarksSave" type="button">💾 Save Remark</button>
+      </div>
+
+      <div class="outreach-history" id="remarksHistory">
+        <h4>Past Remarks</h4>
+        <div id="remarksHistoryList"></div>
+      </div>
     </div>
   </div>
 
@@ -495,9 +516,99 @@
       }
     }
 
+    // ── Standard-quality remarks ────────────────────────────────────
+    let remarksModalLead = null;
+    function openRemarks(pageUrl, name) {
+      if (!pageUrl) { showToast('Lead has no page_url — cannot add remark', 'error'); return; }
+      remarksModalLead = ALL_LEADS.find(l => l.page_url === pageUrl) || null;
+      if (!remarksModalLead) { showToast('Lead not found', 'error'); return; }
+      document.getElementById('remarksTitle').textContent = 'Standard-Quality Remarks — ' + (name || 'Lead');
+      document.getElementById('remarksSub').textContent = 'Add free-form notes about lead quality. Future you will thank you.';
+      document.getElementById('remarksText').value = '';
+      renderRemarksHistory(remarksModalLead);
+      document.getElementById('remarksModal').classList.add('open');
+      setTimeout(() => document.getElementById('remarksText').focus(), 50);
+    }
+    function closeRemarks() {
+      document.getElementById('remarksModal').classList.remove('open');
+      remarksModalLead = null;
+    }
+    function renderRemarksHistory(lead) {
+      const list = document.getElementById('remarksHistoryList');
+      const box = document.getElementById('remarksHistory');
+      const items = (lead.remarks || []).slice().reverse(); // newest first
+      if (items.length === 0) { box.style.display = 'none'; return; }
+      box.style.display = 'block';
+      list.innerHTML = items.map((r, i) => {
+        const idx = lead.remarks.length - 1 - i; // original index
+        return '<div class="outreach-log" style="border-color:rgba(245,158,11,0.18)">' +
+          '<div class="ic">📝</div>' +
+          '<div class="body">' +
+            '<div style="color:#E2E8F0;white-space:pre-wrap;word-break:break-word">' + esc(r.text || '') + '</div>' +
+            '<div class="meta">' + esc(formatDate(r.created_at)) + ' &middot; by ' + esc(r.author_name || 'You') + '</div>' +
+          '</div>' +
+          '<button class="del" data-idx="' + idx + '" type="button">Delete</button>' +
+        '</div>';
+      }).join('');
+      list.querySelectorAll('.del').forEach(btn => {
+        btn.addEventListener('click', function() {
+          const idx = parseInt(btn.dataset.idx, 10);
+          deleteRemark(idx);
+        });
+      });
+    }
+    async function submitRemark() {
+      if (!remarksModalLead) return;
+      const text = document.getElementById('remarksText').value.trim();
+      if (!text) { showToast('Write a remark first', 'error'); return; }
+      const btn = document.getElementById('remarksSave');
+      btn.disabled = true; btn.textContent = 'Saving…';
+      try {
+        const resp = await fetch(API_BASE + '/api/remarks', {
+          method: 'POST', headers: authHeaders(),
+          body: JSON.stringify({ page_url: remarksModalLead.page_url, text: text }),
+        });
+        const r = await resp.json().catch(() => ({}));
+        if (!resp.ok) throw new Error(r.error || 'HTTP ' + resp.status);
+        if (!remarksModalLead.remarks) remarksModalLead.remarks = [];
+        remarksModalLead.remarks.unshift(r.remark); // newest first
+        document.getElementById('remarksText').value = '';
+        renderRemarksHistory(remarksModalLead);
+        applyFilters();
+        showToast('✓ Remark saved', 'success');
+      } catch (e) {
+        showToast('Save failed: ' + e.message, 'error');
+      } finally {
+        btn.disabled = false; btn.textContent = '💾 Save Remark';
+      }
+    }
+    async function deleteRemark(idx) {
+      if (!remarksModalLead) return;
+      const r = remarksModalLead.remarks && remarksModalLead.remarks[idx];
+      if (!r) return;
+      const ok = await scravenConfirm('Delete this remark?', { title: 'Delete Remark' });
+      if (!ok) return;
+      try {
+        const resp = await fetch(API_BASE + '/api/remarks/delete', {
+          method: 'POST', headers: authHeaders(),
+          body: JSON.stringify({ id: r._id || r.id || '' }),
+        });
+        if (!resp.ok) {
+          const err = await resp.json().catch(() => ({}));
+          throw new Error(err.error || 'HTTP ' + resp.status);
+        }
+        remarksModalLead.remarks.splice(idx, 1);
+        renderRemarksHistory(remarksModalLead);
+        applyFilters();
+        showToast('✓ Remark deleted', 'success');
+      } catch (e) {
+        showToast('Delete failed: ' + e.message, 'error');
+      }
+    }
+
     async function load() {
       const tbody = document.getElementById('qualifiedTbody');
-      tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:40px;color:#64748B">Loading qualified leads…</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="11" style="text-align:center;padding:40px;color:#64748B">Loading qualified leads…</td></tr>';
       try {
         const resp = await fetch(API_BASE + '/api/leads/qualified', { headers: authHeaders() });
         if (!resp.ok) throw new Error('HTTP ' + resp.status);
@@ -509,21 +620,25 @@
         } catch (_) { /* ignore — table still renders */ }
         applyFilters();
       } catch (e) {
-        tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:40px;color:#FCA5A5">Failed to load: ' + esc(e.message) + '</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="11" style="text-align:center;padding:40px;color:#FCA5A5">Failed to load: ' + esc(e.message) + '</td></tr>';
         showStatus('Load failed: ' + e.message, 'error');
       }
     }
 
     async function enrichWithOutreach() {
-      // Fetch outreach logs for all qualified leads in parallel.
+      // Fetch outreach + remarks for all qualified leads in parallel.
       const tasks = ALL_LEADS.map(async (l) => {
         if (!l.page_url) return;
         try {
           const r = await fetch(API_BASE + '/api/outreach?page_url=' + encodeURIComponent(l.page_url), { headers: authHeaders() });
-          if (!r.ok) return;
-          const data = await r.json();
-          l.outreach_logs = Array.isArray(data) ? data : [];
-        } catch (_) {}
+          if (!r.ok) { l.outreach_logs = []; }
+          else { const d = await r.json(); l.outreach_logs = Array.isArray(d) ? d : []; }
+        } catch (_) { l.outreach_logs = []; }
+        try {
+          const r2 = await fetch(API_BASE + '/api/remarks?page_url=' + encodeURIComponent(l.page_url), { headers: authHeaders() });
+          if (!r2.ok) { l.remarks = []; }
+          else { const d2 = await r2.json(); l.remarks = Array.isArray(d2) ? d2 : []; }
+        } catch (_) { l.remarks = []; }
       });
       await Promise.allSettled(tasks);
     }
@@ -575,6 +690,10 @@
         const outreachLogs = (l.outreach_logs || []);
         const lastOutreach = outreachLogs.length ? outreachLogs[outreachLogs.length - 1] : null;
         const outreachCount = outreachLogs.length;
+        const remarks = (l.remarks || []);
+        const remarkCount = remarks.length;
+        const lastRemark = remarks.length ? remarks[0] : null; // newest first
+        const remarkPreview = lastRemark ? esc((lastRemark.text || '').substring(0, 60)) + ((lastRemark.text || '').length > 60 ? '…' : '') : '';
         return `<tr data-id="${esc(id)}">
           <td><input type="checkbox" class="checkbox row-sel" data-id="${esc(id)}" ${checked} /></td>
           <td>
@@ -595,6 +714,13 @@
               ${outreachCount > 0
                 ? outreachIcon(lastOutreach.type) + ' <span style="color:#94A3B8;font-size:11px">×' + outreachCount + '</span>'
                 : '<span style="color:#64748B">+ Log</span>'}
+            </button>
+          </td>
+          <td style="max-width:240px">
+            <button class="row-btn row-remarks" onclick="openRemarks('${esc(l.page_url || '')}', '${esc(l.business_name || 'Unknown')}')" title="Add standard-quality remarks" style="background:rgba(245,158,11,0.12);color:#FCD34D;border:1px solid rgba(245,158,11,0.3);text-align:left;display:block;width:100%;max-width:240px;white-space:normal;line-height:1.4;padding:6px 8px">
+              ${remarkCount > 0
+                ? '<span style="color:#FCD34D;font-weight:700;font-size:11px">📝 ' + remarkCount + '</span><div style="color:#94A3B8;font-size:11px;margin-top:2px;word-break:break-word">' + remarkPreview + '</div>'
+                : '<span style="color:#64748B;font-size:11px">+ Add remark</span>'}
             </button>
           </td>
           <td class="q-meta">${esc(qualifiedAt)}<br><span style="color:#64748B">by ${esc(by)}</span></td>
@@ -732,6 +858,20 @@
         if (e.key === 'Escape' && document.getElementById('outreachModal').classList.contains('open')) closeOutreach();
       });
 
+      // Remarks modal wiring
+      document.getElementById('remarksClose').addEventListener('click', closeRemarks);
+      document.getElementById('remarksCancel').addEventListener('click', closeRemarks);
+      document.getElementById('remarksSave').addEventListener('click', submitRemark);
+      document.getElementById('remarksModal').addEventListener('click', function(e) {
+        if (e.target.id === 'remarksModal') closeRemarks();
+      });
+      document.getElementById('remarksText').addEventListener('keydown', function(e) {
+        if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); submitRemark(); }
+      });
+      document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && document.getElementById('remarksModal').classList.contains('open')) closeRemarks();
+      });
+
       // Auth state
       const user = getUser();
       const token = getToken();
@@ -767,6 +907,6 @@
     });
   </script>
   <script src="/assets/scraven-modal.js" defer></script>
-  <script src="/assets/tabbar.js?v=5" defer></script>
+  <script src="/assets/tabbar.js?v=6" defer></script>
 </body>
 </html>

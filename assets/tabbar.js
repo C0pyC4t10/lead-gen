@@ -14,13 +14,18 @@
     account: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="5"/><path d="M3 21v-2a7 7 0 0 1 7-7h4a7 7 0 0 1 7 7v2"/></svg>',
   };
 
+  // Custom SVG: Qualified — check-in-circle (target hit)
+  SVGS.qualified = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2" fill="currentColor"/></svg>';
+
   // 5 tabs — each with route, icon, label, and brand-color tint.
+  // History is moved into /leads as a tab (Extract/History), so the bottom
+  // bar gets Qualified instead.
   var TABS = [
-    { id: "home",    href: "/",         svg: SVGS.home,    label: "Home" },
-    { id: "extract", href: "/extract",  svg: SVGS.extract, label: "Extract", primary: true },
-    { id: "leads",   href: "/leads",    svg: SVGS.leads,   label: "Leads" },
-    { id: "history", href: "/leads#history", svg: SVGS.history, label: "History" },
-    { id: "account", href: "/profile",  svg: SVGS.account, label: "Account", elemId: "tabBarAccount" },
+    { id: "home",      href: "/",          svg: SVGS.home,      label: "Home" },
+    { id: "extract",   href: "/extract",   svg: SVGS.extract,   label: "Extract", primary: true },
+    { id: "leads",     href: "/leads",     svg: SVGS.leads,     label: "Leads" },
+    { id: "qualified", href: "/qualified", svg: SVGS.qualified, label: "Qualified" },
+    { id: "account",   href: "/profile",   svg: SVGS.account,   label: "Account", elemId: "tabBarAccount" },
   ];
 
   function injectStyles() {
@@ -367,20 +372,45 @@
     var path = currentPath();
     var hash = window.location.hash || "";
     var tabs = bar.querySelectorAll(".tab");
+    // First clear all active states
+    for (var k = 0; k < tabs.length; k++) {
+      tabs[k].classList.remove("is-active");
+      tabs[k].removeAttribute("aria-current");
+    }
+    // For each tab, decide if it should be active. A tab is active when
+    // its path matches the current path AND (for tabs with a #hash) the
+    // current hash also matches. The PRIMARY tab (Extract) is the visual
+    // center of the bottom bar but it should NEVER auto-highlight just
+    // because of the `is-primary` class — it must actually match the page.
     var matched = false;
     for (var i = 0; i < tabs.length; i++) {
       var t = tabs[i];
       var href = t.getAttribute("href") || "/";
-      // Split href into path + hash for matching
       var hParts = href.split("#");
       var hPath = (hParts[0] || "/").replace(/\/+$/, "") || "/";
       var hHash = hParts[1] ? "#" + hParts[1] : "";
-      t.classList.remove("is-active");
-      t.removeAttribute("aria-current");
-      if (!matched && hPath === path && hHash === hash) {
-        t.classList.add("is-active");
-        t.setAttribute("aria-current", "page");
-        matched = true;
+      if (hPath === path) {
+        // For path-only matches (no hash), accept the current hash too —
+        // e.g. on /leads#history, the /leads tab can also light up.
+        if (!hHash || hHash === hash || !hash) {
+          t.classList.add("is-active");
+          t.setAttribute("aria-current", "page");
+          matched = true;
+        }
+      }
+    }
+    // Hard fallback: if no tab matched the current path, mark the tab
+    // whose href starts with the current path. Prevents the Extract
+    // "stuck-active" bug on pages that have no direct match in TABS.
+    if (!matched) {
+      for (var j = 0; j < tabs.length; j++) {
+        var tj = tabs[j];
+        var hp = (tj.getAttribute("href") || "/").split("#")[0].replace(/\/+$/, "") || "/";
+        if (hp !== "/" && path.indexOf(hp) === 0) {
+          tj.classList.add("is-active");
+          tj.setAttribute("aria-current", "page");
+          break;
+        }
       }
     }
   }

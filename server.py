@@ -2775,6 +2775,16 @@ class Handler(BaseHTTPRequestHandler):
             user_filter = None if is_admin else user.get('id')
             logs = mongo_db.list_outreach_logs(page_url=page_url, user_id=user_filter, limit=500)
             self._json(200, [mongo_db.serialize(x) for x in logs])
+        elif parsed.path == '/api/remarks':
+            # List standard-quality remarks for a lead (or all for admin)
+            user = require_auth(self)
+            if not user: return
+            params = parse_qs(parsed.query or '')
+            page_url = (params.get('page_url', [None])[0]) or None
+            is_admin = user.get('role') in ('admin', 'super_admin')
+            user_filter = None if is_admin else user.get('id')
+            remarks = mongo_db.list_qualified_remarks(page_url=page_url, user_id=user_filter, limit=500)
+            self._json(200, [mongo_db.serialize(r) for r in remarks])
         elif parsed.path == '/api/last-lead':
             url = get_last_lead_url()
             if url:
@@ -3335,6 +3345,61 @@ class Handler(BaseHTTPRequestHandler):
             )
             if not ok:
                 self._json(404, {'error': 'Log not found or not authorized'}); return
+            self._json(200, {'status': 'deleted'})
+            return
+
+        if parsed.path == '/api/remarks':
+            # Add a new standard-quality remark
+            user = require_auth(self)
+            if not user: return
+            if data is None:
+                self._json(400, {'error': 'Invalid JSON'}); return
+            page_url = (data.get('page_url') or '').strip()
+            text = (data.get('text') or '').strip()
+            if not page_url:
+                self._json(400, {'error': 'page_url is required'}); return
+            if not text:
+                self._json(400, {'error': 'text is required'}); return
+            if len(text) > 4000:
+                self._json(400, {'error': 'text too long (max 4000 chars)'}); return
+            qlead_id = None
+            try:
+                db = mongo_db.get_db()
+                if db is not None:
+                    qlead = db.qualified_leads.find_one({'page_url': page_url}, {'_id': 1})
+                    if qlead and qlead.get('_id'):
+                        qlead_id = str(qlead['_id'])
+            except Exception:
+                pass
+            remark = mongo_db.save_qualified_remark(
+                page_url=page_url,
+                text=text,
+                user_id=user.get('id'),
+                user_name=user.get('name', ''),
+                qualified_lead_id=qlead_id,
+            )
+            if not remark:
+                self._json(500, {'error': 'Failed to save remark'}); return
+            self._json(201, {'status': 'saved', 'remark': mongo_db.serialize(remark)})
+            return
+
+        if parsed.path == '/api/remarks/delete':
+            # Delete a remark (owner-only unless admin)
+            user = require_auth(self)
+            if not user: return
+            if data is None:
+                self._json(400, {'error': 'Invalid JSON'}); return
+            remark_id = (data.get('id') or data.get('_id') or '').strip()
+            if not remark_id:
+                self._json(400, {'error': 'id is required'}); return
+            is_admin = user.get('role') in ('admin', 'super_admin')
+            ok = mongo_db.delete_qualified_remark(
+                remark_id,
+                user_id=None if is_admin else user.get('id'),
+                is_admin=is_admin,
+            )
+            if not ok:
+                self._json(404, {'error': 'Remark not found or not authorized'}); return
             self._json(200, {'status': 'deleted'})
             return
 

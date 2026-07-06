@@ -142,6 +142,10 @@ def _ensure_indexes(db):
         db.outreach_logs.create_index([('page_url', ASCENDING), ('created_at', DESCENDING)])
         db.outreach_logs.create_index([('logged_by_user_id', ASCENDING), ('created_at', DESCENDING)])
         db.outreach_logs.create_index([('qualified_lead_id', ASCENDING)])
+        # Standard-quality remarks: free-form notes about a qualified lead
+        db.qualified_remarks.create_index([('page_url', ASCENDING), ('created_at', DESCENDING)])
+        db.qualified_remarks.create_index([('qualified_lead_id', ASCENDING)])
+        db.qualified_remarks.create_index([('author_user_id', ASCENDING), ('created_at', DESCENDING)])
         db.fcommerce_leads.create_index([('page_url', ASCENDING)], unique=True)
         db.linkedin_leads.create_index([('url', ASCENDING)])
         db.maps_leads.create_index([('page_url', ASCENDING)])
@@ -703,6 +707,66 @@ def delete_outreach_log(log_id, user_id=None, is_admin=False):
         if user_id and not is_admin:
             query['logged_by_user_id'] = user_id
         result = db.outreach_logs.delete_one(query)
+        return result.deleted_count > 0
+    except Exception:
+        return False
+
+
+# ── Standard-quality remarks ──────────────────────────────────────────
+# Free-form notes about a qualified lead. Each remark is text authored
+# by a user with timestamp. Used by the Qualified page for manual
+# observations about lead quality (e.g. "Phone disconnected", "Owner is
+# slow to respond", "Competitor already in market").
+def save_qualified_remark(page_url, text, user_id, user_name, qualified_lead_id=None):
+    """Save a new standard-quality remark. Returns the inserted doc or None."""
+    db = get_db()
+    if db is None:
+        return None
+    if not page_url or not (text or '').strip():
+        return None
+    try:
+        doc = {
+            'page_url': page_url,
+            'text': (text or '').strip(),
+            'author_user_id': user_id,
+            'author_name': user_name or '',
+            'qualified_lead_id': qualified_lead_id,
+            'created_at': now_iso(),
+        }
+        result = db.qualified_remarks.insert_one(doc)
+        doc['_id'] = str(result.inserted_id)
+        return doc
+    except Exception:
+        return None
+
+def list_qualified_remarks(page_url=None, user_id=None, limit=200):
+    """List standard-quality remarks. Filter by page_url (single lead) or user_id."""
+    db = get_db()
+    if db is None:
+        return []
+    query = {}
+    if page_url:
+        query['page_url'] = page_url
+    if user_id:
+        query['author_user_id'] = user_id
+    try:
+        return list(db.qualified_remarks.find(query).sort('created_at', DESCENDING).limit(limit))
+    except Exception:
+        return []
+
+def delete_qualified_remark(remark_id, user_id=None, is_admin=False):
+    """Delete a remark. Owner-only unless admin."""
+    db = get_db()
+    if db is None:
+        return False
+    try:
+        oid = to_object_id(remark_id)
+        if not oid:
+            return False
+        query = {'_id': oid}
+        if user_id and not is_admin:
+            query['author_user_id'] = user_id
+        result = db.qualified_remarks.delete_one(query)
         return result.deleted_count > 0
     except Exception:
         return False
