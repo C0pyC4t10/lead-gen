@@ -131,10 +131,17 @@
     // otherwise only shows Profile (+ Admin for admins) so it doesn't
     // duplicate the Logout button on every page.
     var onProfile = window.location.pathname === "/profile" || window.location.pathname === "/profile.html";
+    // If the page has a `.nav-center` slot (e.g. homepage), inject the
+    // profile into it so the dropdown sits centered. Otherwise fall back
+    // to appending to the top nav (right-aligned on every other page).
+    var isHome = window.location.pathname === "/" || window.location.pathname === "/index.html";
+    var host = (isHome && topNav.querySelector(".nav-center"))
+      ? topNav.querySelector(".nav-center")
+      : topNav;
 
     var profile = document.createElement("div");
     profile.id = "navProfile";
-    profile.className = "nav-profile";
+    profile.className = "nav-profile" + (isHome ? " is-centered" : "");
     profile.setAttribute("aria-label", (u.name || "Profile") + " — " + (u.email || ""));
     var initial = (u.name || u.email || "?").charAt(0).toUpperCase();
     profile.innerHTML =
@@ -157,15 +164,19 @@
         (onProfile ? '<button type="button" class="nav-profile-menu-item is-logout" data-action="logout" role="menuitem"><span class="di">' + iconSVG("logout") + '</span><span class="dl">Logout</span></button>' : '') +
       '</div>';
 
-    topNav.appendChild(profile);
+    host.appendChild(profile);
 
     // Hide any pre-existing duplicate profile / admin / logout links in
     // the page header. The new mountProfile dropdown is the single source
     // of truth for these actions. The lead usage counter is hidden on
     // every page except /profile — that page has a richer stat panel
     // and doesn't need the small nav badge cluttering every other page.
+    // On the homepage, the legacy .header-profile is hidden and the
+    // injected navProfile (with .is-centered class) takes its place.
     var dup = topNav.querySelectorAll('#profileLink, .header-profile, #adminLink, #logoutBtn, .logout-btn');
     for (var i = 0; i < dup.length; i++) dup[i].style.display = 'none';
+    var headerProfile = topNav.querySelector('#headerProfile');
+    if (headerProfile) headerProfile.style.display = 'none';
     var leadBadge = topNav.querySelector('#leadBadge, .lead-badge');
     if (leadBadge) {
       if (onProfile) leadBadge.style.display = 'inline-flex';

@@ -375,6 +375,23 @@ body.nav-drawer-open { overflow: hidden; }
   margin-left: 8px;
   flex-shrink: 0;
 }
+/* Homepage center slot: the profile sits inside .nav-center (next to the
+   logo on the left and the burger on the right) and should look balanced,
+   not left-aligned. */
+.nav-profile.is-centered {
+  margin-left: 0;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgba(10, 79, 217, 0.18), rgba(0, 229, 255, 0.08));
+  border: 1px solid rgba(0, 229, 255, 0.28);
+  box-shadow: 0 4px 14px rgba(10, 79, 217, 0.18);
+  transition: all 0.2s ease;
+}
+.nav-profile.is-centered:hover {
+  background: linear-gradient(180deg, rgba(10, 79, 217, 0.28), rgba(0, 229, 255, 0.14));
+  border-color: rgba(0, 229, 255, 0.5);
+  box-shadow: 0 6px 18px rgba(10, 79, 217, 0.28);
+}
 .nav-profile-avatar {
   width: 36px;
   height: 36px;
