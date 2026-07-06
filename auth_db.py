@@ -14,19 +14,28 @@ import secrets
 from datetime import datetime, timezone
 
 AUTH_DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'auth.db')
+_SQLITE_READY = False  # Lazy schema init flag for cold-start SQLite fallback
+
 
 
 def _use_mongo():
-    """Runtime check: MongoDB configured AND connected.
+    """Runtime check: MongoDB configured AND connected (with brief wait).
 
     Uses is_ready() — never triggers a connect from a request thread.
-    Mongo init is owned by the background thread in server.py.
+    Mongo init is owned by the background thread in server.py. If the
+    background init is still in progress, we wait up to 2.5s for it
+    before giving up. This prevents the SQLite fallback from masking
+    real data during the 1-3s Render cold-start window.
     """
     if not os.environ.get('MONGODB_URI', '').strip():
         return False
     try:
         import mongo_db
-        return mongo_db.is_ready()
+        if mongo_db.is_ready():
+            return True
+        # Brief wait for the background init to finish. Bounded so a
+        # genuinely broken Mongo doesn't hang request threads.
+        return mongo_db.wait_ready(max_ms=2500, step_ms=100)
     except Exception:
         return False
 
@@ -36,10 +45,72 @@ def _now_iso():
 
 
 def _sqlite_conn():
+    global _SQLITE_READY
     conn = sqlite3.connect(AUTH_DB_PATH, timeout=30)
     conn.row_factory = sqlite3.Row
     conn.execute('PRAGMA journal_mode=WAL')
+    if not _SQLITE_READY:
+        try:
+            _ensure_sqlite_schema(conn)
+            _SQLITE_READY = True
+        except Exception:
+            pass
     return conn
+
+def _ensure_sqlite_schema(conn):
+    """Idempotent schema init for the SQLite users table.
+    Safe to call on every connection — uses IF NOT EXISTS and ADD COLUMN guards.
+    Fixes 'no such table: users' on Render cold start when Mongo isn't ready
+    and we fall back to SQLite as a transient path."""
+    c = conn.cursor()
+    c.execute('''CREATE TABLE IF NOT EXISTS users (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        email TEXT UNIQUE NOT NULL,
+        password_hash TEXT NOT NULL,
+        password_salt TEXT NOT NULL,
+        role TEXT NOT NULL DEFAULT 'user',
+        email_verified INTEGER DEFAULT 0,
+        verification_code TEXT,
+        verification_expires TEXT,
+        leads_used INTEGER DEFAULT 0,
+        subscription_tier TEXT DEFAULT 'free',
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        telegram_notifications INTEGER DEFAULT 1
+    )''')
+    # Add columns that may not exist on an older schema (Render ephemeral disk resets)
+    existing = {row[1] for row in c.execute("PRAGMA table_info(users)").fetchall()}
+    for col, ddl in (
+        ('email_verified', "ALTER TABLE users ADD COLUMN email_verified INTEGER DEFAULT 0"),
+        ('verification_code', "ALTER TABLE users ADD COLUMN verification_code TEXT"),
+        ('verification_expires', "ALTER TABLE users ADD COLUMN verification_expires TEXT"),
+        ('leads_used', "ALTER TABLE users ADD COLUMN leads_used INTEGER DEFAULT 0"),
+        ('subscription_tier', "ALTER TABLE users ADD COLUMN subscription_tier TEXT DEFAULT 'free'"),
+        ('telegram_notifications', "ALTER TABLE users ADD COLUMN telegram_notifications INTEGER DEFAULT 1"),
+        ('avatar_url', "ALTER TABLE users ADD COLUMN avatar_url TEXT"),
+        ('avatar_data', "ALTER TABLE users ADD COLUMN avatar_data TEXT"),
+        ('password_reset_token', "ALTER TABLE users ADD COLUMN password_reset_token TEXT"),
+        ('password_reset_expires', "ALTER TABLE users ADD COLUMN password_reset_expires TEXT"),
+        ('deleted_at', "ALTER TABLE users ADD COLUMN deleted_at TEXT"),
+    ):
+        if col not in existing:
+            try:
+                c.execute(ddl)
+            except Exception:
+                pass
+    c.execute('''CREATE TABLE IF NOT EXISTS sessions (
+        token TEXT PRIMARY KEY,
+        user_id INTEGER NOT NULL,
+        created_at TEXT NOT NULL,
+        expires_at TEXT NOT NULL
+    )''')
+    c.execute('''CREATE TABLE IF NOT EXISTS settings (
+        user_id INTEGER PRIMARY KEY,
+        data TEXT,
+        updated_at TEXT
+    )''')
+    conn.commit()
 
 
 def _user_row_to_dict(row):
@@ -189,21 +260,26 @@ def update_user_fields(uid, **fields):
 
 
 def increment_leads_used(uid):
-    if _use_mongo():
-        import mongo_db
-        u = mongo_db.get_user_by_id(uid)
-        if not u:
-            return False
-        new_count = (u.get('leads_used') or 0) + 1
-        return bool(mongo_db.update_user(uid, {'leads_used': new_count}))
-    conn = _sqlite_conn()
+    """Increment user's leads_used counter. Tolerant of failures — caller
+    treats counter as best-effort and the lead is already saved."""
     try:
-        c = conn.cursor()
-        c.execute('UPDATE users SET leads_used = COALESCE(leads_used, 0) + 1, updated_at = ? WHERE id = ?', (_now_iso(), uid))
-        conn.commit()
-        return c.rowcount > 0
-    finally:
-        conn.close()
+        if _use_mongo():
+            import mongo_db
+            u = mongo_db.get_user_by_id(uid)
+            if not u:
+                return False
+            new_count = (u.get('leads_used') or 0) + 1
+            return bool(mongo_db.update_user(uid, {'leads_used': new_count}))
+        conn = _sqlite_conn()
+        try:
+            c = conn.cursor()
+            c.execute('UPDATE users SET leads_used = COALESCE(leads_used, 0) + 1, updated_at = ? WHERE id = ?', (_now_iso(), uid))
+            conn.commit()
+            return c.rowcount > 0
+        finally:
+            conn.close()
+    except Exception:
+        return False
 
 
 def get_verification_code(uid):

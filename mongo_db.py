@@ -87,6 +87,23 @@ def is_ready():
     return _mongo_ready
 
 
+def wait_ready(max_ms=2500, step_ms=100):
+    """Briefly block waiting for the background init to complete.
+    Returns True if ready within the budget, False otherwise. Use this
+    in request threads instead of falling back to SQLite on cold start.
+    """
+    if _mongo_ready:
+        return True
+    import time as _t
+    waited = 0
+    while waited < max_ms:
+        _t.sleep(step_ms / 1000.0)
+        waited += step_ms
+        if _mongo_ready:
+            return True
+    return False
+
+
 def init_and_get_db():
     """Connect synchronously, mark ready, return db. Called ONCE by the
     background init thread in server.py."""

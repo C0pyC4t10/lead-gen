@@ -2,6 +2,7 @@ import os, sqlite3, csv
 from datetime import datetime
 
 LEADS_DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'leads.db')
+_LEADS_READY = False  # Lazy schema init flag for cold-start SQLite fallback
 
 LEADS_COLUMNS = [
     'date', 'platform', 'business_name', 'page_url', 'category', 'followers',
@@ -11,9 +12,18 @@ LEADS_COLUMNS = [
 ]
 
 def get_conn():
+    global _LEADS_READY
     conn = sqlite3.connect(LEADS_DB_PATH, timeout=30)
     conn.row_factory = sqlite3.Row
     conn.execute('PRAGMA journal_mode=WAL')
+    if not _LEADS_READY:
+        # Mark ready BEFORE calling init_db() to prevent recursion
+        # (init_db also calls get_conn).
+        _LEADS_READY = True
+        try:
+            init_db()
+        except Exception:
+            pass
     return conn
 
 def init_db():

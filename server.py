@@ -65,6 +65,21 @@ def _mongo_alive():
         return False
 
 
+def _wait_for_mongo(max_ms=2500, step_ms=100):
+    """Briefly block waiting for the background Mongo init thread.
+    Returns True if Mongo became ready within the budget, False otherwise.
+    Prevents the SQLite fallback from returning empty data during the
+    ~1-3 second cold start window, which would make /api/leads and
+    /api/admin/* look empty for the very first request after deploy.
+    """
+    if not USE_MONGO or mongo_db is None:
+        return False
+    try:
+        return mongo_db.wait_ready(max_ms=max_ms, step_ms=step_ms)
+    except Exception:
+        return False
+
+
 def _backfill_mongo_from_csv():
     """One-time: if Mongo is empty and collected_leads/leads.csv has data, seed it."""
     if not _mongo_alive():
@@ -845,7 +860,7 @@ def append_lead(data, notify_telegram=True, user_id=None):
     if not page_url:
         return False, 'page_url is required'
 
-    if _mongo_alive():
+    if _mongo_alive() or _wait_for_mongo():
         result = mongo_db.save_lead(data, user_id)
         if result is None:
             return False, 'Database unavailable'
@@ -992,7 +1007,7 @@ def get_qualified_leads():
 
 
 def read_all_leads(filter_status=None, include_trashed=False, user_id=None, include_all_users=False):
-    if _mongo_alive():
+    if _mongo_alive() or _wait_for_mongo():
         rows = mongo_db.list_leads(
             user_id=user_id,
             is_admin=bool(include_all_users),
@@ -1010,7 +1025,7 @@ def read_all_leads(filter_status=None, include_trashed=False, user_id=None, incl
 
 def read_all_leads_for_stats(limit=2000):
     """Bounded read for admin/stats — never returns > limit rows."""
-    if _mongo_alive():
+    if _mongo_alive() or _wait_for_mongo():
         try:
             rows = mongo_db.list_leads(
                 user_id=None,
