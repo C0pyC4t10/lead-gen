@@ -3994,39 +3994,82 @@ if __name__ == '__main__':
     if not TELEGRAM_TOKEN:
         print("WARNING: TELEGRAM_TOKEN not set. Notifications disabled.", flush=True)
 
-    ensure_csv()
-    init_auth_db()
-    leads_db.init_db()
-
-    if USE_MONGO:
-        print(f"MongoDB layer active (DB: {os.environ.get('MONGODB_DB','scraven')})", flush=True)
-        _backfill_mongo_from_csv()
-    else:
-        print("MongoDB NOT active — using SQLite leads.db (ephemeral on Render free)", flush=True)
-
-    # Register Telegram bot commands
-    if TELEGRAM_TOKEN:
-        for api_base in (BOT_API, "https://api.telegram.org/bot"):
-            try:
-                requests.post(f"{api_base}{TELEGRAM_TOKEN}/deleteWebhook?drop_pending_updates=true", timeout=5)
-                resp = requests.post(f"{api_base}{TELEGRAM_TOKEN}/setMyCommands", json={
-                    "commands": [
-                        {"command": "help", "description": "Show what I can do"},
-                    ],
-                }, timeout=10)
-                if resp.json().get('ok'):
-                    print(f"  Commands registered via {api_base}", flush=True)
-                    break
-            except Exception as e:
-                print(f"  Command reg via {api_base} failed: {e}", flush=True)
-                continue
-
-        # DISABLED: conflicts with Hermes gateway polling (same bot token)
-        # polling_thread = threading.Thread(target=poll_dashboard, daemon=True)
-        # polling_thread.start()
-
+    # CRITICAL: bind the port FIRST so Render sees an open port immediately.
+    # Mongo / SQLite init work happens in a background thread afterwards.
     port = int(os.environ.get('PORT', 8800))
     server = ThreadingHTTPServer(('0.0.0.0', port), Handler)
+    server_thread = threading.Thread(target=server.serve_forever, daemon=True)
+    server_thread.start()
+    print(f'Skarbol Lead Gen server listening on http://0.0.0.0:{port}', flush=True)
+    print(f'  DATABASE_URL: {"set" if os.environ.get("DATABASE_URL") else "not set (using SQLite)"}', flush=True)
+    print(f'  ALLOWED_ORIGINS: {os.environ.get("ALLOWED_ORIGINS", "*")}', flush=True)
+    print(f'  MONGODB_URI:    {"set" if USE_MONGO else "not set"}', flush=True)
+
+    def _background_init():
+        """Mongo + auth + leads init that doesn't block the HTTP listener."""
+        try:
+            if USE_MONGO:
+                db = mongo_db.get_db() if mongo_db else None
+                if db is not None:
+                    print(f"MongoDB layer active (DB: {os.environ.get('MONGODB_DB','scraven')})", flush=True)
+                    try:
+                        _backfill_mongo_from_csv()
+                    except Exception as e:
+                        print(f"[init] backfill failed (non-fatal): {e}", flush=True)
+                    try:
+                        init_auth_db()
+                        _seed_default_users()
+                    except Exception as e:
+                        print(f"[init] auth/seed failed (non-fatal): {e}", flush=True)
+                else:
+                    print("MongoDB NOT reachable — falling back to SQLite auth.db + leads.db (ephemeral!)", flush=True)
+                    try:
+                        ensure_csv()
+                    except Exception:
+                        pass
+                    try:
+                        init_auth_db()
+                    except Exception:
+                        pass
+                    try:
+                        leads_db.init_db()
+                    except Exception:
+                        pass
+            else:
+                try:
+                    ensure_csv()
+                except Exception:
+                    pass
+                try:
+                    init_auth_db()
+                except Exception:
+                    pass
+                try:
+                    leads_db.init_db()
+                except Exception:
+                    pass
+        except Exception as e:
+            print(f"[init] background init crashed: {e}", flush=True)
+
+        # Register Telegram bot commands (network call, don't block HTTP)
+        if TELEGRAM_TOKEN:
+            for api_base in (BOT_API, "https://api.telegram.org/bot"):
+                try:
+                    requests.post(f"{api_base}{TELEGRAM_TOKEN}/deleteWebhook?drop_pending_updates=true", timeout=5)
+                    resp = requests.post(f"{api_base}{TELEGRAM_TOKEN}/setMyCommands", json={
+                        "commands": [
+                            {"command": "help", "description": "Show what I can do"},
+                        ],
+                    }, timeout=10)
+                    if resp.json().get('ok'):
+                        print(f"  Commands registered via {api_base}", flush=True)
+                        break
+                except Exception as e:
+                    print(f"  Command reg via {api_base} failed: {e}", flush=True)
+                    continue
+
+    init_thread = threading.Thread(target=_background_init, daemon=True)
+    init_thread.start()
 
     def _shutdown(signum, frame):
         print(f'\nReceived signal {signum}, shutting down gracefully...', flush=True)
@@ -4034,6 +4077,17 @@ if __name__ == '__main__':
             server.shutdown()
         except Exception:
             pass
+        server.server_close()
+        sys.exit(0)
+
+    signal.signal(signal.SIGTERM, _shutdown)
+    signal.signal(signal.SIGINT, _shutdown)
+
+    try:
+        while server_thread.is_alive():
+            server_thread.join(1)
+    except KeyboardInterrupt:
+        print('\nShutting down…', flush=True)
         server.server_close()
         sys.exit(0)
 
