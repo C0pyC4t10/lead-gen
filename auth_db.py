@@ -393,7 +393,10 @@ def list_users_for_admin():
 def count_users_by_role():
     if _use_mongo():
         import mongo_db
-        return mongo_db.count_users_grouped_by_role()
+        try:
+            return mongo_db.count_users_grouped_by_role()
+        except Exception:
+            return {}
     conn = _sqlite_conn()
     try:
         c = conn.cursor()
@@ -473,10 +476,13 @@ def count_users():
     """Total user count (any storage)."""
     if _use_mongo():
         import mongo_db
-        db = mongo_db.get_db()
-        if db is None:
+        try:
+            db = mongo_db.get_db()
+            if db is None:
+                return 0
+            return db.users.count_documents({})
+        except Exception:
             return 0
-        return db.users.count_documents({})
     conn = _sqlite_conn()
     try:
         c = conn.cursor()

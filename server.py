@@ -3146,40 +3146,63 @@ class Handler(BaseHTTPRequestHandler):
             if user['role'] not in ('admin', 'super_admin'):
                 self._json(403, {'error': 'Forbidden'})
                 return
+            now = datetime.now()
+            month_prefix = now.strftime('%Y-%m')
+            warnings = []
+
+            # ── Lead list (Mongo primary, SQLite fallback) — never raises
             try:
                 leads = read_all_leads_for_stats(limit=2000)
+            except Exception as e:
+                leads = []
+                warnings.append(f'leads:{e}')
+
+            # ── Total users — has its own try so a Mongo hiccup doesn't
+            # zero-out the response
+            try:
                 user_count = auth_db.count_users()
+            except Exception as e:
+                user_count = 0
+                warnings.append(f'count_users:{e}')
+
+            # ── Role counts — separate try so one failure doesn't blank
+            # out the other stats
+            try:
                 role_counts = auth_db.count_users_by_role()
-                statuses = {}
-                this_month = 0
-                now = datetime.now()
-                month_prefix = now.strftime('%Y-%m')
-                for l in (leads or []):
+            except Exception as e:
+                role_counts = {}
+                warnings.append(f'role_counts:{e}')
+
+            # ── Aggregate (in-memory, can't fail on bad Mongo state)
+            statuses = {}
+            this_month = 0
+            for l in (leads or []):
+                try:
                     s = l.get('status', 'unknown')
                     statuses[s] = statuses.get(s, 0) + 1
                     d = (l.get('date') or '').strip()
                     if d.startswith(month_prefix):
                         this_month += 1
-                self._json(200, {
-                    'total_leads': len(leads or []),
-                    'total_users': user_count,
-                    'role_counts': role_counts,
-                    'statuses': statuses,
-                    'this_month': this_month,
-                    'month_label': now.strftime('%B %Y'),
-                    'note': 'capped at 2000 for stats' if leads and len(leads) >= 2000 else None,
-                })
-            except Exception as e:
-                self._json(500, {
-                    'error': 'Stats query failed',
-                    'detail': str(e),
-                    'total_leads': 0,
-                    'total_users': 0,
-                    'role_counts': {},
-                    'statuses': {},
-                    'this_month': 0,
-                    'month_label': datetime.now().strftime('%B %Y'),
-                })
+                except Exception:
+                    continue
+
+            note_parts = []
+            if leads and len(leads) >= 2000:
+                note_parts.append('capped at 2000 leads')
+            if warnings:
+                note_parts.append('partial: ' + '; '.join(warnings))
+            note = ' · '.join(note_parts) if note_parts else None
+
+            self._json(200, {
+                'total_leads': len(leads or []),
+                'total_users': user_count,
+                'role_counts': role_counts,
+                'statuses': statuses,
+                'this_month': this_month,
+                'month_label': now.strftime('%B %Y'),
+                'note': note,
+            })
+            return
         elif parsed.path == '/api/bookmarklet-extract':
             self._serve_bookmarklet_js()
         elif parsed.path == '/api/qualified/daily-files':
