@@ -1220,6 +1220,14 @@
 
     document.getElementById('detailQualify').addEventListener('click', async () => {
       if (!detailLead) return;
+      const ok = await scravenConfirm(
+        'Qualify "' + (detailLead.business_name || 'this lead') + '"?\n\n' +
+        'This will:\n' +
+        '  • Move it to the Qualified Pipeline\n' +
+        '  • Save it as Qualified by you\n' +
+        '  • Be recorded in the audit log'
+      );
+      if (!ok) return;
       await quickAction(detailIdx, 'qualify');
     });
 
@@ -1271,6 +1279,12 @@
       if (!pageUrl) { showStatus('Missing page URL.', 'error'); return; }
       const cur = !!detailLead.contacted;
       const next = !cur;
+      const ok = await scravenConfirm(
+        (next ? 'Mark "' : 'Clear "') + (detailLead.business_name || 'this lead') + '" as contacted?\n\n' +
+        (next ? 'Adds the Contacted flag and records the change in the audit log.'
+              : 'Removes the Contacted flag and records the change in the audit log.')
+      );
+      if (!ok) return;
       try {
         const resp = await fetch(API_BASE + '/api/lead/contacted', {
           method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (token || APP_TOKEN || '') },
@@ -1447,6 +1461,14 @@
     }
 
     async function updateStatus(pageUrl, status) {
+      // Ask permission before changing pipeline status
+      const leadName = ((allLeads.find(l => l.page_url === pageUrl) || {}).business_name || 'this lead');
+      const statusLabel = (status || '').charAt(0).toUpperCase() + (status || '').slice(1);
+      const ok = await scravenConfirm(
+        'Move "' + leadName + '" to stage "' + statusLabel + '"?\n\n' +
+        'This will be recorded in the audit log.'
+      );
+      if (!ok) return;
       // Disable the row buttons immediately so the user can't double-click
       // while the request is in flight (fixes "buttons not smooth" issue).
       const tbody = document.getElementById('historyBody');
@@ -1503,6 +1525,14 @@
 
     // Toggle the independent 'contacted' flag on a lead (separate from status)
     async function toggleContacted(pageUrl, currentContacted) {
+      const leadName = ((allLeads.find(l => l.page_url === pageUrl) || {}).business_name || 'this lead');
+      const next = !currentContacted;
+      const ok = await scravenConfirm(
+        (next ? 'Mark "' : 'Clear "') + leadName + '" as contacted?\n\n' +
+        (next ? 'This adds a Contacted flag — visible in the row status cell and recorded in the audit log.'
+              : 'This removes the Contacted flag — recorded in the audit log.')
+      );
+      if (!ok) return;
       const tbody = document.getElementById('historyBody');
       if (tbody) {
         const cb = tbody.querySelector('.hist-select[data-url="' + cssEscape(pageUrl) + '"]');
@@ -1511,7 +1541,6 @@
           if (tr) tr.querySelectorAll('button').forEach(b => { b.disabled = true; });
         }
       }
-      const next = !currentContacted;
       try {
         const resp = await fetch(API_BASE + '/api/lead/contacted', {
           method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (token || APP_TOKEN || '') },
