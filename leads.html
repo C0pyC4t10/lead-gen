@@ -765,6 +765,11 @@
       if (window.location.hash === '#history') switchLtab('history');
       else switchLtab('extract');
     });
+    // Pre-load history in the background so the History tab opens instantly
+    // when the user clicks it (avoids the "nothing loads" delay on desktop).
+    setTimeout(function () {
+      try { loadHistory(); } catch (_) {}
+    }, 200);
     document.querySelectorAll('.ltab').forEach(t => {
       t.addEventListener('click', function () {
         var id = this.dataset.tab;
@@ -1245,6 +1250,10 @@
         if (resp.ok) {
           detailLead.status = next;
           refreshDetailContactBtn();
+          // Update the source row in the history table in place + sync memory
+          const inMem = allLeads.find(l => l.page_url === pageUrl);
+          if (inMem) inMem.status = next;
+          if (detailIsHistory) applyStatusToRow(pageUrl, next);
           if (detailIsHistory) loadHistory();
         }
       } catch (err) { showStatus('Failed: ' + err.message, 'error'); }
@@ -1309,7 +1318,8 @@
     }
 
     function renderPage(page) {
-      const filtered = getFilteredLeads();
+      let filtered = [];
+      try { filtered = getFilteredLeads(); } catch (e) { console.error('getFilteredLeads failed', e); }
       const groups = {};
       filtered.forEach(l => {
         const raw = (l.date || '').substring(0, 10);
@@ -1338,29 +1348,35 @@
         return 0;
       });
       day.leads.forEach((l, i) => {
-        const tr = document.createElement('tr');
-        const dateDisp = day.date === 'unknown' ? 'Unknown' : (l.date && l.date.length > 10 ? l.date.slice(0, 16) : day.date);
-        tr.innerHTML = `
-           <td><input type="checkbox" class="hist-select" data-url="${esc(l.page_url || '')}" /></td>
-           <td style="text-align:center;font-size:11px;color:#64748B">${i + 1}</td>
-           <td style="white-space:nowrap;font-size:11px;color:#64748B">${esc(dateDisp)}</td>
-           <td><span class="lead-name" onclick="openHistoryDetail(decodeURIComponent('${ue(l.page_url)}'))">${esc(l.business_name || '—')}</span></td>
-           <td><span class="badge">${esc(l.platform || '—')}</span></td>
-           <td style="font-size:12px;color:#94A3B8">${esc(l.category || '—')}</td>
-           <td><strong>${l.qualification_score || '?'}</strong></td>
-           <td><span class="badge ${(l.status || 'new').toLowerCase()}">${esc(l.status || 'new')}</span></td>
-           <td style="font-size:12px;word-break:break-all">${l.email ? esc(l.email) : '<span style="color:#64748B;font-style:italic">Not found</span>'}</td>
-           <td style="font-size:12px">${l.phone ? esc(l.phone) : '<span style="color:#64748B;font-style:italic">Not found</span>'}</td>
-           <td>
-             <div style="display:flex;gap:4px;flex-wrap:wrap">
-               <button class="btn-outline success sm" onclick="updateStatus(decodeURIComponent('${ue(l.page_url)}'),'qualified')">Qualify</button>
-               <button class="btn-outline sm${(l.status || '').toLowerCase() === 'contacted' ? ' contacted-active' : ''}" onclick="toggleContacted(decodeURIComponent('${ue(l.page_url)}'), '${esc((l.status || 'new').toLowerCase())}')">${(l.status || '').toLowerCase() === 'contacted' ? '✓ Contacted' : 'Contact'}</button>
-               ${l.page_url && (l.platform || '').toLowerCase() === 'facebook' ? `<button class="btn-outline sm" onclick="apifyHistoryLead(decodeURIComponent('${ue(l.page_url)}'))" title="Re-extract via Apify to fill missing phone/email">⚡</button>` : ''}
-               <button class="btn-outline danger sm" onclick="deleteLead(decodeURIComponent('${ue(l.page_url)}'))">Delete</button>
-             </div>
-           </td>
-        `;
-        tbody.appendChild(tr);
+        try {
+          const tr = document.createElement('tr');
+          const dateDisp = day.date === 'unknown' ? 'Unknown' : (l.date && l.date.length > 10 ? l.date.slice(0, 16) : day.date);
+          tr.innerHTML = `
+             <td><input type="checkbox" class="hist-select" data-url="${esc(l.page_url || '')}" /></td>
+             <td style="text-align:center;font-size:11px;color:#64748B">${i + 1}</td>
+             <td style="white-space:nowrap;font-size:11px;color:#64748B">${esc(dateDisp)}</td>
+             <td><span class="lead-name" onclick="openHistoryDetail(decodeURIComponent('${ue(l.page_url)}'))">${esc(l.business_name || '—')}</span></td>
+             <td><span class="badge">${esc(l.platform || '—')}</span></td>
+             <td style="font-size:12px;color:#94A3B8">${esc(l.category || '—')}</td>
+             <td><strong>${l.qualification_score || '?'}</strong></td>
+             <td><span class="badge ${(l.status || 'new').toLowerCase()}">${esc(l.status || 'new')}</span></td>
+             <td style="font-size:12px;word-break:break-all">${l.email ? esc(l.email) : '<span style="color:#64748B;font-style:italic">Not found</span>'}</td>
+             <td style="font-size:12px">${l.phone ? esc(l.phone) : '<span style="color:#64748B;font-style:italic">Not found</span>'}</td>
+             <td>
+               <div style="display:flex;gap:4px;flex-wrap:wrap">
+                 ${(l.status || '').toLowerCase() === 'qualified'
+                   ? '<span class="badge qualified" style="font-size:11px;padding:4px 10px">✓ Qualified</span>'
+                   : `<button class="btn-outline success sm qualify-toggle" onclick="updateStatus(decodeURIComponent('${ue(l.page_url)}'),'qualified')">Qualify</button>`}
+                 <button class="btn-outline sm contact-toggle${(l.status || '').toLowerCase() === 'contacted' ? ' contacted-active' : ''}" onclick="toggleContacted(decodeURIComponent('${ue(l.page_url)}'), '${esc((l.status || 'new').toLowerCase())}')">${(l.status || '').toLowerCase() === 'contacted' ? '✓ Contacted' : 'Contact'}</button>
+                 ${l.page_url && (l.platform || '').toLowerCase() === 'facebook' ? `<button class="btn-outline sm" onclick="apifyHistoryLead(decodeURIComponent('${ue(l.page_url)}'))" title="Re-extract via Apify to fill missing phone/email">⚡</button>` : ''}
+                 <button class="btn-outline danger sm" onclick="deleteLead(decodeURIComponent('${ue(l.page_url)}'))">Delete</button>
+               </div>
+             </td>
+          `;
+          tbody.appendChild(tr);
+        } catch (rowErr) {
+          console.error('row render failed', rowErr, l);
+        }
       });
     }
 
@@ -1401,13 +1417,58 @@
         });
         const result = await resp.json();
         showStatus(result.message || result.error || 'Updated', resp.ok ? 'success' : 'error');
-        if (resp.ok) loadHistory();
+        if (resp.ok) {
+          // Update in-memory state so instant UI updates work without a full reload
+          const lead = allLeads.find(l => l.page_url === pageUrl);
+          if (lead) {
+            lead.status = status;
+            applyStatusToRow(pageUrl, status);
+          }
+          loadHistory();
+        }
       } catch (err) { showStatus('Failed: ' + err.message, 'error'); }
     }
 
     async function toggleContacted(pageUrl, currentStatus) {
       const next = (currentStatus || '').toLowerCase() === 'contacted' ? 'new' : 'contacted';
       await updateStatus(pageUrl, next);
+    }
+
+    // Update the status badge, Contact button, and Qualify button for a
+    // single history row in place — avoids waiting for a full history reload.
+    function applyStatusToRow(pageUrl, status) {
+      const s = (status || '').toLowerCase();
+      const tbody = document.getElementById('historyBody');
+      if (!tbody) return;
+      const rows = tbody.querySelectorAll('tr');
+      rows.forEach(tr => {
+        const cb = tr.querySelector('.hist-select');
+        if (!cb || cb.getAttribute('data-url') !== pageUrl) return;
+        // Status badge (column 8)
+        const badge = tr.children[7] && tr.children[7].querySelector('.badge');
+        if (badge) {
+          badge.className = 'badge ' + s;
+          badge.textContent = s;
+        }
+        // Contact button
+        const contactBtn = tr.querySelector('button.contact-toggle');
+        if (contactBtn) {
+          if (s === 'contacted') {
+            contactBtn.classList.add('contacted-active');
+            contactBtn.textContent = '✓ Contacted';
+          } else {
+            contactBtn.classList.remove('contacted-active');
+            contactBtn.textContent = 'Contact';
+          }
+        }
+        // Qualify button — once qualified, lock it as a "Qualified" badge
+        const qualifyBtn = tr.querySelector('button.qualify-toggle');
+        if (qualifyBtn) {
+          if (s === 'qualified') {
+            qualifyBtn.outerHTML = '<span class="badge qualified" style="font-size:11px;padding:4px 10px">✓ Qualified</span>';
+          }
+        }
+      });
     }
 
     async function deleteLead(pageUrl) {
