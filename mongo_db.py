@@ -418,17 +418,17 @@ def list_trashed_leads(user_id=None, is_admin=False):
         q['saved_by_user_id'] = to_object_id(user_id)
     return list(db.leads.find(q).sort('deleted_at', DESCENDING))
 
-def update_lead_status(page_url, user_id, status, follow_up_date=None):
+def update_lead_status(page_url, user_id, status, follow_up_date=None, is_admin=False):
     db = get_db()
     if db is None:
         return False
     update = {'status': status}
     if follow_up_date:
         update['follow_up_date'] = follow_up_date
-    result = db.leads.update_one(
-        {'page_url': page_url, 'saved_by_user_id': to_object_id(user_id)},
-        {'$set': update},
-    )
+    q = {'page_url': page_url}
+    if not is_admin and user_id is not None:
+        q['saved_by_user_id'] = to_object_id(user_id)
+    result = db.leads.update_one(q, {'$set': update})
     return result.modified_count > 0
 
 def trash_lead(page_url, user_id):

@@ -219,7 +219,11 @@
     .badge.new { background: rgba(59, 130, 246, 0.12); color: #93C5FD; }
     .badge.qualified, .badge.won { background: rgba(16, 185, 129, 0.12); color: #6EE7B7; }
     .badge.lost { background: rgba(239, 68, 68, 0.12); color: #FCA5A5; }
-    .badge.contacted { background: rgba(245, 158, 11, 0.12); color: #FCD34D; }
+    .badge.contacted, .btn-outline.contacted-active {
+      background: rgba(16, 185, 129, 0.18);
+      color: #6EE7B7;
+      border-color: rgba(16, 185, 129, 0.4);
+    }
     .badge.proposal { background: rgba(139, 92, 246, 0.12); color: #C4B5FD; }
     .badge.meeting { background: rgba(245, 158, 11, 0.12); color: #FCD34D; }
     .badge.duplicate { background: rgba(148, 163, 184, 0.12); color: #94A3B8; }
@@ -730,6 +734,7 @@
     </div>
     <div class="dp-actions">
       <button id="detailSave" class="btn-glow">Save Lead</button>
+      <button id="detailContact" class="btn-outline">Contact</button>
       <button id="detailQualify" class="btn-outline success">Qualify</button>
       <button id="detailRemove" class="btn-outline danger">Remove</button>
     </div>
@@ -1164,6 +1169,7 @@
       else { badge.classList.add('green'); document.getElementById('detailScoreText').textContent = 'Strong lead — prioritize outreach'; }
       document.getElementById('detailOverlay').classList.add('open');
       document.getElementById('detailPanel').style.display = '';
+      refreshDetailContactBtn();
     }
 
     function closeDetail() {
@@ -1208,6 +1214,40 @@
     document.getElementById('detailQualify').addEventListener('click', async () => {
       if (!detailLead) return;
       await quickAction(detailIdx, 'qualify');
+    });
+
+    function refreshDetailContactBtn() {
+      const btn = document.getElementById('detailContact');
+      if (!btn) return;
+      const s = ((detailLead && (detailLead.status || '')) || '').toLowerCase();
+      if (s === 'contacted') {
+        btn.textContent = '✓ Contacted';
+        btn.classList.add('contacted-active');
+      } else {
+        btn.textContent = 'Contact';
+        btn.classList.remove('contacted-active');
+      }
+    }
+
+    document.getElementById('detailContact').addEventListener('click', async () => {
+      if (!detailLead) return;
+      const pageUrl = detailLead.page_url || detailLead.url;
+      if (!pageUrl) { showStatus('Missing page URL.', 'error'); return; }
+      const cur = ((detailLead.status || '') || '').toLowerCase();
+      const next = cur === 'contacted' ? 'new' : 'contacted';
+      try {
+        const resp = await fetch(API_BASE + '/api/lead/status', {
+          method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (token || APP_TOKEN || '') },
+          body: JSON.stringify({ page_url: pageUrl, status: next }),
+        });
+        const result = await resp.json();
+        showStatus(result.message || result.error || 'Updated', resp.ok ? 'success' : 'error');
+        if (resp.ok) {
+          detailLead.status = next;
+          refreshDetailContactBtn();
+          if (detailIsHistory) loadHistory();
+        }
+      } catch (err) { showStatus('Failed: ' + err.message, 'error'); }
     });
 
     document.getElementById('detailRemove').addEventListener('click', async () => {
@@ -1314,7 +1354,7 @@
            <td>
              <div style="display:flex;gap:4px;flex-wrap:wrap">
                <button class="btn-outline success sm" onclick="updateStatus(decodeURIComponent('${ue(l.page_url)}'),'qualified')">Qualify</button>
-               <button class="btn-outline sm" onclick="updateStatus(decodeURIComponent('${ue(l.page_url)}'),'contacted')">Contact</button>
+               <button class="btn-outline sm${(l.status || '').toLowerCase() === 'contacted' ? ' contacted-active' : ''}" onclick="toggleContacted(decodeURIComponent('${ue(l.page_url)}'), '${esc((l.status || 'new').toLowerCase())}')">${(l.status || '').toLowerCase() === 'contacted' ? '✓ Contacted' : 'Contact'}</button>
                ${l.page_url && (l.platform || '').toLowerCase() === 'facebook' ? `<button class="btn-outline sm" onclick="apifyHistoryLead(decodeURIComponent('${ue(l.page_url)}'))" title="Re-extract via Apify to fill missing phone/email">⚡</button>` : ''}
                <button class="btn-outline danger sm" onclick="deleteLead(decodeURIComponent('${ue(l.page_url)}'))">Delete</button>
              </div>
@@ -1363,6 +1403,11 @@
         showStatus(result.message || result.error || 'Updated', resp.ok ? 'success' : 'error');
         if (resp.ok) loadHistory();
       } catch (err) { showStatus('Failed: ' + err.message, 'error'); }
+    }
+
+    async function toggleContacted(pageUrl, currentStatus) {
+      const next = (currentStatus || '').toLowerCase() === 'contacted' ? 'new' : 'contacted';
+      await updateStatus(pageUrl, next);
     }
 
     async function deleteLead(pageUrl) {
@@ -1490,6 +1535,7 @@
       else { badge.classList.add('green'); document.getElementById('detailScoreText').textContent = 'Strong lead — prioritize outreach'; }
       document.getElementById('detailOverlay').classList.add('open');
       document.getElementById('detailPanel').style.display = '';
+      refreshDetailContactBtn();
     }
 
     async function saveHistoryLead() {

@@ -889,10 +889,16 @@ def append_lead(data, notify_telegram=True, user_id=None):
     return True, 'Lead saved'
 
 
-def delete_lead(page_url, user_id=None):
+def delete_lead(page_url, user_id=None, is_admin=False):
     """Hard delete (legacy). Prefer trash_lead()."""
     if USE_MONGO:
-        ok = mongo_db.bulk_purge([page_url], user_id)
+        if is_admin:
+            from mongo_db import get_db as _mgdb
+            _db = _mgdb()
+            r = _db.leads.delete_one({'page_url': page_url}) if _db else None
+            ok = bool(r and r.deleted_count)
+        else:
+            ok = mongo_db.bulk_purge([page_url], user_id)
         if ok:
             print(f"LEAD DELETED: {page_url}", flush=True)
         return ok, 'Lead deleted' if ok else 'Lead not found'
@@ -960,20 +966,20 @@ def append_qualified_lead(lead):
     print(f"QUALIFIED: {lead.get('business_name')}", flush=True)
 
 
-def update_lead_status(page_url, new_status, follow_up_date=None, user_id=None):
+def update_lead_status(page_url, new_status, follow_up_date=None, user_id=None, is_admin=False):
     if new_status not in VALID_STATUSES:
         return False, f"Invalid status. Valid: {', '.join(VALID_STATUSES)}"
     if _mongo_alive():
-        ok = mongo_db.update_lead_status(page_url, user_id, new_status, follow_up_date)
+        ok = mongo_db.update_lead_status(page_url, user_id, new_status, follow_up_date, is_admin=is_admin)
         if not ok:
             return False, 'Lead not found'
         if new_status == 'qualified':
-            lead = mongo_db.find_lead_by_url(page_url, user_id)
+            lead = mongo_db.find_lead_by_url(page_url, user_id, is_admin=True) if is_admin else mongo_db.find_lead_by_url(page_url, user_id)
             if lead:
                 append_qualified_lead(mongo_db.serialize(lead))
                 send_telegram_notification(mongo_db.serialize(lead), 'qualified', user_id=user_id)
         else:
-            lead = mongo_db.find_lead_by_url(page_url, user_id, include_trashed=True)
+            lead = mongo_db.find_lead_by_url(page_url, user_id, include_trashed=True, is_admin=is_admin)
             if lead:
                 send_telegram_notification(mongo_db.serialize(lead), 'status_update', user_id=user_id)
         return True, f"Status updated to {new_status}"
@@ -1166,13 +1172,12 @@ def _generate_and_send_demo(chat_id, thread_id, lead_info, name, phone, category
         requests.post(f"{api}/sendMessage", json={"chat_id": chat_id, "message_thread_id": thread_id, "text": f"\u26a0\ufe0f Files at:\n<code>{out_path}</code>\n<code>{pdf_path}</code>", "parse_mode": "HTML"}, timeout=10)
 
 
-def _find_lead_by_name(name, user_id=None):
-    """Find a lead by business_name. user_id given \u2192 only that user's CSV. None \u2192 all CSVs (admin)."""
+def _find_lead_by_name(name, user_id=None, is_admin=False):
+    """Find a lead by business_name. user_id given → only that user's CSV. None or is_admin=True → all CSVs (admin)."""
     name_lower = name.strip().lower()
     if USE_MONGO:
         from db import get_db
-        is_admin = user_id is None
-        if is_admin:
+        if is_admin or user_id is None:
             q = {'business_name': {'$regex': f'^{name.strip()}$', '$options': 'i'}, 'deleted_at': None}
         else:
             q = {'business_name': {'$regex': f'^{name.strip()}$', '$options': 'i'}, 'saved_by_user_id': to_object_id(user_id), 'deleted_at': None}
@@ -3606,7 +3611,7 @@ class Handler(BaseHTTPRequestHandler):
             if not page_url or not new_status:
                 self._json(400, {'error': 'page_url and status required'})
                 return
-            ok, msg = update_lead_status(page_url, new_status, follow_up, user_id=user['id'])
+            ok, msg = update_lead_status(page_url, new_status, follow_up, user_id=user['id'], is_admin=user.get('role') in ('admin', 'super_admin'))
             if ok:
                 self._json(200, {'status': 'updated', 'message': msg})
             else:
@@ -3811,7 +3816,8 @@ class Handler(BaseHTTPRequestHandler):
                 self._json(400, {'error': "action must be qualify, disqualify, or demo"})
                 return
 
-            lead = _find_lead_by_name(name, user_id=user['id'])
+            is_admin = user.get('role') in ('admin', 'super_admin')
+            lead = _find_lead_by_name(name, user_id=user['id'], is_admin=is_admin)
             if not lead:
                 self._json(404, {'error': f'Lead "{name}" not found'})
                 return
@@ -3819,13 +3825,13 @@ class Handler(BaseHTTPRequestHandler):
             page_url = lead.get('page_url', '').strip()
 
             if action == 'qualify':
-                ok, msg = update_lead_status(page_url, 'qualified', user_id=user['id'])
+                ok, msg = update_lead_status(page_url, 'qualified', user_id=user['id'], is_admin=user.get('role') in ('admin', 'super_admin'))
                 if ok:
                     self._json(200, {'status': 'qualified', 'message': f'\u2705 {lead["business_name"]} qualified & saved to vault'})
                 else:
                     self._json(400, {'error': msg})
             elif action == 'disqualify':
-                ok, msg = delete_lead(page_url, user_id=user['id'])
+                ok, msg = delete_lead(page_url, user_id=user['id'], is_admin=is_admin)
                 if ok:
                     self._json(200, {'status': 'deleted', 'message': f'\u274c {lead["business_name"]} removed from leads'})
                 else:
