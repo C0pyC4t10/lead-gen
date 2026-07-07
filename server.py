@@ -1020,8 +1020,37 @@ def get_qualified_leads():
     if _mongo_alive():
         leads = mongo_db.serialize(mongo_db.list_qualified_leads())
         # Enrich qualified leads with missing fields from the original lead
+        # and resolve qualified_by -> user name if still missing (defense-in-depth).
+        users_by_id = {}
+        def _resolve_user_name(user_id):
+            if not user_id:
+                return ''
+            if user_id in users_by_id:
+                return users_by_id[user_id]
+            try:
+                oid = mongo_db.to_object_id(user_id) if hasattr(mongo_db, 'to_object_id') else None
+            except Exception:
+                oid = None
+            user_doc = None
+            if oid is not None:
+                user_doc = mongo_db.get_db().users.find_one({'_id': oid}, {'name': 1, 'email': 1})
+            if user_doc is None:
+                # Fallback: match by string id (older records)
+                user_doc = mongo_db.get_db().users.find_one({'id': user_id}, {'name': 1, 'email': 1})
+            if not user_doc:
+                user_doc = mongo_db.get_db().users.find_one({'_id': user_id}, {'name': 1, 'email': 1})
+            name = (user_doc or {}).get('name') or ''
+            if not name and user_doc and user_doc.get('email'):
+                name = user_doc['email'].split('@')[0]
+            users_by_id[user_id] = name or ''
+            return name or ''
         for l in leads:
-            if not l.get('followers') or not l.get('address'):
+            # Backfill qualified_by_name from the users collection if missing
+            if not l.get('qualified_by_name') and l.get('qualified_by'):
+                resolved = _resolve_user_name(l['qualified_by'])
+                if resolved:
+                    l['qualified_by_name'] = resolved
+            if not l.get('followers') or not l.get('address') or not l.get('website') or not l.get('platform'):
                 orig = mongo_db.find_lead_by_url(l.get('page_url', ''), user_id=None, is_admin=True)
                 if orig:
                     orig = mongo_db.serialize(orig)
