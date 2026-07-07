@@ -120,7 +120,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   const tokenInput = document.getElementById('tokenInput');
   const btnSaveToken = document.getElementById('btnSaveToken');
 
-  chrome.storage.local.get(['skarbolAuthToken', 'skarbolNotifyTelegram'], (cfg) => {
+  const DEFAULT_API_BASE = 'https://lead-gen-phcw.onrender.com';
+
+chrome.storage.local.get(['skarbolAuthToken', 'skarbolNotifyTelegram', 'skarbolApiBase'], (cfg) => {
     if (!cfg.skarbolAuthToken) {
       if (authBanner) authBanner.style.display = 'block';
     }
@@ -128,7 +130,34 @@ document.addEventListener('DOMContentLoaded', async () => {
       const chk = document.getElementById('chkNotifyTelegram');
       if (chk) chk.checked = false;
     }
+    // Show configured server URL with option to change
+    const apiBase = cfg.skarbolApiBase || DEFAULT_API_BASE;
+    const apiBaseLabel = document.getElementById('apiBaseLabel');
+    if (apiBaseLabel) apiBaseLabel.textContent = apiBase;
+    const apiBaseInput = document.getElementById('apiBaseInput');
+    if (apiBaseInput) apiBaseInput.value = apiBase;
   });
+
+  const changeLink = document.getElementById('changeServer');
+  const serverRow = document.getElementById('serverRow');
+  if (changeLink && serverRow) {
+    changeLink.addEventListener('click', (e) => {
+      e.preventDefault();
+      serverRow.style.display = serverRow.style.display === 'none' ? 'block' : 'none';
+    });
+  }
+  const btnSaveServer = document.getElementById('btnSaveServer');
+  if (btnSaveServer) {
+    btnSaveServer.addEventListener('click', () => {
+      const v = (document.getElementById('apiBaseInput').value || '').trim().replace(/\/+$/, '');
+      if (!v) return;
+      chrome.storage.local.set({ skarbolApiBase: v }, () => {
+        const lbl = document.getElementById('apiBaseLabel');
+        if (lbl) lbl.textContent = v;
+        showStatus('Server URL saved: ' + v, 'success');
+      });
+    });
+  }
 
   if (btnSaveToken) {
     btnSaveToken.addEventListener('click', () => {

@@ -1,11 +1,14 @@
+const DEFAULT_API_BASE = 'https://lead-gen-phcw.onrender.com';
+
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === 'save_lead') {
-    chrome.storage.local.get(['skarbolAuthToken'], (cfg) => {
+    chrome.storage.local.get(['skarbolAuthToken', 'skarbolApiBase'], (cfg) => {
       const token = cfg.skarbolAuthToken || '';
+      const apiBase = (cfg.skarbolApiBase || DEFAULT_API_BASE).replace(/\/+$/, '');
       const headers = { 'Content-Type': 'application/json' };
       if (token) headers['Authorization'] = 'Bearer ' + token;
 
-      fetch('http://127.0.0.1:8800/api/lead', {
+      fetch(apiBase + '/api/lead', {
         method: 'POST',
         headers: headers,
         body: JSON.stringify(request.data),

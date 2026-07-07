@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Skarbol Lead Gen",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Extract lead data from Facebook & Instagram business pages and save to Skarbol Tech lead-gen system.",
   "permissions": [
     "activeTab",
@@ -14,7 +14,9 @@
     "https://m.facebook.com/*",
     "https://www.instagram.com/*",
     "http://localhost:8800/*",
-    "http://127.0.0.1:8800/*"
+    "http://127.0.0.1:8800/*",
+    "https://lead-gen-phcw.onrender.com/*",
+    "https://*/*"
   ],
   "content_scripts": [
     {

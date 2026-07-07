@@ -233,8 +233,13 @@
         <input type="text" id="tokenInput" placeholder="Paste API token from web app" />
         <button id="btnSaveToken">Save</button>
       </div>
-      <div style="margin-top:6px; font-size:10px; color:#94A3B8;">
-        Get it: open <code style="color:#00E5FF">http://localhost:8800/leads</code>, sign in, then DevTools → <code style="color:#00E5FF">localStorage.getItem('token')</code>
+      <div style="margin-top:6px; font-size:10px; color:#94A3B8; line-height:1.5;">
+        Get it: open <code style="color:#00E5FF">https://lead-gen-phcw.onrender.com/leads</code>, sign in, then DevTools → <code style="color:#00E5FF">localStorage.getItem('skarbol_token')</code><br/>
+        Server URL is set to <code style="color:#00E5FF" id="apiBaseLabel">https://lead-gen-phcw.onrender.com</code> · <a href="#" id="changeServer" style="color:#67E8F9">change</a>
+      </div>
+      <div id="serverRow" style="display:none; margin-top:6px;">
+        <input type="text" id="apiBaseInput" placeholder="https://your-server.com" style="width:100%" />
+        <button id="btnSaveServer" style="margin-top:4px">Save server</button>
       </div>
     </div>
 
