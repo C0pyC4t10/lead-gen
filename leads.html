@@ -1807,35 +1807,39 @@
 
     async function saveHistoryLead() {
       if (!detailLead) return;
+      const page_url = document.getElementById('de_url').value.trim();
+      if (!page_url) { showStatus('Page URL is required', 'error'); return; }
+      const scoreStr = document.getElementById('de_score') ? document.getElementById('de_score').value : '';
       const data = {
-        date: detailLead.date || new Date().toISOString().split('T')[0],
-        platform: detailLead.platform || '',
+        page_url,
         business_name: document.getElementById('de_name').value.trim(),
-        page_url: document.getElementById('de_url').value.trim(),
+        platform: document.getElementById('de_platform') ? document.getElementById('de_platform').textContent.trim() : (detailLead.platform || ''),
+        category: document.getElementById('de_category').value.trim(),
         followers: document.getElementById('de_followers').value.trim(),
         email: document.getElementById('de_email').value.trim(),
         phone: document.getElementById('de_phone').value.trim(),
         website: document.getElementById('de_website').value.trim(),
-        has_website: document.getElementById('de_website').value.trim() ? 'true' : 'false',
         address: document.getElementById('de_address').value.trim(),
         last_post_date: document.getElementById('de_lastPost').value.trim(),
-        category: document.getElementById('de_category').value.trim(),
-        qualification_score: parseInt(detailLead.qualification_score) || 5,
-        status: detailLead.status || 'new',
         notes: detailLead.notes || '',
       };
+      if (scoreStr !== '') {
+        const n = parseInt(scoreStr);
+        if (!Number.isNaN(n)) data.qualification_score = n;
+      }
       showLoading('Updating...', '');
       try {
-        const resp = await fetch(API_BASE + '/api/lead', {
-          method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data),
+        const resp = await fetch(API_BASE + '/api/lead/update', {
+          method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (token || APP_TOKEN || '') }, body: JSON.stringify(data),
         });
         hideLoading();
         if (resp.ok) {
           showStatus('Updated: ' + data.business_name, 'success');
+          Object.assign(detailLead, data);
           loadHistory();
         } else {
           const err = await resp.json();
-          showStatus(err.message || 'Update failed', 'error');
+          showStatus(err.message || err.error || 'Update failed', 'error');
         }
       } catch (err) { hideLoading(); showStatus('Update failed: ' + err.message, 'error'); }
     }

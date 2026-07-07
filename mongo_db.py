@@ -466,6 +466,24 @@ def update_lead_status(page_url, user_id, status, follow_up_date=None, is_admin=
     return result.matched_count > 0
 
 
+def update_lead_fields(page_url, user_id, fields, is_admin=False):
+    """Update mutable fields on a lead (name, followers, email, phone, etc.).
+    Admins can edit any lead; non-admins only their own. Returns True if found.
+    """
+    db = get_db()
+    if db is None:
+        return False
+    q = {'page_url': page_url}
+    if not is_admin and user_id is not None:
+        q['saved_by_user_id'] = to_object_id(user_id)
+    update = dict(fields or {})
+    update['updated_at'] = now_iso()
+    if not update:
+        return False
+    result = db.leads.update_many(q, {'$set': update})
+    return result.matched_count > 0
+
+
 def set_lead_contacted(page_url, contacted, user_id=None, user_name='', is_admin=False):
     """Independent 'contacted' flag — coexists with status (qualified/won/etc).
 

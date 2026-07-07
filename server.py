@@ -3737,6 +3737,30 @@ class Handler(BaseHTTPRequestHandler):
                 self._json(200, {'status': 'updated', 'message': msg})
             else:
                 self._json(400, {'error': msg})
+        elif parsed.path == '/api/lead/update':
+            user = require_auth(self)
+            if not user: return
+            if data is None:
+                self._json(400, {'error': 'Invalid JSON'})
+                return
+            page_url = data.get('page_url', '').strip()
+            if not page_url:
+                self._json(400, {'error': 'page_url required'})
+                return
+            is_admin = user.get('role') in ('admin', 'super_admin')
+            ALLOWED_FIELDS = ('business_name', 'platform', 'category', 'followers',
+                              'email', 'phone', 'website', 'has_website',
+                              'address', 'last_post_date', 'notes',
+                              'qualification_score')
+            updates = {k: data[k] for k in ALLOWED_FIELDS if k in data}
+            if not updates:
+                self._json(400, {'error': 'no editable fields supplied'})
+                return
+            ok = mongo_db.update_lead_fields(page_url, user['id'], updates, is_admin=is_admin)
+            if ok:
+                self._json(200, {'status': 'updated', 'message': 'Lead saved'})
+            else:
+                self._json(404, {'error': 'Lead not found or no permission'})
         elif parsed.path == '/api/lead/contacted':
             # Toggle the independent 'contacted' flag on a lead. Coexists
             # with status (qualified/won/etc.) so both can show in history.
