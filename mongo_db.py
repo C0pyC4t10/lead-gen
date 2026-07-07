@@ -530,12 +530,15 @@ def list_status_history(page_url=None, user_id=None, limit=200):
         q['changed_by'] = to_object_id(user_id)
     return list(db.status_history.find(q).sort('changed_at', DESCENDING).limit(limit))
 
-def trash_lead(page_url, user_id):
+def trash_lead(page_url, user_id, is_admin=False):
     db = get_db()
     if db is None:
         return False
+    q = {'page_url': page_url, 'deleted_at': None}
+    if not is_admin:
+        q['saved_by_user_id'] = to_object_id(user_id)
     result = db.leads.update_one(
-        {'page_url': page_url, 'saved_by_user_id': to_object_id(user_id), 'deleted_at': None},
+        q,
         {'$set': {'deleted_at': now_iso(), 'status': 'trashed'}},
     )
     # Also remove from qualified pipeline
@@ -543,25 +546,27 @@ def trash_lead(page_url, user_id):
     db.qualified_remarks.delete_many({'page_url': page_url})
     return result.modified_count > 0 or q_removed.deleted_count > 0
 
-def restore_lead(page_url, user_id):
+def restore_lead(page_url, user_id, is_admin=False):
     db = get_db()
     if db is None:
         return False
+    q = {'page_url': page_url}
+    if not is_admin:
+        q['saved_by_user_id'] = to_object_id(user_id)
     result = db.leads.update_one(
-        {'page_url': page_url, 'saved_by_user_id': to_object_id(user_id)},
+        q,
         {'$set': {'deleted_at': None, 'status': 'new'}},
     )
     return result.modified_count > 0
 
-def purge_lead(page_url, user_id):
+def purge_lead(page_url, user_id, is_admin=False):
     db = get_db()
     if db is None:
         return False
-    result = db.leads.delete_one({
-        'page_url': page_url,
-        'saved_by_user_id': to_object_id(user_id),
-        'deleted_at': {'$ne': None},
-    })
+    q = {'page_url': page_url, 'deleted_at': {'$ne': None}}
+    if not is_admin:
+        q['saved_by_user_id'] = to_object_id(user_id)
+    result = db.leads.delete_one(q)
     return result.deleted_count > 0
 
 def bulk_trash(page_urls, user_id):
