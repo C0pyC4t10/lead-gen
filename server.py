@@ -1140,7 +1140,8 @@ def get_qualified_leads():
                 orig = mongo_db.serialize(orig)
                 # Always overwrite these with the latest from the source lead
                 for field in ('followers', 'address', 'website', 'platform',
-                              'phone', 'email', 'category', 'business_name'):
+                              'phone', 'email', 'category', 'business_name',
+                              'qualification_score'):
                     if orig.get(field) and orig.get(field) != l.get(field):
                         l[field] = orig[field]
         return leads
@@ -3987,6 +3988,8 @@ class Handler(BaseHTTPRequestHandler):
             if data is None:
                 self._json(400, {'error': 'Invalid JSON'})
                 return
+            user = require_auth(self)
+            if not user: return
             action = data.get('action', '').strip().lower()
             name = data.get('business_name', '').strip()
             if not action or not name:
@@ -4011,11 +4014,11 @@ class Handler(BaseHTTPRequestHandler):
                 else:
                     self._json(400, {'error': msg})
             elif action == 'disqualify':
-                ok, msg = delete_lead(page_url, user_id=user['id'], is_admin=is_admin)
+                ok = mongo_db.disqualify_lead(page_url) if _mongo_alive() else False
                 if ok:
-                    self._json(200, {'status': 'deleted', 'message': f'\u274c {lead["business_name"]} removed from leads'})
+                    self._json(200, {'status': 'disqualified', 'message': f'\u274c {lead["business_name"]} removed from qualified pipeline'})
                 else:
-                    self._json(400, {'error': msg})
+                    self._json(400, {'error': 'Lead not found in qualified pipeline'})
             elif action == 'demo':
                 n = lead.get('business_name', '') or lead.get('name', '')
                 p = lead.get('phone', '')
