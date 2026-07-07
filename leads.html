@@ -1247,9 +1247,18 @@
         if (!Array.isArray(rows) || rows.length === 0) { el.textContent = 'No status changes recorded yet.'; return; }
         el.innerHTML = rows.slice(0, 8).map(r => {
           const who = r.changed_by_name || (r.changed_by ? 'user' : 'system');
-          const when = (r.changed_at || '').replace('T', ' ').slice(0, 16);
+          // Convert UTC ISO from server to user's local timezone
+          const d = r.changed_at ? new Date(r.changed_at) : null;
+          const pad = n => String(n).padStart(2, '0');
+          const when = d && !isNaN(d.getTime())
+            ? d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate())
+              + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes())
+            : (r.changed_at || '');
+          const tzOffset = d ? -d.getTimezoneOffset() : 0;
+          const tzSign = tzOffset >= 0 ? '+' : '-';
+          const tzLabel = 'GMT' + tzSign + pad(Math.floor(Math.abs(tzOffset) / 60)) + ':' + pad(Math.abs(tzOffset) % 60);
           const st = r.status || '?';
-          return '<div>· <b>' + esc(who) + '</b> → <span class="badge ' + esc((st || '').toLowerCase()) + '" style="font-size:10px;padding:2px 6px">' + esc(st) + '</span> <span style="color:#64748B">' + esc(when) + '</span></div>';
+          return '<div>· <b>' + esc(who) + '</b> → <span class="badge ' + esc((st || '').toLowerCase()) + '" style="font-size:10px;padding:2px 6px">' + esc(st) + '</span> <span style="color:#64748B" title="Local: ' + esc(when) + ' (' + tzLabel + ') · UTC: ' + esc((r.changed_at || '').replace('T', ' ').slice(0, 16)) + '">' + esc(when) + '</span></div>';
         }).join('');
       } catch (_) {
         el.textContent = 'Failed to load history.';
