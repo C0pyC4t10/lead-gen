@@ -254,8 +254,12 @@ QUALIFIED_COLUMNS = CSV_COLUMNS + ['qualified_at', 'qualified_by']
 VALID_STATUSES = ['new', 'contacted', 'qualified', 'meeting', 'proposal', 'won', 'lost']
 
 TELEGRAM_TOKEN = os.environ.get('TELEGRAM_TOKEN', '')
-TELEGRAM_CHAT_ID = "-1004334910291"
-TELEGRAM_THREAD_ID = 354
+TELEGRAM_CHAT_ID = os.environ.get('TELEGRAM_CHAT_ID', "-1004334910291")
+TELEGRAM_THREAD_ID = int(os.environ.get('TELEGRAM_THREAD_ID', '354') or 354)
+# Qualified leads go to a separate chat topic ("Lead Gen Outreach") so the
+# qualification pipeline stays out of the general Lead Gen topic. Set via
+# env var so deploy-time config can override per-environment.
+TELEGRAM_QUALIFIED_THREAD_ID = int(os.environ.get('TELEGRAM_QUALIFIED_THREAD_ID', '355') or 355)
 
 DEMO_DIR = os.path.join(os.path.dirname(__file__), 'demo')
 MAPS_CSV_PATH = os.path.join(os.path.dirname(__file__), 'collected_leads', 'maps_leads.csv')
@@ -746,7 +750,10 @@ def is_social_website(url):
 
 def send_telegram_notification(lead, action='saved', user_id=None):
     chat_id = TELEGRAM_CHAT_ID
-    thread_id = TELEGRAM_THREAD_ID
+    # Qualified leads go to a dedicated "Lead Gen Outreach" topic so they
+    # don't pollute the general Lead Gen thread. Other actions (saved,
+    # duplicate, status_update) stay in the default topic.
+    thread_id = TELEGRAM_QUALIFIED_THREAD_ID if action == 'qualified' else TELEGRAM_THREAD_ID
     token = TELEGRAM_TOKEN
     if not token:
         print("  TELEGRAM_TOKEN not set, skipping notification", flush=True)
@@ -757,6 +764,9 @@ def send_telegram_notification(lead, action='saved', user_id=None):
             token = cfg['bot_token']
         if cfg.get('chat_id'):
             chat_id = cfg['chat_id']
+        # Per-user topic overrides (optional)
+        if action == 'qualified' and cfg.get('qualified_thread_id'):
+            thread_id = int(cfg['qualified_thread_id'])
     # If the configured chat is unreachable (parvez.skarbol situation
     # — user has a chat_id but bot was kicked/blocked), fall back to
     # the default Skarbol TELEGRAM_CHAT_ID so admins still see the
@@ -844,6 +854,8 @@ def send_telegram_notification(lead, action='saved', user_id=None):
         "disable_web_page_preview": True,
     }
     if chat_id == TELEGRAM_CHAT_ID:
+        # message_thread_id is only valid for forum topics in the default chat;
+        # for action='qualified' this routes to TELEGRAM_QUALIFIED_THREAD_ID.
         payload['message_thread_id'] = thread_id
 
     # Circuit-breaker: once a chat_id returns 'chat not found' or similar,
