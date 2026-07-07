@@ -1097,18 +1097,20 @@ def get_qualified_leads():
                 resolved = _resolve_user_name(l['qualified_by'])
                 if resolved:
                     l['qualified_by_name'] = resolved
-            if not l.get('followers') or not l.get('address') or not l.get('website') or not l.get('platform'):
-                orig = mongo_db.find_lead_by_url(l.get('page_url', ''), user_id=None, is_admin=True)
-                if orig:
-                    orig = mongo_db.serialize(orig)
-                    if not l.get('followers') and orig.get('followers'):
-                        l['followers'] = orig['followers']
-                    if not l.get('address') and orig.get('address'):
-                        l['address'] = orig['address']
-                    if not l.get('website') and orig.get('website'):
-                        l['website'] = orig['website']
-                    if not l.get('platform') and orig.get('platform'):
-                        l['platform'] = orig['platform']
+            # Refresh mutable fields from the freshest lead record. Qualified
+            # records are snapshots from when they were qualified, so they
+            # can hold stale values (followers count, phone, address, etc.)
+            # even after the original lead was re-saved with updated data.
+            # Always overwrite with the latest from the leads collection so
+            # the qualified panel shows the most current info.
+            orig = mongo_db.find_lead_by_url(l.get('page_url', ''), user_id=None, is_admin=True)
+            if orig:
+                orig = mongo_db.serialize(orig)
+                # Always overwrite these with the latest from the source lead
+                for field in ('followers', 'address', 'website', 'platform',
+                              'phone', 'email', 'category', 'business_name'):
+                    if orig.get(field) and orig.get(field) != l.get(field):
+                        l[field] = orig[field]
         return leads
     return leads_db.get_qualified_leads()
 

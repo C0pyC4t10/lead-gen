@@ -1308,13 +1308,19 @@
         if (!Array.isArray(rows) || rows.length === 0) { el.textContent = 'No status changes recorded yet.'; return; }
         el.innerHTML = rows.slice(0, 8).map(r => {
           const who = r.changed_by_name || (r.changed_by ? 'user' : 'system');
-          // Convert UTC ISO from server to user's local timezone
+          // Convert UTC ISO from server to user's local timezone (12-hour)
           const d = r.changed_at ? new Date(r.changed_at) : null;
           const pad = n => String(n).padStart(2, '0');
-          const when = d && !isNaN(d.getTime())
-            ? d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate())
-              + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes())
-            : (r.changed_at || '');
+          let when = '';
+          if (d && !isNaN(d.getTime())) {
+            let h = d.getHours();
+            const ampm = h >= 12 ? 'PM' : 'AM';
+            h = h % 12 || 12;
+            when = d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate())
+              + ' ' + h + ':' + pad(d.getMinutes()) + ' ' + ampm;
+          } else {
+            when = r.changed_at || '';
+          }
           const tzOffset = d ? -d.getTimezoneOffset() : 0;
           const tzSign = tzOffset >= 0 ? '+' : '-';
           const tzLabel = 'GMT' + tzSign + pad(Math.floor(Math.abs(tzOffset) / 60)) + ':' + pad(Math.abs(tzOffset) % 60);
