@@ -893,7 +893,7 @@
         return `<tr data-id="${esc(id)}" data-idx="${i}">
           <td onclick="event.stopPropagation()"><input type="checkbox" class="checkbox row-sel" data-id="${esc(id)}" ${checked} /></td>
           <td>
-            <div class="business-name" style="cursor:pointer" onclick="event.stopPropagation(); openDetail(${i})">${esc(l.business_name || 'Unknown')}</div>
+            <div class="business-name" style="cursor:pointer" data-lead-idx="${i}">${esc(l.business_name || 'Unknown')}</div>
             <div class="biz-url">${esc((l.page_url || '').substring(0, 80))}</div>
           </td>
           <td><span class="platform-tag ${platformCls}">${esc(plat)}</span></td>
@@ -936,9 +936,21 @@
         </tr>`;
       }).join('');
 
-      // Row-click → open detail was removed. Only the lead-name opens the panel;
-      // the rest of the row stays clickable for text selection and inline
-      // actions without accidentally opening the detail panel.
+      // Event delegation: only clicks on .business-name open the detail panel.
+      // This avoids whole-row click→panel conflicts with text selection, the
+      // checkbox, the action buttons, the outreach/remarks cells, etc.
+      tbody.onclick = function (e) {
+        const t = e.target;
+        if (!t || !t.closest) return;
+        const nameEl = t.closest('.business-name');
+        if (!nameEl) return;
+        const idx = parseInt(nameEl.getAttribute('data-lead-idx'), 10);
+        if (!isNaN(idx)) {
+          e.preventDefault();
+          e.stopPropagation();
+          try { openDetail(idx); } catch (err) { console.error('openDetail failed', err); }
+        }
+      };
 
       updateSelectAll();
     }
@@ -1156,7 +1168,7 @@
     // ── Detail panel (slide from right) ──
     let detailLead = null;
     function openDetail(idx) {
-      const lead = FILTERED[idx];
+      const lead = (typeof idx === 'object' && idx) ? idx : FILTERED[idx];
       if (!lead) return;
       detailLead = lead;
       const grade = computeGrade(lead);
