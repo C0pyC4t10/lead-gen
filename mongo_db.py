@@ -451,14 +451,19 @@ def update_lead_status(page_url, user_id, status, follow_up_date=None, is_admin=
     db = get_db()
     if db is None:
         return False
-    update = {'status': status}
+    update = {'status': status, 'updated_at': now_iso()}
     if follow_up_date:
         update['follow_up_date'] = follow_up_date
     q = {'page_url': page_url}
     if not is_admin and user_id is not None:
         q['saved_by_user_id'] = to_object_id(user_id)
-    result = db.leads.update_one(q, {'$set': update})
-    return result.modified_count > 0
+    # Use update_many so every duplicate row for the same page_url gets
+    # the new status. Old code used update_one which left other duplicates
+    # at 'new' even after the user "qualified" the lead. Also check
+    # matched_count (not modified_count) so setting the same status
+    # doesn't return False.
+    result = db.leads.update_many(q, {'$set': update})
+    return result.matched_count > 0
 
 
 def set_lead_contacted(page_url, contacted, user_id=None, user_name='', is_admin=False):
@@ -472,14 +477,15 @@ def set_lead_contacted(page_url, contacted, user_id=None, user_name='', is_admin
     q = {'page_url': page_url}
     if not is_admin and user_id is not None:
         q['saved_by_user_id'] = to_object_id(user_id)
-    update = {'contacted': bool(contacted)}
+    update = {'contacted': bool(contacted), 'updated_at': now_iso()}
     if contacted:
         update['contacted_at'] = now_iso()
         if user_id is not None:
             update['contacted_by'] = to_object_id(user_id)
         if user_name:
             update['contacted_by_name'] = user_name
-    result = db.leads.update_one(q, {'$set': update})
+    # update_many so duplicate rows for the same page_url all flip together
+    result = db.leads.update_many(q, {'$set': update})
     return result.matched_count > 0
 
 
