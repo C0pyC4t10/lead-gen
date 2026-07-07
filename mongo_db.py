@@ -127,6 +127,14 @@ def init_and_get_db():
                 print(f"[mongo] Dedupe pass removed {n} duplicate qualified rows", flush=True)
         except Exception as e:
             print(f"[mongo] Dedupe pass failed: {e}", flush=True)
+        # Backfill qualified_by_name from users collection so the qualified
+        # page detail panel can show "Qualified by <user>" for legacy records.
+        try:
+            n = backfill_qualified_by_names()
+            if n:
+                print(f"[mongo] Backfilled qualified_by_name on {n} leads", flush=True)
+        except Exception as e:
+            print(f"[mongo] qualified_by_name backfill failed: {e}", flush=True)
         _mongo_ready = True
         return _db
 
@@ -722,6 +730,44 @@ def dedupe_qualified_leads():
         })
         removed += r.deleted_count
     return removed
+
+
+def backfill_qualified_by_names():
+    """Resolve qualified_by ObjectId → user.name for old records missing the name.
+
+    Existing rows from before save_qualified_lead started populating
+    qualified_by_name have only the ObjectId. We look up each user by ID
+    and write their name into qualified_by_name. Safe to run multiple
+    times (only writes when name is empty or differs).
+    """
+    db = get_db()
+    if db is None:
+        return 0
+    updated = 0
+    cursor = db.qualified_leads.find({
+        'qualified_by': {'$ne': None},
+        '$or': [
+            {'qualified_by_name': {'$in': [None, '']}},
+            {'qualified_by_name': {'$exists': False}},
+        ],
+    })
+    for doc in cursor:
+        qby = doc.get('qualified_by')
+        if not qby:
+            continue
+        user = db.users.find_one({'_id': qby}, {'name': 1, 'email': 1})
+        if not user:
+            continue
+        name = user.get('name') or (user.get('email', '').split('@')[0] if user.get('email') else '')
+        if not name:
+            continue
+        r = db.qualified_leads.update_one(
+            {'_id': doc['_id']},
+            {'$set': {'qualified_by_name': name}},
+        )
+        if r.modified_count:
+            updated += 1
+    return updated
 
 def list_qualified_leads(limit=500):
     db = get_db()

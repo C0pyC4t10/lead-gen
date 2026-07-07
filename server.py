@@ -981,8 +981,13 @@ def update_lead_status(page_url, new_status, follow_up_date=None, user_id=None, 
         if new_status == 'qualified':
             lead = mongo_db.find_lead_by_url(page_url, user_id, is_admin=True) if is_admin else mongo_db.find_lead_by_url(page_url, user_id)
             if lead:
-                append_qualified_lead(mongo_db.serialize(lead))
-                send_telegram_notification(mongo_db.serialize(lead), 'qualified', user_id=user_id)
+                serialized = mongo_db.serialize(lead)
+                # Attach the qualifiying user's name so the qualified panel
+                # can render "Qualified by <user>" immediately, even for fresh
+                # records (backfill runs once on connect for legacy rows).
+                serialized['qualified_by_name'] = user_name or ''
+                append_qualified_lead(serialized)
+                send_telegram_notification(serialized, 'qualified', user_id=user_id)
         else:
             lead = mongo_db.find_lead_by_url(page_url, user_id, include_trashed=True, is_admin=is_admin)
             if lead:
@@ -3670,6 +3675,17 @@ class Handler(BaseHTTPRequestHandler):
                 self._json(200, {'status': 'ok', 'duplicates_removed': removed})
             else:
                 self._json(200, {'status': 'ok', 'duplicates_removed': 0})
+        elif parsed.path == '/api/admin/backfill-qualified-by':
+            user = require_auth(self)
+            if not user: return
+            if user.get('role') not in ('admin', 'super_admin'):
+                self._json(403, {'error': 'admin only'})
+                return
+            if _mongo_alive():
+                updated = mongo_db.backfill_qualified_by_names()
+                self._json(200, {'status': 'ok', 'backfilled': updated})
+            else:
+                self._json(200, {'status': 'ok', 'backfilled': 0})
         elif parsed.path == '/api/lead/delete':
             if data is None:
                 self._json(400, {'error': 'Invalid JSON'})

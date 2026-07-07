@@ -1166,10 +1166,17 @@
       sub.push('<span class="platform-tag" style="font-size:9px;padding:2px 6px">' + esc(getPlatform(lead)) + '</span>');
       sub.push('<span style="margin-left:6px;color:#94A3B8">Score</span> <b style="color:#F8FAFC">' + (parseInt(lead.qualification_score) || 0) + '</b>');
       sub.push('<span style="margin-left:10px">Grade <b style="color:' + (grade === 'A' ? '#6EE7B7' : grade === 'B' ? '#67E8F9' : grade === 'C' ? '#FCD34D' : '#FCA5A5') + '">' + grade + '</b></span>');
-      // Qualified by — prominent badge in header so ownership is always visible
+      // Qualified by — prominent badge in header so ownership is always visible.
+      // Falls back through: name → saved_by → qualified_by id (last resort).
       const qbyName = lead.qualified_by_name || lead.saved_by || '';
+      const qbyId = lead.qualified_by || '';
       if (qbyName) {
-        sub.push('<span style="margin-left:10px;display:inline-flex;align-items:center;gap:5px;padding:3px 9px;background:rgba(110,231,183,0.12);border:1px solid rgba(110,231,183,0.3);border-radius:6px;color:#6EE7B7;font-size:11px;font-weight:600" title="This lead was qualified by this user">👤 Qualified by ' + esc(qbyName) + '</span>');
+        sub.push('<span style="margin-left:10px;display:inline-flex;align-items:center;gap:5px;padding:3px 9px;background:rgba(110,231,183,0.12);border:1px solid rgba(110,231,183,0.3);border-radius:6px;color:#6EE7B7;font-size:11px;font-weight:600" title="Qualified by ' + esc(qbyName) + (qbyId ? ' (id: ' + esc(qbyId.slice(-8)) + ')' : '') + '">👤 Qualified by ' + esc(qbyName) + (qbyId ? ' <span style="opacity:0.7;font-size:10px">·' + esc(qbyId.slice(-6)) + '</span>' : '') + '</span>');
+      } else if (qbyId) {
+        // Legacy record with only the qualified_by id — show the short id
+        sub.push('<span style="margin-left:10px;display:inline-flex;align-items:center;gap:5px;padding:3px 9px;background:rgba(110,231,183,0.12);border:1px solid rgba(110,231,183,0.3);border-radius:6px;color:#6EE7B7;font-size:11px;font-weight:600" title="Qualified by user id ' + esc(qbyId) + '">👤 Qualified by user ' + esc(qbyId.slice(-8)) + '</span>');
+      } else {
+        sub.push('<span style="margin-left:10px;display:inline-flex;align-items:center;gap:5px;padding:3px 9px;background:rgba(148,163,184,0.10);border:1px solid rgba(148,163,184,0.2);border-radius:6px;color:#94A3B8;font-size:11px;font-weight:500">👤 Qualified by unknown (legacy)</span>');
       }
       document.getElementById('dpSub').innerHTML = sub.join('');
       renderDetailBody(lead);
@@ -1200,7 +1207,14 @@
         // Permission / ownership — who qualified this lead and when
         '<div class="dp-section">' +
           '<h4>Permission</h4>' +
-          dpField('Qualified by', '<span style="color:#6EE7B7;font-weight:600">' + esc(lead.qualified_by_name || lead.saved_by || '—') + '</span>') +
+          dpField('Qualified by',
+            '<span style="color:#6EE7B7;font-weight:600">' +
+              esc(lead.qualified_by_name || lead.saved_by || '—') +
+            '</span>' +
+            (lead.qualified_by
+              ? ' <span style="font-size:10px;color:#64748B;margin-left:6px" title="User id">id:' + esc(lead.qualified_by.slice(-10)) + '</span>'
+              : '')
+          ) +
           (function () {
             const q = formatLocalWithUtcTooltip(lead.qualified_at);
             return dpField('Qualified at', '<span title="' + esc(q.title) + '" style="cursor:help">' + esc(q.text) + '</span>');
