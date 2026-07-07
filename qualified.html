@@ -515,6 +515,7 @@
               <th class="sortable" data-sort="name">Business <span class="sort-ind">⇅</span></th>
               <th>Platform</th>
               <th class="sortable sorted" data-sort="score">Quality <span class="sort-ind">↓</span></th>
+              <th class="sortable" data-sort="qualified_by">Qualified by <span class="sort-ind">⇅</span></th>
               <th>Contact</th>
               <th>Outreach</th>
               <th>Remarks</th>
@@ -858,6 +859,8 @@
         if (sortKey === 'score_desc') return (parseInt(b.qualification_score) || 0) - (parseInt(a.qualification_score) || 0);
         if (sortKey === 'last_contact_desc') return (lastOutreachDate(b) || '').localeCompare(lastOutreachDate(a) || '');
         if (sortKey === 'name_asc') return (a.business_name || '').localeCompare(b.business_name || '');
+        if (sortKey === 'qualified_by_asc') return ((a.qualified_by_name || a.saved_by || '')).localeCompare((b.qualified_by_name || b.saved_by || ''));
+        if (sortKey === 'qualified_by_desc') return ((b.qualified_by_name || b.saved_by || '')).localeCompare((a.qualified_by_name || a.saved_by || ''));
         return 0;
       });
       render();
@@ -899,6 +902,11 @@
               <span class="grade-badge ${grade}">${grade}</span>
               <div class="grade-meta">${gradeBlurb(grade, l)}</div>
             </div>
+          </td>
+          <td class="qb-cell" data-sort-key="${esc((l.qualified_by_name || l.saved_by || '').toLowerCase())}">
+            ${(l.qualified_by_name || l.saved_by)
+              ? '<span style="display:inline-flex;align-items:center;gap:4px;padding:3px 8px;background:rgba(110,231,183,0.10);border:1px solid rgba(110,231,183,0.25);border-radius:5px;color:#6EE7B7;font-size:11px;font-weight:600" title="Qualified by ' + esc(l.qualified_by_name || l.saved_by) + '">👤 ' + esc(l.qualified_by_name || l.saved_by) + '</span>'
+              : '<span style="color:#64748B;font-size:11px">—</span>'}
           </td>
           <td class="contact-cell">
             ${l.phone ? '<a href="tel:' + esc(l.phone) + '" onclick="event.stopPropagation()">📞 ' + esc(l.phone) + '</a>' : '<span class="miss">No phone</span>'}
@@ -1158,6 +1166,11 @@
       sub.push('<span class="platform-tag" style="font-size:9px;padding:2px 6px">' + esc(getPlatform(lead)) + '</span>');
       sub.push('<span style="margin-left:6px;color:#94A3B8">Score</span> <b style="color:#F8FAFC">' + (parseInt(lead.qualification_score) || 0) + '</b>');
       sub.push('<span style="margin-left:10px">Grade <b style="color:' + (grade === 'A' ? '#6EE7B7' : grade === 'B' ? '#67E8F9' : grade === 'C' ? '#FCD34D' : '#FCA5A5') + '">' + grade + '</b></span>');
+      // Qualified by — prominent badge in header so ownership is always visible
+      const qbyName = lead.qualified_by_name || lead.saved_by || '';
+      if (qbyName) {
+        sub.push('<span style="margin-left:10px;display:inline-flex;align-items:center;gap:5px;padding:3px 9px;background:rgba(110,231,183,0.12);border:1px solid rgba(110,231,183,0.3);border-radius:6px;color:#6EE7B7;font-size:11px;font-weight:600" title="This lead was qualified by this user">👤 Qualified by ' + esc(qbyName) + '</span>');
+      }
       document.getElementById('dpSub').innerHTML = sub.join('');
       renderDetailBody(lead);
       document.getElementById('dp').classList.add('open');
