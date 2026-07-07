@@ -363,7 +363,11 @@ def count_users_grouped_by_role():
     db = get_db()
     if db is None:
         return {}
-    pipeline = [{'$group': {'_id': '$role', 'count': {'$sum': 1}}}]
+    # Skip soft-deleted users — they shouldn't inflate the role counts.
+    pipeline = [
+        {'$match': {'deleted_at': None}},
+        {'$group': {'_id': '$role', 'count': {'$sum': 1}}},
+    ]
     return {r['_id']: r['count'] for r in db.users.aggregate(pipeline)}
 
 # ── Leads ────────────────────────────────────────────────────────────
@@ -1069,9 +1073,15 @@ def admin_stats():
     db = get_db()
     if db is None:
         return {'total_users': 0, 'total_leads': 0, 'role_counts': {}, 'statuses': {}, 'this_month': 0, 'month_label': ''}
-    total_users = db.users.count_documents({})
+    # Exclude soft-deleted users (deleted_at != None) from the count and
+    # role breakdown so the admin dashboard doesn't count trashed users.
+    active_users_filter = {'deleted_at': None}
+    total_users = db.users.count_documents(active_users_filter)
     total_leads = db.leads.count_documents({'deleted_at': None})
-    role_counts = {r['_id']: r['count'] for r in db.users.aggregate([{'$group': {'_id': '$role', 'count': {'$sum': 1}}}])}
+    role_counts = {r['_id']: r['count'] for r in db.users.aggregate([
+        {'$match': active_users_filter},
+        {'$group': {'_id': '$role', 'count': {'$sum': 1}}},
+    ])}
     statuses = {r['_id']: r['count'] for r in db.leads.aggregate([
         {'$match': {'deleted_at': None}},
         {'$group': {'_id': '$status', 'count': {'$sum': 1}}},
