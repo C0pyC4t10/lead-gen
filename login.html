@@ -272,7 +272,8 @@
           (function(){ var i=new Image(); i.onload=function(){ var a=document.getElementById('profileLink'); a.innerHTML=''; a.style.background='none'; a.style.padding='0'; a.appendChild(i); }; i.onerror=function(){}; i.src=window.location.origin+'/api/avatars/'+user.id+'.jpg?t='+Date.now(); })();
           document.getElementById('logoutBtn').style.display = 'none';
           if (user.role === 'admin' || user.role === 'super_admin') {
-            document.getElementById('adminLink').style.display = 'none';
+            // Show Admin link in desktop top nav for admins
+            document.getElementById('adminLink').style.display = '';
           }
           document.getElementById('logoutBtn').addEventListener('click', function(){
             fetch(window.location.origin + '/api/auth/logout', {method:'POST',headers:{'Authorization':'Bearer '+token}}).catch(function(){});
@@ -286,6 +287,6 @@
   </script>
   <script>document.querySelectorAll('.nav-links > a').forEach(function(a){var h=a.getAttribute('href');if(h===location.pathname||(h!=='/'&&location.pathname.startsWith(h))){a.classList.add('active');}})</script>
   <!-- Shared Facebook-style tab bar (every page) -->
-  <script src="/assets/tabbar.js?v=10" defer></script>
+  <script src="/assets/tabbar.js?v=11" defer></script>
 </body>
 </html>

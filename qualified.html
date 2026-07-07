@@ -1459,9 +1459,18 @@
       };
       hide('loginLink');
       hide('profileLink');
-      hide('adminLink');
       hide('logoutBtn');
       hide('leadBadge');
+      // Show admin link in desktop top nav for admins only
+      try {
+        const _u = JSON.parse(localStorage.getItem('skarbol_user') || 'null');
+        if (_u && (_u.role === 'admin' || _u.role === 'super_admin')) {
+          const a = document.getElementById('adminLink');
+          if (a) a.style.display = '';
+        } else {
+          hide('adminLink');
+        }
+      } catch (_) { hide('adminLink'); }
       document.getElementById('logoutBtn').addEventListener('click', function() {
         if (token) fetch(API_BASE + '/api/auth/logout', { method: 'POST', headers: { 'Authorization': 'Bearer ' + token } }).catch(function(){});
         try { localStorage.removeItem('skarbol_token'); localStorage.removeItem('skarbol_user'); } catch (_) {}
@@ -1471,7 +1480,7 @@
     });
   </script>
   <script src="/assets/scraven-modal.js" defer></script>
-  <script src="/assets/tabbar.js?v=10" defer></script>
+  <script src="/assets/tabbar.js?v=11" defer></script>
   <script>document.querySelectorAll('.nav-links > a').forEach(a=>{var h=a.getAttribute('href');if(h===location.pathname||(h!=='/'&&location.pathname.startsWith(h))){a.classList.add('active');}});</script>
 </body>
 </html>
