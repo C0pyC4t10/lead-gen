@@ -1168,9 +1168,26 @@
     // ── Detail panel (slide from right) ──
     let detailLead = null;
     function openDetail(idx) {
-      const lead = (typeof idx === 'object' && idx) ? idx : FILTERED[idx];
-      if (!lead) return;
+      let lead = null;
+      if (typeof idx === 'object' && idx) {
+        lead = idx;
+      } else if (typeof idx === 'number') {
+        lead = FILTERED[idx] || ALL_LEADS[idx];
+      } else if (typeof idx === 'string') {
+        // Allow lookup by page_url as a fallback
+        lead = ALL_LEADS.find(l => l.page_url === idx) || FILTERED.find(l => l.page_url === idx);
+      }
+      if (!lead) { console.warn('openDetail: no lead for idx', idx); return; }
       detailLead = lead;
+      try {
+        renderDetailPanel(lead);
+      } catch (err) {
+        console.error('openDetail render failed', err);
+        showToast('Failed to open lead detail: ' + err.message, 'error');
+      }
+    }
+
+    function renderDetailPanel(lead) {
       const grade = computeGrade(lead);
       const status = computeOutreachStatus(lead);
       document.getElementById('dpName').textContent = lead.business_name || 'Unknown';
@@ -1191,7 +1208,7 @@
         sub.push('<span style="margin-left:10px;display:inline-flex;align-items:center;gap:5px;padding:3px 9px;background:rgba(148,163,184,0.10);border:1px solid rgba(148,163,184,0.2);border-radius:6px;color:#94A3B8;font-size:11px;font-weight:500">👤 Qualified by unknown (legacy)</span>');
       }
       document.getElementById('dpSub').innerHTML = sub.join('');
-      renderDetailBody(lead);
+      renderDetailBodySafe(lead);
       document.getElementById('dp').classList.add('open');
       document.getElementById('dpOverlay').classList.add('open');
     }
@@ -1200,7 +1217,7 @@
       document.getElementById('dpOverlay').classList.remove('open');
       detailLead = null;
     }
-    function renderDetailBody(lead) {
+    function renderDetailBodyInternal(lead) {
       const body = document.getElementById('dpBody');
       const outreachLogs = lead.outreach_logs || [];
       const remarks = lead.remarks || [];
@@ -1262,6 +1279,21 @@
           '</div>' +
         '</div>';
       body.innerHTML = html;
+    }
+
+    function renderDetailBodySafe(lead) {
+      try {
+        renderDetailBodyInternal(lead);
+      } catch (err) {
+        console.error('renderDetailBody failed', err);
+        const body = document.getElementById('dpBody');
+        if (body) {
+          body.innerHTML = '<div style="padding:24px;color:#FCA5A5">' +
+            '<b>Detail render failed</b><br/>' +
+            esc(err.message || String(err)) +
+            '</div>';
+        }
+      }
     }
     function dpField(label, value, cls) {
       return '<div class="dp-field"><div class="lbl">' + label + '</div><div class="val ' + (cls || '') + '">' + value + '</div></div>';
