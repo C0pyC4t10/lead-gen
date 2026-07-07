@@ -1159,6 +1159,15 @@
             '<div class="dp-stat"><div class="l">Outreach</div><div class="v" style="color:#67E8F9">' + outreachLogs.length + '</div></div>' +
           '</div>' +
         '</div>' +
+        // Permission / ownership — who qualified this lead and when
+        '<div class="dp-section">' +
+          '<h4>Permission</h4>' +
+          dpField('Qualified by', '<span style="color:#6EE7B7;font-weight:600">' + esc(lead.qualified_by_name || lead.saved_by || '—') + '</span>') +
+          dpField('Qualified at', esc((lead.qualified_at || '').replace('T', ' ').slice(0, 16) || '—')) +
+          (lead.first_qualified_at && lead.first_qualified_at !== lead.qualified_at
+            ? dpField('First qualified', esc((lead.first_qualified_at || '').replace('T', ' ').slice(0, 16)))
+            : '') +
+        '</div>' +
         // Business info
         '<div class="dp-section">' +
           '<h4>Business</h4>' +

@@ -731,6 +731,7 @@
     <div class="dp-section">
       <div class="dp-sectitle">Activity</div>
       <div class="dp-field"><span class="dp-label">Last Post</span><div class="dp-value"><input class="inline-edit" id="de_lastPost" /></div></div>
+      <div class="dp-field"><span class="dp-label">Status History</span><div class="dp-value" id="de_statusHistory" style="font-size:12px;color:#94A3B8;line-height:1.6">Loading…</div></div>
     </div>
     <div class="dp-actions">
       <button id="detailSave" class="btn-glow">Save Lead</button>
@@ -1175,6 +1176,7 @@
       document.getElementById('detailOverlay').classList.add('open');
       document.getElementById('detailPanel').style.display = '';
       refreshDetailContactBtn();
+      loadStatusHistory(lead.page_url || lead.url || '');
     }
 
     function closeDetail() {
@@ -1231,6 +1233,26 @@
       } else {
         btn.textContent = 'Contact';
         btn.classList.remove('contacted-active');
+      }
+    }
+
+    async function loadStatusHistory(pageUrl) {
+      const el = document.getElementById('de_statusHistory');
+      if (!el) return;
+      el.textContent = 'Loading…';
+      try {
+        const resp = await fetch(API_BASE + '/api/lead/status-history?page_url=' + encodeURIComponent(pageUrl), { headers: authHeaders() });
+        if (!resp.ok) { el.textContent = 'No status history yet.'; return; }
+        const rows = await resp.json();
+        if (!Array.isArray(rows) || rows.length === 0) { el.textContent = 'No status changes recorded yet.'; return; }
+        el.innerHTML = rows.slice(0, 8).map(r => {
+          const who = r.changed_by_name || (r.changed_by ? 'user' : 'system');
+          const when = (r.changed_at || '').replace('T', ' ').slice(0, 16);
+          const st = r.status || '?';
+          return '<div>· <b>' + esc(who) + '</b> → <span class="badge ' + esc((st || '').toLowerCase()) + '" style="font-size:10px;padding:2px 6px">' + esc(st) + '</span> <span style="color:#64748B">' + esc(when) + '</span></div>';
+        }).join('');
+      } catch (_) {
+        el.textContent = 'Failed to load history.';
       }
     }
 
@@ -1410,6 +1432,16 @@
     }
 
     async function updateStatus(pageUrl, status) {
+      // Disable the row buttons immediately so the user can't double-click
+      // while the request is in flight (fixes "buttons not smooth" issue).
+      const tbody = document.getElementById('historyBody');
+      if (tbody) {
+        const cb = tbody.querySelector('.hist-select[data-url="' + cssEscape(pageUrl) + '"]');
+        if (cb) {
+          const tr = cb.closest('tr');
+          if (tr) tr.querySelectorAll('button').forEach(b => { b.disabled = true; });
+        }
+      }
       try {
         const resp = await fetch(API_BASE + '/api/lead/status', {
           method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (token || APP_TOKEN || '') },
@@ -1418,15 +1450,40 @@
         const result = await resp.json();
         showStatus(result.message || result.error || 'Updated', resp.ok ? 'success' : 'error');
         if (resp.ok) {
-          // Update in-memory state so instant UI updates work without a full reload
+          // Update in-memory state and row UI instantly
           const lead = allLeads.find(l => l.page_url === pageUrl);
-          if (lead) {
-            lead.status = status;
-            applyStatusToRow(pageUrl, status);
+          if (lead) lead.status = status;
+          applyStatusToRow(pageUrl, status);
+          // Defer full reload so the user sees the change immediately and the
+          // buttons feel snappy. Also avoids race conditions where two clicks
+          // fire loadHistory() back-to-back.
+          clearTimeout(window.__historyReloadTimer);
+          window.__historyReloadTimer = setTimeout(loadHistory, 1200);
+        } else {
+          // Re-enable buttons on failure
+          if (tbody) {
+            const cb = tbody.querySelector('.hist-select[data-url="' + cssEscape(pageUrl) + '"]');
+            if (cb) {
+              const tr = cb.closest('tr');
+              if (tr) tr.querySelectorAll('button').forEach(b => { b.disabled = false; });
+            }
           }
-          loadHistory();
         }
-      } catch (err) { showStatus('Failed: ' + err.message, 'error'); }
+      } catch (err) {
+        showStatus('Failed: ' + err.message, 'error');
+        if (tbody) {
+          const cb = tbody.querySelector('.hist-select[data-url="' + cssEscape(pageUrl) + '"]');
+          if (cb) {
+            const tr = cb.closest('tr');
+            if (tr) tr.querySelectorAll('button').forEach(b => { b.disabled = false; });
+          }
+        }
+      }
+    }
+
+    function cssEscape(s) {
+      if (window.CSS && CSS.escape) return CSS.escape(s);
+      return String(s || '').replace(/(["\\])/g, '\\$1');
     }
 
     async function toggleContacted(pageUrl, currentStatus) {
@@ -1473,6 +1530,11 @@
 
     async function deleteLead(pageUrl) {
       if (!(await scravenConfirm('Move this lead to Trash? You can recover it from /trash.'))) return;
+      // Disable row buttons while request is in flight
+      const tbody = document.getElementById('historyBody');
+      const cb = tbody && tbody.querySelector('.hist-select[data-url="' + cssEscape(pageUrl) + '"]');
+      const tr = cb && cb.closest('tr');
+      if (tr) tr.querySelectorAll('button').forEach(b => { b.disabled = true; });
       try {
         const resp = await fetch(API_BASE + '/api/lead/delete', {
           method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
@@ -1481,7 +1543,11 @@
         const result = await resp.json();
         showStatus(result.message || 'Moved to Trash', resp.ok ? 'success' : 'error');
         if (resp.ok) loadHistory();
-      } catch (err) { showStatus('Failed: ' + err.message, 'error'); }
+        else if (tr) tr.querySelectorAll('button').forEach(b => { b.disabled = false; });
+      } catch (err) {
+        showStatus('Failed: ' + err.message, 'error');
+        if (tr) tr.querySelectorAll('button').forEach(b => { b.disabled = false; });
+      }
     }
 
     document.getElementById('btnRefresh').addEventListener('click', loadHistory);
@@ -1597,6 +1663,7 @@
       document.getElementById('detailOverlay').classList.add('open');
       document.getElementById('detailPanel').style.display = '';
       refreshDetailContactBtn();
+      loadStatusHistory(pageUrl);
     }
 
     async function saveHistoryLead() {

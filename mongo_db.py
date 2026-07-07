@@ -120,6 +120,13 @@ def init_and_get_db():
         _client = client
         _db = _client[DB_NAME]
         _ensure_indexes(_db)
+        # One-shot dedupe of any pre-existing qualified_leads duplicates
+        try:
+            n = dedupe_qualified_leads()
+            if n:
+                print(f"[mongo] Dedupe pass removed {n} duplicate qualified rows", flush=True)
+        except Exception as e:
+            print(f"[mongo] Dedupe pass failed: {e}", flush=True)
         _mongo_ready = True
         return _db
 
@@ -134,8 +141,15 @@ def _ensure_indexes(db):
         db.leads.create_index([('saved_by_user_id', ASCENDING), ('deleted_at', ASCENDING)])
         db.leads.create_index([('status', ASCENDING)])
         db.leads.create_index([('date', DESCENDING)])
-        db.qualified_leads.create_index([('page_url', ASCENDING), ('qualified_at', ASCENDING)], unique=True)
+        # One row per page_url — re-qualifying updates the same record
+        # (qualified_at/qualified_by/qualified_by_name) instead of creating duplicates.
+        db.qualified_leads.create_index([('page_url', ASCENDING)], unique=True)
         db.qualified_leads.create_index([('qualified_at', DESCENDING)])
+        # Drop legacy compound index that allowed duplicates
+        try:
+            db.qualified_leads.drop_index('page_url_1_qualified_at_1')
+        except Exception:
+            pass
         db.daily_qualified.create_index([('date', DESCENDING)])
         db.daily_qualified.create_index([('page_url', ASCENDING), ('date', ASCENDING)], unique=True)
         # Outreach tracking: one collection per outreach log entry
@@ -146,6 +160,9 @@ def _ensure_indexes(db):
         db.qualified_remarks.create_index([('page_url', ASCENDING), ('created_at', DESCENDING)])
         db.qualified_remarks.create_index([('qualified_lead_id', ASCENDING)])
         db.qualified_remarks.create_index([('author_user_id', ASCENDING), ('created_at', DESCENDING)])
+        # Status-change audit trail (who marked this lead contacted/qualified/etc.)
+        db.status_history.create_index([('page_url', ASCENDING), ('changed_at', DESCENDING)])
+        db.status_history.create_index([('changed_by', ASCENDING), ('changed_at', DESCENDING)])
         db.fcommerce_leads.create_index([('page_url', ASCENDING)], unique=True)
         db.linkedin_leads.create_index([('url', ASCENDING)])
         db.maps_leads.create_index([('page_url', ASCENDING)])
@@ -431,6 +448,37 @@ def update_lead_status(page_url, user_id, status, follow_up_date=None, is_admin=
     result = db.leads.update_one(q, {'$set': update})
     return result.modified_count > 0
 
+
+def log_status_change(page_url, status, user_id, user_name, is_admin=False):
+    """Append a status-change event to the audit log. Returns event id (str) or None."""
+    db = get_db()
+    if db is None:
+        return None
+    try:
+        doc = {
+            'page_url': page_url,
+            'status': status,
+            'changed_by': to_object_id(user_id) if user_id else None,
+            'changed_by_name': user_name or '',
+            'changed_at': now_iso(),
+        }
+        r = db.status_history.insert_one(doc)
+        return str(r.inserted_id)
+    except Exception:
+        return None
+
+
+def list_status_history(page_url=None, user_id=None, limit=200):
+    db = get_db()
+    if db is None:
+        return []
+    q = {}
+    if page_url:
+        q['page_url'] = page_url
+    if user_id:
+        q['changed_by'] = to_object_id(user_id)
+    return list(db.status_history.find(q).sort('changed_at', DESCENDING).limit(limit))
+
 def trash_lead(page_url, user_id):
     db = get_db()
     if db is None:
@@ -579,12 +627,22 @@ def disqualify_lead(page_url):
     return q_removed.deleted_count > 0
 
 def save_qualified_lead(lead, qualified_by_user_id):
+    """Insert or update a qualified lead keyed by page_url.
+
+    Re-qualifying the same lead (e.g., admin A then admin B) updates the
+    existing record instead of creating a duplicate — qualified_at,
+    qualified_by, qualified_by_name are refreshed and the latest field
+    values overwrite any stale ones. Returns True on success.
+    """
     db = get_db()
     if db is None:
         return False
+    page_url = (lead.get('page_url') or '').strip()
+    if not page_url:
+        return False
     doc = {
         'lead_id': to_object_id(lead.get('id')) if lead.get('id') else None,
-        'page_url': lead.get('page_url', ''),
+        'page_url': page_url,
         'business_name': lead.get('business_name', ''),
         'phone': lead.get('phone', ''),
         'email': lead.get('email', ''),
@@ -602,10 +660,35 @@ def save_qualified_lead(lead, qualified_by_user_id):
         'notes': lead.get('notes', ''),
     }
     try:
-        db.qualified_leads.insert_one(doc)
+        db.qualified_leads.update_one(
+            {'page_url': page_url},
+            {'$set': doc, '$setOnInsert': {'first_qualified_at': doc['qualified_at']}},
+            upsert=True,
+        )
         return True
     except Exception:
         return False
+
+
+def dedupe_qualified_leads():
+    """One-shot cleanup: collapse duplicate qualified rows by page_url, keep most recent."""
+    db = get_db()
+    if db is None:
+        return 0
+    pipeline = [
+        {'$sort': {'qualified_at': -1}},
+        {'$group': {'_id': '$page_url', 'doc': {'$first': '$$ROOT'}, 'count': {'$sum': 1}}},
+        {'$match': {'count': {'$gt': 1}}},
+    ]
+    removed = 0
+    for group in db.qualified_leads.aggregate(pipeline):
+        # Delete every doc with that page_url except the most recent one we kept
+        r = db.qualified_leads.delete_many({
+            'page_url': group['_id'],
+            '_id': {'$ne': group['doc']['_id']},
+        })
+        removed += r.deleted_count
+    return removed
 
 def list_qualified_leads(limit=500):
     db = get_db()

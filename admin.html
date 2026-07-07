@@ -138,6 +138,10 @@
       <div class="stat-card"><div class="stat-value" id="statQualified">—</div><div class="stat-label">Qualified</div></div>
     </div>
 
+    <div style="display:flex;gap:8px;margin:0 0 16px;flex-wrap:wrap">
+      <button class="btn-outline" onclick="dedupeQualified()" id="btnDedupeQualified">🧹 Dedupe Qualified</button>
+    </div>
+
     <div class="card">
       <div class="card-header">Users</div>
       <div class="scroll-x">
@@ -390,6 +394,25 @@
           showStatus(r.error || 'Restore failed', 'error');
         }
       } catch (e) { showStatus('Connection error', 'error'); }
+    }
+
+    async function dedupeQualified() {
+      if (!(await scravenConfirm('Collapse duplicate qualified rows by page_url? Keeps the most recent qualified_by / qualified_at.'))) return;
+      const btn = document.getElementById('btnDedupeQualified');
+      if (btn) { btn.disabled = true; btn.textContent = '🧹 Deduping…'; }
+      try {
+        const resp = await fetch(API_BASE + '/api/admin/dedupe-qualified', {
+          method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+        });
+        const r = await resp.json().catch(() => ({}));
+        if (resp.ok) {
+          showStatus('✓ Removed ' + (r.duplicates_removed || 0) + ' duplicate qualified rows', 'success');
+          loadData();
+        } else {
+          showStatus(r.error || 'Dedupe failed', 'error');
+        }
+      } catch (e) { showStatus('Connection error: ' + e.message, 'error'); }
+      finally { if (btn) { btn.disabled = false; btn.textContent = '🧹 Dedupe Qualified'; } }
     }
   </script>
   <script>

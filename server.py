@@ -966,13 +966,18 @@ def append_qualified_lead(lead):
     print(f"QUALIFIED: {lead.get('business_name')}", flush=True)
 
 
-def update_lead_status(page_url, new_status, follow_up_date=None, user_id=None, is_admin=False):
+def update_lead_status(page_url, new_status, follow_up_date=None, user_id=None, is_admin=False, user_name=''):
     if new_status not in VALID_STATUSES:
         return False, f"Invalid status. Valid: {', '.join(VALID_STATUSES)}"
     if _mongo_alive():
         ok = mongo_db.update_lead_status(page_url, user_id, new_status, follow_up_date, is_admin=is_admin)
         if not ok:
             return False, 'Lead not found'
+        # Audit trail — who changed what status when
+        try:
+            mongo_db.log_status_change(page_url, new_status, user_id, user_name, is_admin=is_admin)
+        except Exception:
+            pass
         if new_status == 'qualified':
             lead = mongo_db.find_lead_by_url(page_url, user_id, is_admin=True) if is_admin else mongo_db.find_lead_by_url(page_url, user_id)
             if lead:
@@ -3611,11 +3616,34 @@ class Handler(BaseHTTPRequestHandler):
             if not page_url or not new_status:
                 self._json(400, {'error': 'page_url and status required'})
                 return
-            ok, msg = update_lead_status(page_url, new_status, follow_up, user_id=user['id'], is_admin=user.get('role') in ('admin', 'super_admin'))
+            ok, msg = update_lead_status(page_url, new_status, follow_up, user_id=user['id'], is_admin=user.get('role') in ('admin', 'super_admin'), user_name=user.get('name', ''))
             if ok:
                 self._json(200, {'status': 'updated', 'message': msg})
             else:
                 self._json(400, {'error': msg})
+        elif parsed.path == '/api/lead/status-history':
+            user = require_auth(self)
+            if not user: return
+            params = parse_qs(parsed.query or '')
+            page_url = (params.get('page_url', [None])[0]) or None
+            is_admin = user.get('role') in ('admin', 'super_admin')
+            user_filter = None if is_admin else user.get('id')
+            if _mongo_alive():
+                rows = mongo_db.list_status_history(page_url=page_url, user_id=user_filter, limit=200)
+                self._json(200, [mongo_db.serialize(x) for x in rows])
+            else:
+                self._json(200, [])
+        elif parsed.path == '/api/admin/dedupe-qualified':
+            user = require_auth(self)
+            if not user: return
+            if user.get('role') not in ('admin', 'super_admin'):
+                self._json(403, {'error': 'admin only'})
+                return
+            if _mongo_alive():
+                removed = mongo_db.dedupe_qualified_leads()
+                self._json(200, {'status': 'ok', 'duplicates_removed': removed})
+            else:
+                self._json(200, {'status': 'ok', 'duplicates_removed': 0})
         elif parsed.path == '/api/lead/delete':
             if data is None:
                 self._json(400, {'error': 'Invalid JSON'})
@@ -3825,7 +3853,7 @@ class Handler(BaseHTTPRequestHandler):
             page_url = lead.get('page_url', '').strip()
 
             if action == 'qualify':
-                ok, msg = update_lead_status(page_url, 'qualified', user_id=user['id'], is_admin=user.get('role') in ('admin', 'super_admin'))
+                ok, msg = update_lead_status(page_url, 'qualified', user_id=user['id'], is_admin=user.get('role') in ('admin', 'super_admin'), user_name=user.get('name', ''))
                 if ok:
                     self._json(200, {'status': 'qualified', 'message': f'\u2705 {lead["business_name"]} qualified & saved to vault'})
                 else:
