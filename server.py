@@ -839,19 +839,34 @@ def send_telegram_notification(lead, action='saved', user_id=None):
     if chat_id == TELEGRAM_CHAT_ID:
         payload['message_thread_id'] = thread_id
 
+    # Circuit-breaker: once a chat_id returns 'chat not found' or similar,
+    # remember it for the lifetime of this server so the same dead chat
+    # doesn't spam the log on every qualify/save. Per-user configs that
+    # point at an unreachable chat are dropped after one failure.
+    _telegram_blocked = {}
+
     def _do_send():
         bot_url = f"https://api.telegram.org/bot{token}/sendMessage"
+        # Skip if we've already determined this chat is unreachable
+        if _telegram_blocked.get(chat_id):
+            return
         try:
             resp = requests.post(bot_url, json=payload, timeout=10)
             result = resp.json()
             if result.get('ok'):
                 page_url = lead.get('page_url', '')
                 set_last_lead_url(page_url)
-                print(f"  Telegram notified: {lead.get('business_name')}", flush=True)
+                print(f"  Telegram notified: {lead.get('business_name')} -> chat {chat_id}", flush=True)
             else:
-                print(f"  Telegram API error: {result}", flush=True)
+                err_code = result.get('error_code') or 0
+                err_desc = (result.get('description') or '').lower()
+                # Only print the first failure per chat_id, then drop it
+                _telegram_blocked[chat_id] = True
+                print(f"  Telegram notification disabled for chat {chat_id}: {err_code} {err_desc}", flush=True)
+                print(f"  (lead '{lead.get('business_name')}' still saved to qualified pipeline)", flush=True)
         except Exception as e:
-            print(f"  Telegram notification failed: {e}", flush=True)
+            # Network errors: transient — allow retry next time, just log briefly
+            print(f"  Telegram notification failed (will retry): {type(e).__name__}", flush=True)
     threading.Thread(target=_do_send, daemon=True).start()
 
 
