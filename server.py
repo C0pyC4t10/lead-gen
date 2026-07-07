@@ -757,6 +757,13 @@ def send_telegram_notification(lead, action='saved', user_id=None):
             token = cfg['bot_token']
         if cfg.get('chat_id'):
             chat_id = cfg['chat_id']
+    # If the configured chat is unreachable (parvez.skarbol situation
+    # — user has a chat_id but bot was kicked/blocked), fall back to
+    # the default Skarbol TELEGRAM_CHAT_ID so admins still see the
+    # lead notification. The per-user config is preserved, just bypassed.
+    user_chat_id = None
+    if user_id and cfg and cfg.get('chat_id'):
+        user_chat_id = cfg['chat_id']
 
     try:
         score = int(lead.get('qualification_score', 0))
@@ -860,10 +867,35 @@ def send_telegram_notification(lead, action='saved', user_id=None):
             else:
                 err_code = result.get('error_code') or 0
                 err_desc = (result.get('description') or '').lower()
-                # Only print the first failure per chat_id, then drop it
-                _telegram_blocked[chat_id] = True
-                print(f"  Telegram notification disabled for chat {chat_id}: {err_code} {err_desc}", flush=True)
-                print(f"  (lead '{lead.get('business_name')}' still saved to qualified pipeline)", flush=True)
+                # Only block this chat_id if the error is "chat not found" /
+                # forbidden / etc — i.e. the chat itself is unreachable.
+                # Otherwise (e.g. rate limit, malformed payload), allow retry.
+                permanent_errors = ('chat not found', 'chat was deleted', 'forbidden',
+                                    'bot was blocked', 'bot was kicked', 'not enough rights')
+                if any(p in err_desc for p in permanent_errors):
+                    _telegram_blocked[chat_id] = True
+                    print(f"  Telegram chat {chat_id} marked unreachable: {err_desc}", flush=True)
+                # If the user's own chat is unreachable, fall back to the
+                # default Skarbol chat so admins still see notifications.
+                if user_chat_id and chat_id == user_chat_id and user_chat_id != TELEGRAM_CHAT_ID:
+                    print(f"  Falling back to default chat {TELEGRAM_CHAT_ID} for admin notification", flush=True)
+                    fallback = TELEGRAM_CHAT_ID
+                    if fallback and fallback not in _telegram_blocked:
+                        chat_id = fallback
+                        payload2 = dict(payload)
+                        payload2['chat_id'] = fallback
+                        payload2['message_thread_id'] = thread_id
+                        try:
+                            r2 = requests.post(bot_url, json=payload2, timeout=10)
+                            rj2 = r2.json()
+                            if rj2.get('ok'):
+                                print(f"  Fallback notified: {lead.get('business_name')} -> chat {fallback}", flush=True)
+                            else:
+                                _telegram_blocked[fallback] = True
+                                print(f"  Fallback chat {fallback} also unreachable: {rj2}", flush=True)
+                        except Exception as ex:
+                            print(f"  Fallback notify failed: {ex}", flush=True)
+                print(f"  (lead '{lead.get('business_name')}' still saved)", flush=True)
         except Exception as e:
             # Network errors: transient — allow retry next time, just log briefly
             print(f"  Telegram notification failed (will retry): {type(e).__name__}", flush=True)
