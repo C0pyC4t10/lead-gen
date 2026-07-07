@@ -655,9 +655,9 @@
           document.getElementById('profileLink').textContent = user.name.charAt(0).toUpperCase();
           (function(){ var i=new Image(); i.onload=function(){ var a=document.getElementById('profileLink'); a.innerHTML=''; a.style.background='none'; a.style.padding='0'; a.appendChild(i); }; i.onerror=function(){}; i.src=window.location.origin+'/api/avatars/'+user.id+'.jpg?t='+Date.now(); })();
           document.getElementById('logoutBtn').style.display = 'none';
-          if (user.role === 'admin' || user.role === 'super_admin') {
-            // Keep Admin link visible in desktop top nav for admins
-            document.getElementById('adminLink').style.display = '';
+if (user.role === 'admin' || user.role === 'super_admin') {
+            // Admin link lives in the avatar dropdown (single source of truth)
+            document.getElementById('adminLink').style.display = 'none';
           }
           fetch(window.location.origin + '/api/auth/leads-remaining', {
             headers: {'Authorization': 'Bearer ' + token}
@@ -737,6 +737,6 @@
     </div>
   </footer>
   <!-- Shared Facebook-style tab bar (every page) -->
-  <script src="/assets/tabbar.js?v=11" defer></script>
+  <script src="/assets/tabbar.js?v=12" defer></script>
 </body>
 </html>

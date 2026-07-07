@@ -449,6 +449,39 @@ def update_lead_status(page_url, user_id, status, follow_up_date=None, is_admin=
     return result.modified_count > 0
 
 
+def set_lead_contacted(page_url, contacted, user_id=None, user_name='', is_admin=False):
+    """Independent 'contacted' flag — coexists with status (qualified/won/etc).
+
+    Returns True if the lead was found and updated.
+    """
+    db = get_db()
+    if db is None:
+        return False
+    q = {'page_url': page_url}
+    if not is_admin and user_id is not None:
+        q['saved_by_user_id'] = to_object_id(user_id)
+    update = {'contacted': bool(contacted)}
+    if contacted:
+        update['contacted_at'] = now_iso()
+        if user_id is not None:
+            update['contacted_by'] = to_object_id(user_id)
+        if user_name:
+            update['contacted_by_name'] = user_name
+    result = db.leads.update_one(q, {'$set': update})
+    return result.matched_count > 0
+
+
+def get_lead_contacted(page_url, user_id=None, is_admin=False):
+    db = get_db()
+    if db is None:
+        return False
+    q = {'page_url': page_url}
+    if not is_admin and user_id is not None:
+        q['saved_by_user_id'] = to_object_id(user_id)
+    lead = db.leads.find_one(q, {'contacted': 1})
+    return bool(lead and lead.get('contacted'))
+
+
 def log_status_change(page_url, status, user_id, user_name, is_admin=False):
     """Append a status-change event to the audit log. Returns event id (str) or None."""
     db = get_db()

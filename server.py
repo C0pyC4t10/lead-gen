@@ -3621,6 +3621,32 @@ class Handler(BaseHTTPRequestHandler):
                 self._json(200, {'status': 'updated', 'message': msg})
             else:
                 self._json(400, {'error': msg})
+        elif parsed.path == '/api/lead/contacted':
+            # Toggle the independent 'contacted' flag on a lead. Coexists
+            # with status (qualified/won/etc.) so both can show in history.
+            user = require_auth(self)
+            if not user: return
+            if data is None:
+                self._json(400, {'error': 'Invalid JSON'})
+                return
+            page_url = data.get('page_url', '').strip()
+            contacted = bool(data.get('contacted', True))
+            if not page_url:
+                self._json(400, {'error': 'page_url required'})
+                return
+            is_admin = user.get('role') in ('admin', 'super_admin')
+            if _mongo_alive():
+                ok = mongo_db.set_lead_contacted(page_url, contacted, user_id=user['id'], user_name=user.get('name', ''), is_admin=is_admin)
+                if ok:
+                    try:
+                        mongo_db.log_status_change(page_url, 'contacted' if contacted else 'uncontacted', user['id'], user.get('name', ''), is_admin=is_admin)
+                    except Exception:
+                        pass
+                    self._json(200, {'status': 'ok', 'contacted': contacted})
+                else:
+                    self._json(404, {'error': 'Lead not found'})
+            else:
+                self._json(503, {'error': 'Mongo not available'})
         elif parsed.path == '/api/lead/status-history':
             user = require_auth(self)
             if not user: return

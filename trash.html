@@ -368,12 +368,8 @@
         const lo = document.getElementById('logoutBtn');
         const loginLink = document.getElementById('loginLink');
         if (link) link.style.display = 'none';
+        if (adminA) adminA.style.display = 'none';
         if (lo) lo.style.display = 'none';
-        // Show admin link in desktop top nav for admins only
-        try {
-          const _u = JSON.parse(localStorage.getItem('skarbol_user') || 'null');
-          if (adminA) adminA.style.display = (_u && (_u.role === 'admin' || _u.role === 'super_admin')) ? '' : 'none';
-        } catch (_) { if (adminA) adminA.style.display = 'none'; }
         if (r.ok) {
           if (loginLink) loginLink.style.display = 'none';
         } else {
@@ -429,6 +425,6 @@
   </footer>
   <script>document.querySelectorAll('.nav-links > a').forEach(a=>{var h=a.getAttribute('href');if(h===location.pathname||(h!=='/'&&location.pathname.startsWith(h))){a.classList.add('active');}});</script>
   <!-- Shared Facebook-style tab bar (every page) -->
-  <script src="/assets/tabbar.js?v=11" defer></script>
+  <script src="/assets/tabbar.js?v=12" defer></script>
 </body>
 </html>

@@ -338,14 +338,19 @@ body.has-tab-bar {
   color: #fff;
 }
 .nav-drawer a.is-logout {
-  color: #FCA5A5;
-  border-color: rgba(239, 68, 68, 0.3);
+  color: #fff;
+  background: linear-gradient(135deg, #DC2626, #EF4444);
+  border-color: rgba(239, 68, 68, 0.6);
+  font-weight: 600;
+  box-shadow: 0 4px 14px rgba(239, 68, 68, 0.25);
 }
 .nav-drawer a.is-logout:hover {
-  background: rgba(239, 68, 68, 0.12);
-  color: #FECACA;
-  border-color: rgba(239, 68, 68, 0.5);
+  background: linear-gradient(135deg, #B91C1C, #DC2626);
+  color: #fff;
+  border-color: rgba(239, 68, 68, 0.8);
+  box-shadow: 0 6px 18px rgba(239, 68, 68, 0.35);
 }
+.nav-drawer a.is-logout .di svg { stroke: #fff; }
 .nav-drawer .di {
   font-size: 18px;
   width: 32px;
