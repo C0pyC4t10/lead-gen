@@ -502,6 +502,19 @@ def can_extract_lead(user):
         return False, 0
     return True, remaining
 
+# ── Role helpers (single source of truth for permissions) ──
+# super_admin has full access to every system endpoint and resource.
+# admin can manage user/pro accounts but not other admins (unless they
+# are super_admin). pro/user have the most limited access.
+def is_super_admin(user):
+    return bool(user and user.get('role') == 'super_admin')
+
+def is_admin_or_super(user):
+    return bool(user and user.get('role') in ('admin', 'super_admin'))
+
+def is_pro_or_admin(user):
+    return bool(user and user.get('role') in ('pro', 'admin', 'super_admin'))
+
 def require_auth(self):
     token = None
     auth = self.headers.get('Authorization', '')
@@ -986,25 +999,25 @@ def delete_lead(page_url, user_id=None, is_admin=False):
     return True, 'Lead deleted'
 
 
-def trash_lead(page_url, user_id=None):
+def trash_lead(page_url, user_id=None, is_admin=False):
     if _mongo_alive():
-        ok = mongo_db.trash_lead(page_url, user_id)
+        ok = mongo_db.trash_lead(page_url, user_id, is_admin=is_admin)
         return (True, 'trashed') if ok else (False, 'Lead not found')
     ok = leads_db.trash_lead(page_url)
     return (True, 'trashed') if ok else (False, 'Lead not found')
 
 
-def restore_lead(page_url, user_id=None):
+def restore_lead(page_url, user_id=None, is_admin=False):
     if _mongo_alive():
-        ok = mongo_db.restore_lead(page_url, user_id)
+        ok = mongo_db.restore_lead(page_url, user_id, is_admin=is_admin)
         return (True, 'restored') if ok else (False, 'Lead not found')
     ok = leads_db.restore_lead(page_url)
     return (True, 'restored') if ok else (False, 'Lead not found')
 
 
-def purge_lead(page_url, user_id=None):
+def purge_lead(page_url, user_id=None, is_admin=False):
     if _mongo_alive():
-        ok = mongo_db.purge_lead(page_url, user_id)
+        ok = mongo_db.purge_lead(page_url, user_id, is_admin=is_admin)
         return (True, 'purged') if ok else (False, 'Lead not found')
     ok = leads_db.delete_lead_permanently(page_url)
     return (True, 'purged') if ok else (False, 'Lead not found')
@@ -3796,7 +3809,7 @@ class Handler(BaseHTTPRequestHandler):
             is_admin = user['role'] in ('admin', 'super_admin')
             ok, msg = trash_lead(page_url, user_id=user['id'])
             if not ok and is_admin:
-                ok, msg = trash_lead(page_url)
+                ok, msg = trash_lead(page_url, is_admin=True)
             if ok:
                 self._json(200, {'status': 'trashed', 'message': 'Moved to Trash \u2014 recoverable', 'page_url': page_url})
             else:
@@ -3814,7 +3827,7 @@ class Handler(BaseHTTPRequestHandler):
             is_admin = user['role'] in ('admin', 'super_admin')
             ok, msg = trash_lead(page_url, user_id=user['id'])
             if not ok and is_admin:
-                ok, msg = trash_lead(page_url)
+                ok, msg = trash_lead(page_url, is_admin=True)
             if ok:
                 self._json(200, {'status': 'trashed', 'message': 'Moved to Trash', 'page_url': page_url})
             else:
@@ -3847,7 +3860,7 @@ class Handler(BaseHTTPRequestHandler):
             is_admin = user['role'] in ('admin', 'super_admin')
             ok, msg = restore_lead(page_url, user_id=user['id'])
             if not ok and is_admin:
-                ok, msg = restore_lead(page_url)
+                ok, msg = restore_lead(page_url, is_admin=True)
             if ok:
                 self._json(200, {'status': 'restored', 'message': 'Recovered from Trash', 'page_url': page_url})
             else:
@@ -3865,7 +3878,7 @@ class Handler(BaseHTTPRequestHandler):
             is_admin = user['role'] in ('admin', 'super_admin')
             ok, msg = purge_lead(page_url, user_id=user['id'])
             if not ok and is_admin:
-                ok, msg = purge_lead(page_url)
+                ok, msg = purge_lead(page_url, is_admin=True)
             if ok:
                 self._json(200, {'status': 'purged', 'message': 'Permanently deleted', 'page_url': page_url})
             else:
@@ -3889,7 +3902,7 @@ class Handler(BaseHTTPRequestHandler):
                     continue
                 ok, msg = trash_lead(url, user_id=user['id'])
                 if not ok and is_admin:
-                    ok, msg = trash_lead(url)
+                    ok, msg = trash_lead(url, is_admin=True)
                 if ok:
                     moved.append(url)
                 else:
@@ -3914,7 +3927,7 @@ class Handler(BaseHTTPRequestHandler):
                     continue
                 ok, msg = restore_lead(url, user_id=user['id'])
                 if not ok and is_admin:
-                    ok, msg = restore_lead(url)
+                    ok, msg = restore_lead(url, is_admin=True)
                 if ok:
                     restored.append(url)
                 else:
@@ -3939,7 +3952,7 @@ class Handler(BaseHTTPRequestHandler):
                     continue
                 ok, msg = purge_lead(url, user_id=user['id'])
                 if not ok and is_admin:
-                    ok, msg = purge_lead(url)
+                    ok, msg = purge_lead(url, is_admin=True)
                 if ok:
                     purged.append(url)
                 else:
@@ -3964,7 +3977,7 @@ class Handler(BaseHTTPRequestHandler):
                     continue
                 ok, msg = trash_lead(url, user_id=user['id'])
                 if not ok and is_admin:
-                    ok, msg = trash_lead(url)
+                    ok, msg = trash_lead(url, is_admin=True)
                 if ok:
                     moved.append(url)
                 else:
