@@ -373,28 +373,32 @@
     .dp-value .inline-edit { text-align: right; }
 
     .dp-actions {
-      display: flex; gap: 8px; margin-top: 20px;
+      display: flex; gap: 10px; margin-top: 20px;
       position: sticky; bottom: 0; background: rgba(14, 24, 37, 0.98);
-      padding-top: 12px; border-top: 1px solid rgba(226, 232, 240, 0.06);
+      padding-top: 14px; padding-bottom: 4px;
+      border-top: 1px solid rgba(226, 232, 240, 0.06);
       z-index: 1;
       align-items: stretch;
     }
     .dp-actions .btn-glow {
-      flex: 0 0 auto;
+      flex: 1 1 auto;
       min-width: 0;
-      padding: 9px 16px;
-      font-size: 13px;
+      padding: 14px 28px;
+      font-size: 15px;
+      letter-spacing: 0.2px;
     }
     .dp-actions-secondary {
       display: grid;
       grid-template-columns: 1fr 1fr 1fr;
       gap: 8px;
-      flex: 1 1 auto;
+      flex: 2 1 auto;
+      min-width: 0;
     }
     .dp-actions-secondary .btn-outline {
       min-width: 0;
-      padding: 8px 12px;
+      padding: 14px 12px;
       font-size: 13px;
+      min-height: 48px;
     }
     .dp-actions-secondary .btn-outline.full-row {
       grid-column: 1 / -1;
@@ -785,7 +789,7 @@
       <div class="dp-field"><span class="dp-label">Status History</span><div class="dp-value" id="de_statusHistory" style="font-size:12px;color:#94A3B8;line-height:1.6">Loading…</div></div>
     </div>
     <div class="dp-actions">
-      <button id="detailSave" class="btn-glow">Save Lead</button>
+      <button id="detailSave" class="btn-glow">💾 Save Lead</button>
       <div class="dp-actions-secondary">
         <button id="detailContact" class="btn-outline">Contact</button>
         <button id="detailQualify" class="btn-outline success">Qualify</button>
