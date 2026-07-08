@@ -1037,11 +1037,17 @@ def append_qualified_lead(lead):
     page_url = lead.get('page_url', '')
     if _mongo_alive():
         try:
-            mongo_db.save_qualified_lead(lead, qualified_by_user_id=lead.get('saved_by_user_id') or lead.get('user_id'))
-        except Exception:
-            pass
+            ok = mongo_db.save_qualified_lead(lead, qualified_by_user_id=lead.get('saved_by_user_id') or lead.get('user_id'))
+            if not ok:
+                print(f"QUALIFIED FAILED (save_qualified_lead returned False): {lead.get('business_name')} url={page_url}", flush=True)
+            else:
+                print(f"QUALIFIED OK: {lead.get('business_name')} url={page_url} qualified_by={lead.get('qualified_by_name', '?')}", flush=True)
+        except Exception as e:
+            print(f"QUALIFIED ERROR: {lead.get('business_name')} url={page_url} err={e}", flush=True)
     else:
-        leads_db.qualify_lead(page_url)
+        ok = leads_db.qualify_lead(page_url)
+        if not ok:
+            print(f"QUALIFIED FAILED (sqlite): {lead.get('business_name')} url={page_url}", flush=True)
     print(f"QUALIFIED: {lead.get('business_name')}", flush=True)
 
 
@@ -3771,6 +3777,7 @@ class Handler(BaseHTTPRequestHandler):
                 return
             page_url = data.get('page_url', '').strip()
             contacted = bool(data.get('contacted', True))
+            note = (data.get('note') or '').strip()
             if not page_url:
                 self._json(400, {'error': 'page_url required'})
                 return
@@ -3779,7 +3786,7 @@ class Handler(BaseHTTPRequestHandler):
                 ok = mongo_db.set_lead_contacted(page_url, contacted, user_id=user['id'], user_name=user.get('name', ''), is_admin=is_admin)
                 if ok:
                     try:
-                        mongo_db.log_status_change(page_url, 'contacted' if contacted else 'uncontacted', user['id'], user.get('name', ''), is_admin=is_admin)
+                        mongo_db.log_status_change(page_url, 'contacted' if contacted else 'uncontacted', user['id'], user.get('name', ''), note=note, is_admin=is_admin)
                     except Exception:
                         pass
                     self._json(200, {'status': 'ok', 'contacted': contacted})

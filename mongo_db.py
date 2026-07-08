@@ -518,7 +518,7 @@ def get_lead_contacted(page_url, user_id=None, is_admin=False):
     return bool(lead and lead.get('contacted'))
 
 
-def log_status_change(page_url, status, user_id, user_name, is_admin=False):
+def log_status_change(page_url, status, user_id, user_name, note='', is_admin=False):
     """Append a status-change event to the audit log. Returns event id (str) or None."""
     db = get_db()
     if db is None:
@@ -530,6 +530,7 @@ def log_status_change(page_url, status, user_id, user_name, is_admin=False):
             'changed_by': to_object_id(user_id) if user_id else None,
             'changed_by_name': user_name or '',
             'changed_at': now_iso(),
+            'note': note,
         }
         r = db.status_history.insert_one(doc)
         return str(r.inserted_id)

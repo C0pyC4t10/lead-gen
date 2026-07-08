@@ -1336,7 +1336,8 @@
           const tzSign = tzOffset >= 0 ? '+' : '-';
           const tzLabel = 'GMT' + tzSign + pad(Math.floor(Math.abs(tzOffset) / 60)) + ':' + pad(Math.abs(tzOffset) % 60);
           const st = r.status || '?';
-          return '<div>· <b>' + esc(who) + '</b> → <span class="badge ' + esc((st || '').toLowerCase()) + '" style="font-size:10px;padding:2px 6px">' + esc(st) + '</span> <span style="color:#64748B" title="Local: ' + esc(when) + ' (' + tzLabel + ') · UTC: ' + esc((r.changed_at || '').replace('T', ' ').slice(0, 16)) + '">' + esc(when) + '</span></div>';
+          const noteLine = r.note ? '<div style="margin:2px 0 4px 18px;color:#CBD5E1;font-style:italic;font-size:12px;white-space:pre-wrap;border-left:2px solid rgba(0,229,255,0.3);padding-left:8px">📝 ' + esc(r.note) + '</div>' : '';
+          return '<div style="margin-bottom:4px">· <b>' + esc(who) + '</b> → <span class="badge ' + esc((st || '').toLowerCase()) + '" style="font-size:10px;padding:2px 6px">' + esc(st) + '</span> <span style="color:#64748B" title="Local: ' + esc(when) + ' (' + tzLabel + ') · UTC: ' + esc((r.changed_at || '').replace('T', ' ').slice(0, 16)) + '">' + esc(when) + '</span></div>' + noteLine;
         }).join('');
       } catch (_) {
         el.textContent = 'Failed to load history.';
@@ -1349,16 +1350,16 @@
       if (!pageUrl) { showStatus('Missing page URL.', 'error'); return; }
       const cur = !!detailLead.contacted;
       const next = !cur;
-      const ok = await scravenConfirm(
-        (next ? 'Mark "' : 'Clear "') + (detailLead.business_name || 'this lead') + '" as contacted?\n\n' +
-        (next ? 'Adds the Contacted flag and records the change in the audit log.'
-              : 'Removes the Contacted flag and records the change in the audit log.')
+      const note = await scravenNote(
+        (next ? 'Mark "' : 'Clear "') + (detailLead.business_name || 'this lead') + '" as contacted.\n\nAdd a note about this contact (e.g. "called, awaiting reply", "messaged on WhatsApp", "email sent").',
+        '',
+        { title: next ? 'Mark as Contacted' : 'Clear Contacted', primaryLabel: next ? 'Mark Contacted' : 'Clear', icon: '📞' }
       );
-      if (!ok) return;
+      if (note === null) return;
       try {
         const resp = await fetch(API_BASE + '/api/lead/contacted', {
           method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (token || APP_TOKEN || '') },
-          body: JSON.stringify({ page_url: pageUrl, contacted: next }),
+          body: JSON.stringify({ page_url: pageUrl, contacted: next, note }),
         });
         const result = await resp.json();
         showStatus(next ? '✓ Marked as contacted' : 'Contacted flag cleared', resp.ok ? 'success' : 'error');
@@ -1597,12 +1598,12 @@
     async function toggleContacted(pageUrl, currentContacted) {
       const leadName = ((allLeads.find(l => l.page_url === pageUrl) || {}).business_name || 'this lead');
       const next = !currentContacted;
-      const ok = await scravenConfirm(
-        (next ? 'Mark "' : 'Clear "') + leadName + '" as contacted?\n\n' +
-        (next ? 'This adds a Contacted flag — visible in the row status cell and recorded in the audit log.'
-              : 'This removes the Contacted flag — recorded in the audit log.')
+      const note = await scravenNote(
+        (next ? 'Mark "' : 'Clear "') + leadName + '" as contacted.\n\nAdd a note about this contact (e.g. "called, awaiting reply", "messaged on WhatsApp", "email sent").',
+        '',
+        { title: next ? 'Mark as Contacted' : 'Clear Contacted', primaryLabel: next ? 'Mark Contacted' : 'Clear', icon: '📞' }
       );
-      if (!ok) return;
+      if (note === null) return;
       const tbody = document.getElementById('historyBody');
       if (tbody) {
         const cb = tbody.querySelector('.hist-select[data-url="' + cssEscape(pageUrl) + '"]');
@@ -1614,7 +1615,7 @@
       try {
         const resp = await fetch(API_BASE + '/api/lead/contacted', {
           method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (token || APP_TOKEN || '') },
-          body: JSON.stringify({ page_url: pageUrl, contacted: next }),
+          body: JSON.stringify({ page_url: pageUrl, contacted: next, note }),
         });
         const result = await resp.json();
         showStatus(next ? '✓ Marked as contacted' : 'Contacted flag cleared', resp.ok ? 'success' : 'error');

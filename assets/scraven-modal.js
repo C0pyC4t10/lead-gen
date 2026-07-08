@@ -124,4 +124,55 @@
       showCancel: true,
     });
   };
+
+  window.scravenNote = function(message, defaultValue = '', opts = {}) {
+    return new Promise((resolve) => {
+      injectCss();
+      const overlay = document.createElement('div');
+      overlay.className = 'scr-overlay';
+      const noteCss = `
+        .scr-textarea { width: 100%; min-height: 110px; padding: 11px 13px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; color: #F8FAFC; font-size: 14px; font-family: inherit; box-sizing: border-box; margin-bottom: 16px; resize: vertical; }
+        .scr-textarea:focus { border-color: #00E5FF; outline: none; background: rgba(0,229,255,0.05); }
+      `;
+      if (!document.getElementById('scr-note-styles')) {
+        const s = document.createElement('style');
+        s.id = 'scr-note-styles';
+        s.textContent = noteCss;
+        document.head.appendChild(s);
+      }
+      overlay.innerHTML = `
+        <div class="scr-modal" style="max-width:520px">
+          <div class="scr-head">
+            <div class="scr-title">${opts.icon || '📝'} <span>${opts.title || 'Add Note'}</span></div>
+            <button class="scr-close" id="scrNoteClose">×</button>
+          </div>
+          ${message ? `<div class="scr-body">${message}</div>` : ''}
+          <textarea class="scr-textarea" id="scrNoteInput" placeholder="${(opts.placeholder || 'What happened? (e.g., called, messaged, awaiting reply)').replace(/"/g, '&quot;')}">${(defaultValue || '').replace(/</g, '&lt;')}</textarea>
+          <div class="scr-actions">
+            <button class="scr-btn scr-btn-secondary" id="scrNoteCancel">Cancel</button>
+            <button class="scr-btn scr-btn-primary" id="scrNoteOk">${opts.primaryLabel || 'Save Note'}</button>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(overlay);
+      const ta = overlay.querySelector('#scrNoteInput');
+      const ok = overlay.querySelector('#scrNoteOk');
+      const cancel = overlay.querySelector('#scrNoteCancel');
+      const close = overlay.querySelector('#scrNoteClose');
+      setTimeout(() => ta.focus(), 50);
+      function done(val) {
+        if (overlay.parentNode) document.body.removeChild(overlay);
+        resolve(val);
+      }
+      ok.onclick = () => done(ta.value.trim());
+      cancel.onclick = () => done(null);
+      close.onclick = () => done(null);
+      overlay.onclick = (e) => { if (e.target === overlay) done(null); };
+      ta.onkeydown = (e) => {
+        if (e.key === 'Escape') done(null);
+        // Allow newlines with Enter; Ctrl+Enter / Cmd+Enter to submit
+        if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') done(ta.value.trim());
+      };
+    });
+  };
 })();
