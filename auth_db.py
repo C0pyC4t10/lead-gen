@@ -473,20 +473,21 @@ def init_auth_db():
 
 
 def count_users():
-    """Total user count (any storage)."""
+    """Total user count (any storage). Excludes soft-deleted users so the
+    count matches what the user table actually shows."""
     if _use_mongo():
         import mongo_db
         try:
             db = mongo_db.get_db()
             if db is None:
                 return 0
-            return db.users.count_documents({})
+            return db.users.count_documents({'deleted_at': None})
         except Exception:
             return 0
     conn = _sqlite_conn()
     try:
         c = conn.cursor()
-        c.execute('SELECT COUNT(*) FROM users')
+        c.execute('SELECT COUNT(*) FROM users WHERE deleted_at IS NULL')
         return c.fetchone()[0]
     finally:
         conn.close()

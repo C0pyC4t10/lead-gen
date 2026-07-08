@@ -312,21 +312,7 @@
       sel.style.opacity = '1';
     }
 
-    // Auto-refresh stats every 30s so counts stay real-time
-    let __autoRefreshTimer = null;
-    function startAutoRefresh() {
-      stopAutoRefresh();
-      __autoRefreshTimer = setInterval(() => { loadData({ silent: true }); }, 30000);
-    }
-    function stopAutoRefresh() {
-      if (__autoRefreshTimer) { clearInterval(__autoRefreshTimer); __autoRefreshTimer = null; }
-    }
-    // Start auto-refresh once initial load completes
-    const _origLoadData = loadData;
-    loadData = function(opts) {
-      return _origLoadData(opts).then(() => { startAutoRefresh(); });
-    };
-    // Manual refresh button next to title
+    // Manual refresh button next to title (no auto-refresh — user clicks to update)
     (function() {
       const title = document.querySelector('.page-title');
       if (!title) return;
