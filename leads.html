@@ -1350,9 +1350,21 @@
       if (!pageUrl) { showStatus('Missing page URL.', 'error'); return; }
       const cur = !!detailLead.contacted;
       const next = !cur;
+      // Fetch previous note to pre-fill the modal
+      let prevNote = detailLead.contact_note || '';
+      if (!prevNote) {
+        try {
+          const r = await fetch(API_BASE + '/api/lead/status-history?page_url=' + encodeURIComponent(pageUrl), { headers: authHeaders() });
+          if (r.ok) {
+            const rows = await r.json();
+            const last = (rows || []).find(x => (x.status || '').toLowerCase() === 'contacted');
+            if (last && last.note) prevNote = last.note;
+          }
+        } catch (_) { /* ignore */ }
+      }
       const note = await scravenNote(
         (next ? 'Mark "' : 'Clear "') + (detailLead.business_name || 'this lead') + '" as contacted.\n\nAdd a note about this contact (e.g. "called, awaiting reply", "messaged on WhatsApp", "email sent").',
-        '',
+        prevNote,
         { title: next ? 'Mark as Contacted' : 'Clear Contacted', primaryLabel: next ? 'Mark Contacted' : 'Clear', icon: '📞' }
       );
       if (note === null) return;
@@ -1365,12 +1377,15 @@
         showStatus(next ? '✓ Marked as contacted' : 'Contacted flag cleared', resp.ok ? 'success' : 'error');
         if (resp.ok) {
           detailLead.contacted = next;
+          detailLead.contact_note = note;
           refreshDetailContactBtn();
           // Update the source row in the history table in place + sync memory
           const inMem = allLeads.find(l => l.page_url === pageUrl);
-          if (inMem) inMem.contacted = next;
-          if (detailIsHistory) applyStatusToRow(pageUrl, detailLead.status, next);
+          if (inMem) { inMem.contacted = next; inMem.contact_note = note; }
+          if (detailIsHistory) applyStatusToRow(pageUrl, detailLead.status, next, note);
           if (detailIsHistory) loadHistory();
+          // Refresh the Status History section so the new note appears immediately
+          loadStatusHistory(pageUrl);
         }
       } catch (err) { showStatus('Failed: ' + err.message, 'error'); }
     });
@@ -1598,9 +1613,21 @@
     async function toggleContacted(pageUrl, currentContacted) {
       const leadName = ((allLeads.find(l => l.page_url === pageUrl) || {}).business_name || 'this lead');
       const next = !currentContacted;
+      // Fetch the most recent contact note for this lead so we can pre-fill the modal
+      let prevNote = (allLeads.find(l => l.page_url === pageUrl) || {}).contact_note || '';
+      if (!prevNote) {
+        try {
+          const r = await fetch(API_BASE + '/api/lead/status-history?page_url=' + encodeURIComponent(pageUrl), { headers: authHeaders() });
+          if (r.ok) {
+            const rows = await r.json();
+            const last = (rows || []).find(x => (x.status || '').toLowerCase() === 'contacted');
+            if (last && last.note) prevNote = last.note;
+          }
+        } catch (_) { /* ignore */ }
+      }
       const note = await scravenNote(
         (next ? 'Mark "' : 'Clear "') + leadName + '" as contacted.\n\nAdd a note about this contact (e.g. "called, awaiting reply", "messaged on WhatsApp", "email sent").',
-        '',
+        prevNote,
         { title: next ? 'Mark as Contacted' : 'Clear Contacted', primaryLabel: next ? 'Mark Contacted' : 'Clear', icon: '📞' }
       );
       if (note === null) return;
@@ -1641,7 +1668,7 @@
 
     // Update the status badge, Contact button, and Qualify button for a
     // single history row in place — avoids waiting for a full history reload.
-    function applyStatusToRow(pageUrl, status, contacted) {
+    function applyStatusToRow(pageUrl, status, contacted, contactNote) {
       const tbody = document.getElementById('historyBody');
       if (!tbody) return;
       const rows = tbody.querySelectorAll('tr');
@@ -1657,7 +1684,10 @@
           const badges = [];
           if (isContacted) badges.push('<span class="badge contacted" style="background:rgba(245,158,11,0.18);color:#FCD34D">✓ Contacted</span>');
           badges.push('<span class="badge ' + stage + '">' + (stage || 'new') + '</span>');
-          statusCell.innerHTML = badges.join(' ');
+          const noteHtml = (isContacted && contactNote)
+            ? '<div style="margin-top:4px;font-size:11px;color:#CBD5E1;font-style:italic;max-width:180px;white-space:pre-wrap;line-height:1.3;border-left:2px solid rgba(0,229,255,0.3);padding-left:6px">📝 ' + esc(contactNote) + '</div>'
+            : '';
+          statusCell.innerHTML = badges.join(' ') + noteHtml;
         }
         // Contact button
         const contactBtn = tr.querySelector('button.contact-toggle');
