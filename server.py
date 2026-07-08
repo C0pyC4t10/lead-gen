@@ -3314,6 +3314,7 @@ class Handler(BaseHTTPRequestHandler):
             now = datetime.now()
             month_prefix = now.strftime('%Y-%m')
             warnings = []
+            print(f"[/api/admin/stats] user={user.get('email')} mongo_alive={_mongo_alive()}", flush=True)
 
             # ── Lead list (Mongo primary, SQLite fallback) — never raises
             try:
@@ -3329,6 +3330,19 @@ class Handler(BaseHTTPRequestHandler):
             except Exception as e:
                 user_count = 0
                 warnings.append(f'count_users:{e}')
+
+            # ── Qualified count from qualified_leads collection (source of truth
+            # for the Qualified page). Replaces the in-memory statuses['qualified']
+            # count which only catches leads with leads.status='qualified' — those
+            # can drift out of sync if save_qualified_lead fails silently.
+            qualified_count = 0
+            try:
+                if _mongo_alive():
+                    qualified_count = mongo_db.get_db().qualified_leads.count_documents({})
+                else:
+                    qualified_count = len(leads_db.get_qualified_leads() or [])
+            except Exception as e:
+                warnings.append(f'qualified_count:{e}')
 
             # ── Role counts — separate try so one failure doesn't blank
             # out the other stats
@@ -3365,8 +3379,10 @@ class Handler(BaseHTTPRequestHandler):
                 'statuses': statuses,
                 'this_month': this_month,
                 'month_label': now.strftime('%B %Y'),
+                'qualified_total': qualified_count,
                 'note': note,
             })
+            print(f"[/api/admin/stats] total_leads={len(leads or [])} total_users={user_count} statuses={statuses} role_counts={role_counts} qualified_from_leads={statuses.get('qualified', 0)} qualified_total={qualified_count}", flush=True)
             return
         elif parsed.path == '/api/bookmarklet-extract':
             self._serve_bookmarklet_js()

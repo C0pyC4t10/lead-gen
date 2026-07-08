@@ -226,7 +226,7 @@
             document.getElementById('statThisMonth').textContent = statsText.this_month ?? 0;
             const ml = document.getElementById('statMonthLabel');
             if (ml && statsText.month_label) ml.textContent = statsText.month_label;
-            document.getElementById('statQualified').textContent = statsText.statuses?.qualified ?? 0;
+            document.getElementById('statQualified').textContent = statsText.qualified_total ?? statsText.statuses?.qualified ?? 0;
           } else { hasError = true; showStatus('Invalid stats response', 'error'); }
         } else {
             const errBody = await statsResp.json().catch(() => ({}));
@@ -310,6 +310,32 @@
       sel.disabled = false;
       sel.style.opacity = '1';
     }
+
+    // Auto-refresh stats every 30s so counts stay real-time
+    let __autoRefreshTimer = null;
+    function startAutoRefresh() {
+      stopAutoRefresh();
+      __autoRefreshTimer = setInterval(() => { loadData({ silent: true }); }, 30000);
+    }
+    function stopAutoRefresh() {
+      if (__autoRefreshTimer) { clearInterval(__autoRefreshTimer); __autoRefreshTimer = null; }
+    }
+    // Start auto-refresh once initial load completes
+    const _origLoadData = loadData;
+    loadData = function(opts) {
+      return _origLoadData(opts).then(() => { startAutoRefresh(); });
+    };
+    // Manual refresh button next to title
+    (function() {
+      const title = document.querySelector('.page-title');
+      if (!title) return;
+      const btn = document.createElement('button');
+      btn.className = 'btn-outline sm';
+      btn.style.cssText = 'margin-left:12px;padding:6px 12px;font-size:12px;vertical-align:middle';
+      btn.textContent = '↻ Refresh';
+      btn.onclick = () => loadData();
+      title.appendChild(btn);
+    })();
 
     async function deleteUser(userId) {
       if (!(await scravenConfirm('Remove this user? They will be moved to the Trash.'))) return;
