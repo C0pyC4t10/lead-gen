@@ -549,6 +549,37 @@ def list_status_history(page_url=None, user_id=None, limit=200):
         q['changed_by'] = to_object_id(user_id)
     return list(db.status_history.find(q).sort('changed_at', DESCENDING).limit(limit))
 
+
+def latest_contact_notes(page_urls):
+    """For each page_url in the list, return the most recent 'contacted' status_history note.
+    Output: {page_url: {'note': '...', 'at': '...', 'by_name': '...'}, ...}
+    Cheap aggregation — single round-trip via $group/$max.
+    """
+    db = get_db()
+    if db is None or not page_urls:
+        return {}
+    try:
+        pipeline = [
+            {'$match': {'page_url': {'$in': page_urls}, 'status': 'contacted'}},
+            {'$sort': {'changed_at': -1}},
+            {'$group': {
+                '_id': '$page_url',
+                'note': {'$first': '$note'},
+                'changed_at': {'$first': '$changed_at'},
+                'changed_by_name': {'$first': '$changed_by_name'},
+            }},
+        ]
+        out = {}
+        for row in db.status_history.aggregate(pipeline):
+            out[row['_id']] = {
+                'note': row.get('note') or '',
+                'at': row.get('changed_at') or '',
+                'by_name': row.get('changed_by_name') or '',
+            }
+        return out
+    except Exception:
+        return {}
+
 def trash_lead(page_url, user_id, is_admin=False):
     db = get_db()
     if db is None:

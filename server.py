@@ -2885,6 +2885,19 @@ class Handler(BaseHTTPRequestHandler):
                 leads = read_all_leads(filter_status=status_filter, include_all_users=True)
             else:
                 leads = read_all_leads(filter_status=status_filter, user_id=user['id'])
+            # Enrich each lead with its latest contact note (from status_history)
+            try:
+                urls = [l.get('page_url') for l in (leads or []) if l.get('page_url')]
+                if urls:
+                    notes = mongo_db.latest_contact_notes(urls) if _mongo_alive() else {}
+                    for l in leads:
+                        n = notes.get(l.get('page_url') or '')
+                        if n and n.get('note'):
+                            l['contact_note'] = n['note']
+                            l['contact_note_at'] = n['at']
+                            l['contact_note_by'] = n['by_name']
+            except Exception as e:
+                print(f"[/api/leads] enrich notes failed: {e}", flush=True)
             self._json(200, leads)
         elif parsed.path == '/api/leads/trash':
             user = require_auth(self)
