@@ -2890,12 +2890,15 @@ class Handler(BaseHTTPRequestHandler):
                 urls = [l.get('page_url') for l in (leads or []) if l.get('page_url')]
                 if urls:
                     notes = mongo_db.latest_contact_notes(urls) if _mongo_alive() else {}
+                    enriched = 0
                     for l in leads:
                         n = notes.get(l.get('page_url') or '')
                         if n and n.get('note'):
                             l['contact_note'] = n['note']
                             l['contact_note_at'] = n['at']
                             l['contact_note_by'] = n['by_name']
+                            enriched += 1
+                    print(f"[/api/leads] enriched {enriched}/{len(leads or [])} leads with contact notes (urls={len(urls)})", flush=True)
             except Exception as e:
                 print(f"[/api/leads] enrich notes failed: {e}", flush=True)
             self._json(200, leads)
@@ -3795,13 +3798,16 @@ class Handler(BaseHTTPRequestHandler):
                 self._json(400, {'error': 'page_url required'})
                 return
             is_admin = user.get('role') in ('admin', 'super_admin')
+            print(f"[/api/lead/contacted] user={user.get('email')} url={page_url} contacted={contacted} note_len={len(note)}", flush=True)
             if _mongo_alive():
                 ok = mongo_db.set_lead_contacted(page_url, contacted, user_id=user['id'], user_name=user.get('name', ''), is_admin=is_admin)
+                print(f"[/api/lead/contacted] set_lead_contacted ok={ok}", flush=True)
                 if ok:
                     try:
-                        mongo_db.log_status_change(page_url, 'contacted' if contacted else 'uncontacted', user['id'], user.get('name', ''), note=note, is_admin=is_admin)
-                    except Exception:
-                        pass
+                        ev_id = mongo_db.log_status_change(page_url, 'contacted' if contacted else 'uncontacted', user['id'], user.get('name', ''), note=note, is_admin=is_admin)
+                        print(f"[/api/lead/contacted] log_status_change ev_id={ev_id}", flush=True)
+                    except Exception as e:
+                        print(f"[/api/lead/contacted] log_status_change ERROR: {e}", flush=True)
                     self._json(200, {'status': 'ok', 'contacted': contacted})
                 else:
                     self._json(404, {'error': 'Lead not found'})
