@@ -1518,10 +1518,35 @@
       });
     }
 
+    async function fetchWithRetry(url, opts = {}, { retries = 2, timeoutMs = 45000 } = {}) {
+      // Render free tier cold-starts (~30-50s). Retry once after 3s on
+      // network failure (Failed to fetch / AbortError) so cold-start wins.
+      for (let attempt = 0; attempt <= retries; attempt++) {
+        const ctrl = new AbortController();
+        const t = setTimeout(() => ctrl.abort(), timeoutMs);
+        try {
+          const resp = await fetch(url, { ...opts, signal: ctrl.signal });
+          clearTimeout(t);
+          return resp;
+        } catch (e) {
+          clearTimeout(t);
+          const transient = (e.name === 'AbortError') ||
+                             (e.message && /Failed to fetch|NetworkError|load failed/i.test(e.message));
+          if (transient && attempt < retries) {
+            await new Promise(r => setTimeout(r, 2500));
+            continue;
+          }
+          throw e;
+        }
+      }
+    }
+
     async function loadHistory() {
       currentPage = 1;
+      const tbody = document.getElementById('historyBody');
+      if (tbody) tbody.innerHTML = '<tr><td colspan="11" style="text-align:center;padding:32px;color:#64748B">Loading leads… <span style="font-size:11px">(first load can take ~30s on Render cold-start)</span></td></tr>';
       try {
-        const resp = await fetch(API_BASE + '/api/leads', { headers: authHeaders() });
+        const resp = await fetchWithRetry(API_BASE + '/api/leads', { headers: authHeaders() });
         if (!resp.ok) {
           throw new Error('HTTP ' + resp.status);
         }
@@ -1543,7 +1568,7 @@
         renderPage(1);
         updateHistDeleteCount();
       } catch (err) {
-        document.getElementById('historyBody').innerHTML = '<tr><td colspan="11" style="text-align:center;padding:32px;color:#475569">Failed to load: ' + err.message + '</td></tr>';
+        if (tbody) tbody.innerHTML = '<tr><td colspan="11" style="text-align:center;padding:32px;color:#FCA5A5">Failed to load: ' + esc(err.message) + '<br><button class="btn-outline sm" style="margin-top:8px" onclick="loadHistory()">Retry</button></td></tr>';
       }
     }
 
