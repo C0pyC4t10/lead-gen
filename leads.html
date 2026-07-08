@@ -382,22 +382,30 @@
     .dp-actions .btn-glow {
       flex: 1 1 auto;
       min-width: 0;
-      min-height: 38px;
-      padding: 8px 14px;
-      font-size: 12px;
-      border-radius: 8px;
+      min-height: 32px;
+      padding: 6px 14px;
+      font-size: 11px;
+      font-weight: 600;
+      border-radius: 6px;
+      background: linear-gradient(135deg, #0A4FD9, #00E5FF);
+      color: #FFFFFF;
+      border: none;
+      box-shadow: none;
     }
+    .dp-actions .btn-glow::after { display: none; }
     .dp-actions-secondary {
       display: grid;
       grid-template-columns: 1fr 1fr 1fr;
       gap: 8px;
-      flex: 2 1 auto;
+      flex: 1 1 auto;
       min-width: 0;
     }
     .dp-actions-secondary .btn-outline {
       min-width: 0;
       padding: 8px 12px;
-      font-size: 13px;
+      font-size: 12px;
+      font-weight: 500;
+      min-height: 38px;
     }
     .dp-actions-secondary .btn-outline.full-row {
       grid-column: 1 / -1;
@@ -792,7 +800,7 @@
       <div class="dp-actions-secondary">
         <button id="detailContact" class="btn-outline">Contact</button>
         <button id="detailQualify" class="btn-outline success">Qualify</button>
-        <button id="detailRemove" class="btn-outline danger full-row">Remove</button>
+        <button id="detailRemove" class="btn-outline danger">Remove</button>
       </div>
     </div>
   </div>
