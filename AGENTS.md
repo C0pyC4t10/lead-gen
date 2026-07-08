@@ -105,4 +105,19 @@ The bottom tab bar uses custom SVG icons stored in `assets/icons/` and injected 
 **Brand style:** 24×24 viewBox, 2px stroke, round caps/joins, Lucide-inspired, CSS `currentColor` for state-driven coloring. Inactive tabs use `#94A3B8` (Steel Vapor) with 40% grayscale, active tabs use `#00E5FF` (Fusion Cyan) at full saturation. The Extract (primary) tab gets Neural Blue→Fusion Cyan gradient background when active with white icon.
 
 **To add/replace an icon:** Edit the `SVGS` object in `assets/tabbar.js` (inline SVG string) and the standalone file in `assets/icons/` for reuse elsewhere.
+
+## CRITICAL: Localhost-First Workflow for Render Deployments
+
+**Render is the production deployment.** Any change to the live site (leads.html, extract.html, etc.) MUST follow this workflow:
+
+1. **Edit the file locally** in `/home/skarbolt/kb/lead-gen/` (the file Render serves from).
+2. **Tell the user the change is ready on localhost** — they test by hard-refreshing `http://localhost:8800/leads` (Ctrl+Shift+R / Cmd+Shift+R).
+3. **Wait for explicit confirmation** ("yes push it" / "looks good" / similar).
+4. **Only then** commit + `git push origin main` to trigger Render auto-deploy.
+
+**Never push without confirmation.** Render auto-deploys on push within ~1-2 min — there's no undo without another commit.
+
+**Local server runs on port 8800**, NOT 8888. Start with `python3 server.py` from `/home/skarbolt/kb/lead-gen/`.
+
+**Render URL:** `https://lead-gen-phcw.onrender.com` — to apply Render's current version back to local, fetch each route (`/leads`, `/extract`, etc.) and overwrite the local file.
 ```
