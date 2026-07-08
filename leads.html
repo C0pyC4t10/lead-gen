@@ -308,7 +308,7 @@
 
     .detail-panel {
       position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-      width: 90vw; max-width: 560px; max-height: min(85vh, 85dvh); overflow-y: auto;
+      width: 90vw; max-width: 820px; max-height: min(85vh, 85dvh); overflow-y: auto;
       background: rgba(14, 24, 37, 0.98);
       backdrop-filter: blur(24px) saturate(180%);
       -webkit-backdrop-filter: blur(24px) saturate(180%);
@@ -2111,7 +2111,7 @@
         'h1{font-size:18px;margin:6px 0 12px}',
       ].join('');
 
-      const html = '<html><head><meta charset="utf-8"><title>' + esc(name) + '</title><style>' + css + '</style></head><body><button class="btn-print noprint" onclick="window.print()">🖨 Print / Save as PDF</button>' + letterhead + '<h1>' + esc(REPORT_TITLE_DEFAULT) + '</h1>' + tableHtml + footer + '</body></html>';
+      const html = '<html><head><meta charset="utf-8"><title>' + esc(name) + '</title><style>' + css + '</style><!-- v=1783499838949 --></head><body><button class="btn-print noprint" onclick="window.print()">🖨 Print / Save as PDF</button>' + letterhead + '<h1>' + esc(REPORT_TITLE_DEFAULT) + '</h1>' + tableHtml + footer + '</body></html>';
 
       const win = window.open('', '_blank');
       if (!win) { showStatus('Popup blocked — allow popups for PDF export.', 'error'); return; }
