@@ -704,7 +704,7 @@ if (user.role === 'admin' || user.role === 'super_admin') {
       }
     })();
   </script>
-  <script>document.querySelectorAll('.nav-links > a').forEach(function(a){var h=a.getAttribute('href');var p=h.split('#')[0];if(h===location.pathname||(p===location.pathname&&h.includes('#')&&location.hash===h.split('#')[1])||(p!=='/'&&location.pathname.startsWith(p)&&!h.includes('#'))){a.classList.add('active');}})</script>
+  <script>(function(){var links=document.querySelectorAll('.nav-links > a');var path=location.pathname;var hash=location.hash;var hashMatched=false;links.forEach(function(a){var h=a.getAttribute('href');if(h.indexOf('#')>=0){var parts=h.split('#');if(parts[0]===path&&('#'+parts[1])===hash){a.classList.add('active');hashMatched=true;}}});if(!hashMatched){links.forEach(function(a){var h=a.getAttribute('href');if(h.indexOf('#')<0&&(h===path||(h!=='/'&&path.indexOf(h)===0))){a.classList.add('active');}});}})();</script>
   <footer class="site-footer" id="siteFooter">
     <div class="footer-grid">
       <div class="footer-brand">
