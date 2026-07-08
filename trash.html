@@ -136,11 +136,12 @@
       <img src="/assets/icon32.png" alt="Scraven" class="logo-icon">
       <span><span class="brand-navy">Scra</span><span class="brand-white">ven</span></span>
     </a>
-    <div class="nav-links">
+<div class="nav-links">
       <a href="/extract">Extract</a>
       <a href="/leads">Leads</a>
+      <a href="/leads#history">History</a>
       <a href="/qualified">Qualified</a>
-      <a href="/trash" class="active">Trash</a>
+      <a href="/trash" id="trashNav" class="active">Trash <span id="trashBadge" style="display:none;background:#EF4444;color:#fff;font-size:10px;padding:1px 6px;border-radius:8px;margin-left:4px">0</span></a>
       <a href="/pricing">Pricing</a>
     </div>
     <div id="auth-nav">
@@ -423,7 +424,7 @@
       <span class="brand-name">Scraven</span> &mdash; The Hunter &middot; Powered by <a href="https://skarboltech.com" target="_blank" rel="noopener noreferrer">Skarbol Tech</a>
     </div>
   </footer>
-  <script>document.querySelectorAll('.nav-links > a').forEach(a=>{var h=a.getAttribute('href');if(h===location.pathname||(h!=='/'&&location.pathname.startsWith(h))){a.classList.add('active');}});</script>
+  <script>document.querySelectorAll('.nav-links > a').forEach(a=>{var h=a.getAttribute('href');var p=h.split('#')[0];if(h===location.pathname||(p===location.pathname&&h.includes('#')&&location.hash===h.split('#')[1])||(p!=='/'&&location.pathname.startsWith(p)&&!h.includes('#'))){a.classList.add('active');}});</script>
   <!-- Shared Facebook-style tab bar (every page) -->
   <script src="/assets/tabbar.js?v=13" defer></script>
 </body>

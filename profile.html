@@ -228,6 +228,7 @@
     <div class="nav-links">
       <a href="/extract">Extract</a>
       <a href="/leads">Leads</a>
+      <a href="/leads#history">History</a>
       <a href="/qualified">Qualified</a>
       <a href="/pricing">Pricing</a>
     </div>
@@ -703,7 +704,7 @@ if (user.role === 'admin' || user.role === 'super_admin') {
       }
     })();
   </script>
-  <script>document.querySelectorAll('.nav-links > a').forEach(function(a){var h=a.getAttribute('href');if(h===location.pathname||(h!=='/'&&location.pathname.startsWith(h))){a.classList.add('active');}})</script>
+  <script>document.querySelectorAll('.nav-links > a').forEach(function(a){var h=a.getAttribute('href');var p=h.split('#')[0];if(h===location.pathname||(p===location.pathname&&h.includes('#')&&location.hash===h.split('#')[1])||(p!=='/'&&location.pathname.startsWith(p)&&!h.includes('#'))){a.classList.add('active');}})</script>
   <footer class="site-footer" id="siteFooter">
     <div class="footer-grid">
       <div class="footer-brand">
