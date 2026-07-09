@@ -1,7 +1,6 @@
 (function () {
   console.log('[Skarbol] content.js v2 loaded on:', window.location.href);
-  // Clear stale data from previous sessions
-  chrome.storage.local.remove('currentLead');
+  // Clear pending about-page navigation (not currentLead — preserve it if extraction fails)
   chrome.storage.local.remove('pendingAbout');
   let extractTimeout = null;
 
@@ -94,14 +93,19 @@
         chrome.storage.local.remove('pendingAbout');
       });
     } else {
+      if (!data.business_name) {
+        console.log('[Skarbol] no business name found — not saving');
+        return;
+      }
       chrome.storage.local.set({ currentLead: data }, () => {
         console.log('[Skarbol] main page data saved');
       });
 
       const hasContact = data.phone || data.email || data.website || data.address;
-      if (!hasContact) {
-        autoNavigateAbout(data);
-      }
+      // Auto-nav to /about disabled — manual fields handle missing data instead.
+      // if (!hasContact) {
+      //   autoNavigateAbout(data);
+      // }
     }
   }
 
@@ -131,6 +135,7 @@
       'facebook', 'marketplace', 'groups', 'see all', 'search',
       'search results', 'create', 'saved', 'memories', 'most recent',
       'unread', 'read', 'seen', 'delivered',
+      'followers', 'following', 'likes',
     ]);
     const skipAltPatterns = [
       /no photo description available/i,
@@ -146,10 +151,39 @@
       /timeline/i,
     ];
 
+    // Skip areas that never contain the business name (dialogs, sidebar, chat, notifications)
+    const skipAncestors = [
+      '[role="dialog"]', '[aria-label*="notification" i]', '[aria-label*="sidebar" i]',
+      '[aria-label*="chat" i]', '[aria-label*="messenger" i]', '[data-pagelet*="right" i]',
+    ];
+    const skipSelector = skipAncestors.join(',');
+
+    // JSON-LD structured data — server-rendered, survives DOM changes
+    try {
+      const ldScripts = document.querySelectorAll('script[type="application/ld+json"]');
+      for (const script of ldScripts) {
+        const data = JSON.parse(script.textContent);
+        if (data.name) {
+          const name = data.name.trim();
+          if (name && name.length > 1 && !skipWords.has(name.toLowerCase())) return name;
+        }
+        // Some pages nest it under @graph
+        if (data['@graph'] && Array.isArray(data['@graph'])) {
+          for (const item of data['@graph']) {
+            if (item.name) {
+              const name = item.name.trim();
+              if (name && name.length > 1 && !skipWords.has(name.toLowerCase())) return name;
+            }
+          }
+        }
+      }
+    } catch (_) {}
+
     // Page header — only look inside the profile/commercial page header area
     const headerArea = document.querySelector(
       '[data-pagelet="ProfileHeader"], ' +
-      '[data-pagelet="CommercialProfile"]'
+      '[data-pagelet="CommercialProfile"], ' +
+      '[data-pagelet="PageHeader"]'
     );
     if (headerArea) {
       const h1InHeader = headerArea.querySelectorAll('h1, h2, strong');
@@ -175,25 +209,26 @@
       if (t && !skipWords.has(t.toLowerCase())) return t;
     }
 
-    // h1 headings
+    // h1 headings — only in main content area
     const h1s = document.querySelectorAll('h1');
     for (const h1 of h1s) {
+      if (h1.closest(skipSelector)) continue;
       const t = h1.innerText.trim();
       if (t && t.length > 3 && !skipWords.has(t.toLowerCase())) return t;
     }
 
-    // Profile photo alt text — but ONLY the small circular profile image, not post photos
+    // Profile photo alt text — only outside dialogs/sidebars
     const profileImgs = document.querySelectorAll(
       'img[alt]:not([alt=""]):not([alt*="post" i]):not([alt*="Photo from" i])'
     );
     const ranked = [];
     for (const img of profileImgs) {
+      if (img.closest(skipSelector)) continue;
       const alt = img.alt.trim();
       if (!alt || alt.length < 3 || alt.length > 60) continue;
       if (skipWords.has(alt.toLowerCase())) continue;
       if (skipAltPatterns.some(p => p.test(alt))) continue;
       if (!/^[A-Za-z0-9&\-'. ]+$/.test(alt)) continue;
-      // Prefer smaller images (profile photos are typically 40-168px)
       const w = img.naturalWidth || img.width || 999;
       ranked.push({ alt, score: w < 200 ? 10 : 1 });
     }
@@ -202,9 +237,53 @@
       return ranked[0].alt;
     }
 
-    // document title fallback
-    const title = document.title.replace(/ \| Facebook$/, '').replace(/ - Facebook$/, '').trim();
+    // document title fallback — strip notification count first so skipWords can catch facebook/home/etc
+    let title = document.title
+      .replace(/^\(\d+\)\s*/, '')
+      .replace(/\s*[|—-]\s*Facebook$/, '')
+      .trim();
     if (title && title.length > 3 && !skipWords.has(title.toLowerCase()) && !/^search/i.test(title)) return title;
+
+    // SPA fallback: find the first [dir="auto"] element that looks like a business name
+    try {
+      const allEls = document.querySelectorAll('[dir="auto"]');
+      let best = '';
+      let bestScore = -1;
+      for (const el of allEls) {
+        if (el.closest(skipSelector)) continue;
+        const t = el.innerText.trim();
+        if (!t || t.length < 3 || t.length > 80) continue;
+        if (skipWords.has(t.toLowerCase())) continue;
+        const rect = el.getBoundingClientRect();
+        if (rect.width < 20 || rect.width > 600) continue;
+        if (rect.bottom < 0 || rect.top > window.innerHeight) continue;
+        // Score: business names have multiple capitalized words, no numbers at start
+        let score = 0;
+        const words = t.split(/\s+/).filter(Boolean);
+        if (words.length >= 2) score += 3;
+        if (/^[A-Z]/.test(t)) score += 2;
+        if (/^\d/.test(t)) score -= 5;
+        // Penalize known non-name patterns
+        if (/contact|info|photo|review|recommend|see all|open|closed/i.test(t)) score -= 4;
+        if (/^\d{5,}/.test(t.replace(/[\s\-\(\)]/g, ''))) score -= 3;
+        if (score > bestScore) {
+          best = t;
+          bestScore = score;
+        }
+      }
+      if (best) return best;
+    } catch (_) {}
+
+    // URL path fallback: /BusinessName → "BusinessName"
+    try {
+      const pathParts = window.location.pathname.replace(/\/$/, '').split('/').filter(Boolean);
+      if (pathParts.length && pathParts[0] !== 'profile.php' && pathParts[0] !== 'pages') {
+        const fromUrl = decodeURIComponent(pathParts[0]).replace(/[-_]/g, ' ');
+        if (fromUrl && fromUrl.length > 2 && !skipWords.has(fromUrl.toLowerCase())) {
+          return fromUrl;
+        }
+      }
+    } catch (_) {}
 
     return '';
   }
@@ -236,46 +315,28 @@
       'Event', 'Wedding', 'Planner', 'Decorator',
     ];
     const catPattern = new RegExp('\\b(' + categoryKeywords.join('|') + ')\\b', 'i');
+    const bioSkipPattern = /(welcome to|about us|we are|we provide|our mission|আমরা|স্বাগতম)/i;
 
-    // First try: contact info section in About page — most reliable
-    const contactSections = document.querySelectorAll(
-      '[data-pagelet="ProfileCards"], ' +
-      '[data-pagelet="PageHeader"], ' +
-      '[aria-label*="about" i], ' +
-      'div[role="main"]'
+    // === Priority 1.5: Facebook's parenthesized category format ===
+    // On Facebook business pages, the category is rendered with text like
+    // "Clothing (Brand)" or "Restaurant (Cafe)". This format is unique to
+    // Facebook's category display and is the most reliable signal.
+    const categorySuffixWords = 'Brand|Store|Shop|Company|Service|Agency|Restaurant|Cafe|Salon|Studio|Manufacturer|Supplier|Retail|Wholesaler|Distributor|Boutique|Pharmacy|Clinic|Gym|Hotel|School|Clothing|Jewelry|Beauty|Coffee|Bakery|Electronics|Designer';
+    const categorySuffixPattern = new RegExp(
+      `^\\s*([A-Za-z][\\w\\s&'-]{1,40})(?:\\s*\\((${categorySuffixWords})\\)|\\s+(${categorySuffixWords}))(\\s+[^()]+)?\\s*$`,
+      'i'
     );
-    for (const section of contactSections) {
-      const text = section.innerText || '';
-      const match = text.match(catPattern);
-      if (match) {
-        // Return the full surrounding context (1-4 words) for a clean category name
-        const idx = text.indexOf(match[0]);
-        const snippet = text.slice(Math.max(0, idx - 30), idx + match[0].length + 30);
-        const lines = snippet.split('\n').filter(l => catPattern.test(l));
-        if (lines.length > 0) return lines[0].trim();
-      }
+    // Collect ALL matching elements in DOM order, then pick the LAST one
+    // (category sits below bio, so it's the deepest/latest match).
+    let lastMatch = '';
+    const allEls = document.querySelectorAll('span, div, a');
+    for (const el of allEls) {
+      const t = (el.innerText || '').trim();
+      if (!t || t.length > 60) continue;
+      const m = t.match(categorySuffixPattern);
+      if (m) lastMatch = m[0].trim();
     }
-
-    // Second try: any span/div with a category match
-    const spans = document.querySelectorAll('span, div');
-    for (const el of spans) {
-      const text = el.innerText.trim();
-      if (
-        text && text.length < 80 &&
-        /[A-Z]/.test(text) &&
-        catPattern.test(text)
-      ) {
-        return text;
-      }
-    }
-
-    // Third try: meta description
-    const ogDesc = document.querySelector('meta[property="og:description"]');
-    if (ogDesc) {
-      const desc = ogDesc.getAttribute('content') || '';
-      const catMatch = desc.match(catPattern);
-      if (catMatch) return catMatch[0];
-    }
+    if (lastMatch) return lastMatch;
 
     return '';
   }
@@ -489,6 +550,8 @@
       'facebook.com', 'fb.com', 'fbcdn.net', 'messenger.com', 'instagram.com',
       'twitter.com', 'x.com', 'youtube.com', 'whatsapp.com', 'wa.me', 'm.me',
       'google.com', 'apple.com', 'linkedin.com', 'bing.com',
+      'tiktok.com', 'snapchat.com', 'pinterest.com', 'telegram.org',
+      'discord.com', 'reddit.com', 'medium.com', 'tumblr.com',
     ];
 
     function isExcluded(url) {
@@ -504,16 +567,7 @@
     for (const card of cards) {
       links = card.querySelectorAll('a[href]');
     }
-    // Priority 4: Body text — scan all links for website patterns
-    const allLinks = document.querySelectorAll('a[href]');
     const candidates = [];
-
-    for (const link of allLinks) {
-        const href = link.href;
-        if (href && href.startsWith('http') && !isExcluded(href)) {
-          return cleanUrl(href);
-        }
-      }
 
     // Priority 2: JSON metadata (structured data)
     try {
@@ -545,6 +599,7 @@
       } catch (_) {}
     }
 
+    // Priority 4: ProfileCards links
     if (links) for (const link of links) {
       const href = link.href;
       if (!href) continue;
@@ -554,13 +609,48 @@
         if (excludeDomains.some(d => u.hostname.includes(d))) continue;
 
         const parentText = (link.closest('div, section') || link).innerText.toLowerCase();
-        const score = (parentText.includes('links') || parentText.includes('website') ? 2 : 0) +
-                      (link.innerText.toLowerCase().includes('website') ? 1 : 0);
+        const score = (parentText.includes('links') || parentText.includes('website') ? 3 : 0) +
+                      (link.innerText.toLowerCase().includes('website') ? 2 : 0);
 
         candidates.push({ href, score });
       } catch (_) {}
     }
 
+    // Priority 5: All page links — score them and pick the best (no early return)
+    const pageLinks = document.querySelectorAll('a[href]:not([href*="facebook.com"]):not([href*="l.facebook.com"])');
+    const linkSkipAncestors = [
+      '[role="dialog"]', '[aria-label*="notification" i]', '[aria-label*="sidebar" i]',
+      '[aria-label*="chat" i]', '[aria-label*="messenger" i]',
+    ];
+    const linkSkipSelector = linkSkipAncestors.join(',');
+    for (const link of pageLinks) {
+      const href = link.href;
+      if (!href || !href.startsWith('http')) continue;
+      if (isExcluded(href)) continue;
+      try {
+        const u = new URL(href);
+        const hostname = u.hostname.replace(/^www\./, '');
+        // Score: in main content +5, in sidebar/nav -5, looks like business website +3
+        const inMain = link.closest('[role="main"], [data-pagelet="ProfileCards"], article');
+        let score = inMain ? 5 : 0;
+        if (link.closest(linkSkipSelector)) score -= 3;
+        // Hostname with common non-business patterns gets lower score
+        if (/\.(gov|edu|org?\.)/i.test(hostname)) score += 1;
+        // Real business websites often have descriptive subpages
+        if (u.pathname && u.pathname.length > 1 && !/^\/(about|contact|home)$/i.test(u.pathname)) score += 1;
+        // Link text says "website" or "visit"
+        const linkText = (link.innerText || '').toLowerCase();
+        const parentText = (link.closest('div, section, td') || link).innerText.toLowerCase();
+        if (/website|visit|www|our\s*(site|web)/i.test(linkText)) score += 3;
+        if (/website|visit|our\s*(site|web)/i.test(parentText)) score += 2;
+        // Penalize generic social-esque path patterns
+        if (/^\/(@|user|profile|channel)/i.test(u.pathname)) score -= 2;
+
+        candidates.push({ href, score });
+      } catch (_) {}
+    }
+
+    // Priority 6: Body text scan for "website" / "visit" / "www" patterns
     const text = document.body.innerText;
     const lines = text.split('\n');
     for (const line of lines) {
@@ -584,7 +674,7 @@
     if (candidates.length === 0) return '';
 
     candidates.sort((a, b) => b.score - a.score);
-    return candidates[0].href;
+    return cleanUrl(candidates[0].href);
   }
 
   function extractAddress() {
@@ -817,16 +907,16 @@
 
   const observer = new MutationObserver(() => {
     clearTimeout(extractTimeout);
-    extractTimeout = setTimeout(extractPageData, 4000);
+    extractTimeout = setTimeout(extractPageData, 6000);
   });
 
   observer.observe(document.body, { childList: true, subtree: true });
 
   window.addEventListener('load', () => {
-    setTimeout(extractPageData, 4000);
+    setTimeout(extractPageData, 6000);
   });
 
-  setTimeout(extractPageData, 4000);
+  setTimeout(extractPageData, 6000);
 
   function retryPostDate(delay, maxRetries) {
     let attempts = 0;
@@ -896,4 +986,27 @@
     setTimeout(tryFind, 3000);
   }
   retryPhoneEmail(5000, 8);
+
+  // ── Retry business name (SPA may render late) ──────────────────
+  function retryBusinessName(delay, maxRetries) {
+    let attempts = 0;
+    function tryFind() {
+      chrome.storage.local.get('currentLead', (result) => {
+        if (result.currentLead && result.currentLead.business_name) return;
+        const name = extractBusinessName();
+        if (name) {
+          console.log('[Skarbol] business name found on retry, re-running full extraction');
+          extractPageData();
+          return;
+        }
+        attempts++;
+        if (attempts < maxRetries) {
+          console.log('[Skarbol] business name retry', attempts + 1, '/', maxRetries);
+          setTimeout(tryFind, delay);
+        }
+      });
+    }
+    setTimeout(tryFind, 4000);
+  }
+  retryBusinessName(5000, 6);
 })();

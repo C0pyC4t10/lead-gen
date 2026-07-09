@@ -49,34 +49,46 @@ function getPostDateStatus(text) {
   return '⚪ Unknown';
 }
 
-function formatValue(key, value) {
-  if (key === 'has_website') {
-    return value ? 'Yes' : 'No';
-  }
-  if (key === 'last_post_date') {
-    const status = getPostDateStatus(value);
-    return value ? `${value} ${status}` : status;
-  }
-  return value || '';
-}
-
 function isEmpty(value) {
   return value === undefined || value === null || value === '';
+}
+
+function getFieldId(key) {
+  return 'field_' + key;
 }
 
 function renderFields(data) {
   const container = document.getElementById('fields');
   container.innerHTML = '';
   for (const cfg of fieldsConfig) {
-    const value = data[cfg.key];
+    const val = data[cfg.key];
     const div = document.createElement('div');
     div.className = 'field';
+    const id = getFieldId(cfg.key);
+    const displayVal = isEmpty(val) ? '' : val;
+    const placeholder = 'Not found';
+    let inputHtml;
+    if (cfg.key === 'has_website') {
+      inputHtml = `<select class="field-input" id="${id}">
+        <option value="" ${displayVal === '' ? 'selected' : ''}>Not found</option>
+        <option value="Yes" ${displayVal === 'Yes' || displayVal === true || displayVal === 'true' ? 'selected' : ''}>Yes</option>
+        <option value="No" ${displayVal === 'No' || displayVal === false || displayVal === 'false' || displayVal === '' ? 'selected' : ''}>No</option>
+      </select>`;
+    } else {
+      inputHtml = `<input type="text" class="field-input" id="${id}" value="${escapeHtml(displayVal)}" placeholder="${placeholder}" />`;
+    }
     div.innerHTML = `
       <div class="field-label">${cfg.label}</div>
-      <div class="field-value${isEmpty(value) ? ' empty' : ''}">${isEmpty(value) ? 'Not found' : formatValue(cfg.key, value)}</div>
+      ${inputHtml}
     `;
     container.appendChild(div);
   }
+}
+
+function escapeHtml(str) {
+  const d = document.createElement('div');
+  d.textContent = str;
+  return d.innerHTML;
 }
 
 function renderScore(score) {
@@ -223,20 +235,21 @@ chrome.storage.local.get(['skarbolAuthToken', 'skarbolNotifyTelegram', 'skarbolA
     renderFields(data);
     renderScore(data.qualification_score);
 
-    document.getElementById('manualEmail').value = '';
-    document.getElementById('manualPhone').value = '';
-
-    btnCopyEmail.disabled = !data.email;
-    btnCopyPhone.disabled = !data.phone;
+    function readField(key) {
+      const el = document.getElementById(getFieldId(key));
+      if (!el) return '';
+      if (el.tagName === 'SELECT') return el.value === 'Not found' ? '' : el.value;
+      return el.value.trim();
+    }
 
     btnCopyEmail.addEventListener('click', () => {
-      navigator.clipboard.writeText(data.email).then(() => {
+      navigator.clipboard.writeText(readField('email') || data.email).then(() => {
         showStatus('Email copied to clipboard', 'success');
       });
     });
 
     btnCopyPhone.addEventListener('click', () => {
-      navigator.clipboard.writeText(data.phone).then(() => {
+      navigator.clipboard.writeText(readField('phone') || data.phone).then(() => {
         showStatus('Phone copied to clipboard', 'success');
       });
     });
@@ -245,39 +258,38 @@ chrome.storage.local.get(['skarbolAuthToken', 'skarbolNotifyTelegram', 'skarbolA
       btnSave.disabled = true;
       btnSave.textContent = 'Saving…';
 
-      const manualEmail = document.getElementById('manualEmail').value.trim();
-      const manualPhone = document.getElementById('manualPhone').value.trim();
-      const finalEmail = manualEmail || data.email || '';
-      const finalPhone = manualPhone || data.phone || '';
-      const hasManual = manualEmail || manualPhone;
+      const finalBusinessName = readField('business_name') || data.business_name || '';
+      const finalCategory = readField('category') || data.category || '';
+      const finalFollowers = readField('followers') || data.followers || '';
+      const finalEmail = readField('email') || data.email || '';
+      const finalPhone = readField('phone') || data.phone || '';
+      const finalWebsite = readField('website') || data.website || '';
+      const finalHasWebsite = readField('has_website') === 'Yes';
+      const finalAddress = readField('address') || data.address || '';
+      const finalLastPostDate = readField('last_post_date') || data.last_post_date || '';
+      const finalUrl = readField('url') || data.url || '';
 
       const followUpDate = (data.qualification_score || 0) >= 8
         ? new Date(Date.now() + 3 * 86400000).toISOString().split('T')[0]
         : '';
 
       let notes = 'Auto-extracted via extension.';
-      if (manualEmail || manualPhone) {
-        let parts = [];
-        if (manualEmail) parts.push('Email: ' + manualEmail);
-        if (manualPhone) parts.push('Phone: ' + manualPhone);
-        notes += ' Manual input — ' + parts.join(', ') + '.';
-      }
 
       const notifyTelegram = document.getElementById('chkNotifyTelegram').checked;
 
       const lead = {
         date: new Date().toISOString().split('T')[0],
         platform: platform,
-        business_name: data.business_name || '',
-        page_url: data.url || '',
-        followers: data.followers || '',
+        business_name: finalBusinessName,
+        page_url: finalUrl,
+        followers: finalFollowers,
         email: finalEmail,
         phone: finalPhone,
-        website: data.website || '',
-        has_website: data.has_website ? 'true' : 'false',
-        address: data.address || '',
-        last_post_date: data.last_post_date || '',
-        category: data.category || '',
+        website: finalWebsite,
+        has_website: finalHasWebsite ? 'true' : 'false',
+        address: finalAddress,
+        last_post_date: finalLastPostDate,
+        category: finalCategory,
         qualification_score: data.qualification_score || 5,
         status: 'new',
         notes: notes,

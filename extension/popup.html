@@ -127,23 +127,30 @@
       display: block;
       margin-bottom: 2px;
     }
-    .manual-inputs input {
+    .field-input {
       width: 100%;
-      padding: 8px 10px;
+      padding: 6px 8px;
       border-radius: 6px;
       border: 1px solid #1A2538;
-      background: #050A14;
-      color: #E2E8F0;
+      background: #0E1825;
+      color: #00E5FF;
       font-size: 13px;
+      font-weight: 600;
       font-family: 'Inter', sans-serif;
       outline: none;
       transition: border-color 0.15s;
     }
-    .manual-inputs input:focus {
+    .field-input:focus {
       border-color: #00E5FF;
     }
-    .manual-inputs input::placeholder {
+    .field-input::placeholder {
       color: #475569;
+      font-weight: 400;
+    }
+    select.field-input {
+      cursor: pointer;
+      appearance: auto;
+      color: #E2E8F0;
     }
     .divider {
       height: 1px;
@@ -244,18 +251,6 @@
     </div>
 
     <div id="fields"></div>
-
-    <div class="manual-inputs">
-      <div class="section-title">✏️ Manual Input</div>
-      <div class="input-group">
-        <label for="manualEmail">Email</label>
-        <input type="email" id="manualEmail" placeholder="Enter email if not found above" />
-      </div>
-      <div class="input-group">
-        <label for="manualPhone">Phone</label>
-        <input type="text" id="manualPhone" placeholder="Enter phone if not found above" />
-      </div>
-    </div>
 
     <div class="score-section">
       <div id="scoreBadge" class="score-badge">-</div>
